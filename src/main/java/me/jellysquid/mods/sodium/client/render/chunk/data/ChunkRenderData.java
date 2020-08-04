@@ -6,10 +6,10 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceArrayMap;
 import me.jellysquid.mods.sodium.client.gl.util.BufferSlice;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.render.chunk.ChunkOcclusionData;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.util.math.Direction;
+import net.minecraft.client.renderer.chunk.SetVisibility;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
 
 import java.util.*;
 
@@ -22,15 +22,15 @@ public class ChunkRenderData {
             .build();
     public static final ChunkRenderData EMPTY = createEmptyData();
 
-    private List<BlockEntity> globalBlockEntities;
-    private List<BlockEntity> blockEntities;
+    private List<TileEntity> globalBlockEntities;
+    private List<TileEntity> blockEntities;
 
     private Map<BlockRenderPass, ChunkMeshData> meshes;
 
-    private ChunkOcclusionData occlusionData;
+    private SetVisibility occlusionData;
     private ChunkRenderBounds bounds;
 
-    private List<Sprite> animatedSprites;
+    private List<TextureAtlasSprite> animatedSprites;
 
     private boolean isEmpty;
     private int meshByteSize;
@@ -53,17 +53,17 @@ public class ChunkRenderData {
      * @return True if this chunk can cull the neighbor given the incoming direction
      */
     public boolean isVisibleThrough(Direction from, Direction to) {
-        return this.occlusionData != null && this.occlusionData.isVisibleThrough(from, to);
+        return this.occlusionData != null && this.occlusionData.isVisible(from, to);
     }
 
-    public List<Sprite> getAnimatedSprites() {
+    public List<TextureAtlasSprite> getAnimatedSprites() {
         return this.animatedSprites;
     }
 
     /**
      * The collection of block entities contained by this rendered chunk.
      */
-    public Collection<BlockEntity> getBlockEntities() {
+    public Collection<TileEntity> getBlockEntities() {
         return this.blockEntities;
     }
 
@@ -71,7 +71,7 @@ public class ChunkRenderData {
      * The collection of block entities contained by this rendered chunk section which are not part of its culling
      * volume. These entities should always be rendered regardless of the render being visible in the frustum.
      */
-    public Collection<BlockEntity> getGlobalBlockEntities() {
+    public Collection<TileEntity> getGlobalBlockEntities() {
         return this.globalBlockEntities;
     }
 
@@ -91,31 +91,31 @@ public class ChunkRenderData {
     }
 
     public static class Builder {
-        private final List<BlockEntity> globalBlockEntities = new ArrayList<>();
-        private final List<BlockEntity> blockEntities = new ArrayList<>();
-        private final Set<Sprite> animatedSprites = new ObjectOpenHashSet<>();
+        private final List<TileEntity> globalBlockEntities = new ArrayList<>();
+        private final List<TileEntity> blockEntities = new ArrayList<>();
+        private final Set<TextureAtlasSprite> animatedSprites = new ObjectOpenHashSet<>();
 
         private final Map<BlockRenderPass, ChunkMeshData> meshes = new Reference2ReferenceArrayMap<>();
 
-        private ChunkOcclusionData occlusionData;
+        private SetVisibility occlusionData;
         private ChunkRenderBounds bounds;
 
         public void setBounds(ChunkRenderBounds bounds) {
             this.bounds = bounds;
         }
 
-        public void setOcclusionData(ChunkOcclusionData data) {
+        public void setOcclusionData(SetVisibility data) {
             this.occlusionData = data;
         }
 
         /**
-         * Adds a sprite to this data container for tracking. If the sprite is tickable, it will be ticked every frame
+         * Adds a TextureAtlasSprite to this data container for tracking. If the TextureAtlasSprite is tickable, it will be ticked every frame
          * before rendering as necessary.
-         * @param sprite The sprite
+         * @param TextureAtlasSprite The TextureAtlasSprite
          */
-        public void addSprite(Sprite sprite) {
-            if (sprite.isAnimated()) {
-                this.animatedSprites.add(sprite);
+        public void addSprite(TextureAtlasSprite TextureAtlasSprite) {
+            if (TextureAtlasSprite.hasAnimationMetadata()) {
+                this.animatedSprites.add(TextureAtlasSprite);
             }
         }
 
@@ -128,7 +128,7 @@ public class ChunkRenderData {
          * @param entity The block entity itself
          * @param cull True if the block entity can be culled to this chunk render's volume, otherwise false
          */
-        public void addBlockEntity(BlockEntity entity, boolean cull) {
+        public void addBlockEntity(TileEntity entity, boolean cull) {
             (cull ? this.blockEntities : this.globalBlockEntities).add(entity);
         }
 
@@ -161,8 +161,8 @@ public class ChunkRenderData {
     }
 
     private static ChunkRenderData createEmptyData() {
-        ChunkOcclusionData occlusionData = new ChunkOcclusionData();
-        occlusionData.addOpenEdgeFaces(EnumSet.allOf(Direction.class));
+        SetVisibility occlusionData = new SetVisibility();
+        occlusionData.setManyVisible(EnumSet.allOf(Direction.class));
 
         ChunkRenderData.Builder meshInfo = new ChunkRenderData.Builder();
         meshInfo.setOcclusionData(occlusionData);

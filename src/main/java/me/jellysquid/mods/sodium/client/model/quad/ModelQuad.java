@@ -1,7 +1,7 @@
 package me.jellysquid.mods.sodium.client.model.quad;
 
 import me.jellysquid.mods.sodium.client.util.BufferUtil;
-import net.minecraft.client.texture.Sprite;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 import java.nio.ByteBuffer;
 
@@ -15,7 +15,7 @@ public class ModelQuad implements ModelQuadViewMutable {
     private final int[] data = new int[VERTEX_SIZE * 4];
     private int flags;
 
-    private Sprite sprite;
+    private TextureAtlasSprite TextureAtlasSprite;
     private int colorIdx;
 
     @Override
@@ -64,8 +64,8 @@ public class ModelQuad implements ModelQuadViewMutable {
     }
 
     @Override
-    public void setSprite(Sprite sprite) {
-        this.sprite = sprite;
+    public void setSprite(TextureAtlasSprite TextureAtlasSprite) {
+        this.TextureAtlasSprite = TextureAtlasSprite;
     }
 
     @Override
@@ -124,8 +124,8 @@ public class ModelQuad implements ModelQuadViewMutable {
     }
 
     @Override
-    public Sprite getSprite() {
-        return this.sprite;
+    public TextureAtlasSprite getSprite() {
+        return this.TextureAtlasSprite;
     }
 
     @Override

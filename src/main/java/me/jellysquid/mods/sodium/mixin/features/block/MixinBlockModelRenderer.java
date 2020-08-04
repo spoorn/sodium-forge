@@ -1,5 +1,7 @@
 package me.jellysquid.mods.sodium.mixin.features.block;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
 import me.jellysquid.mods.sodium.client.model.consumer.QuadVertexConsumer;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.model.quad.sink.FallbackQuadSink;
@@ -11,15 +13,13 @@ import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.rand.XoRoShiRoRandom;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.block.BlockModelRenderer;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.renderer.BlockModelRenderer;
+import net.minecraft.client.renderer.model.BakedQuad;
+import net.minecraft.client.renderer.model.IBakedModel;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.IBlockDisplayReader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
@@ -33,8 +33,8 @@ import java.util.Random;
 public class MixinBlockModelRenderer {
     private final XoRoShiRoRandom random = new XoRoShiRoRandom();
 
-    @Inject(method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLjava/util/Random;JI)Z", at = @At("HEAD"), cancellable = true)
-    private void preRenderBlockInWorld(BlockRenderView world, BakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, VertexConsumer consumer, boolean cull, Random rand, long seed, int int_1, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "renderModel(Lnet/minecraft/world/IBlockDisplayReader;Lnet/minecraft/client/renderer/model/IBakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lcom/mojang/blaze3d/matrix/MatrixStack;Lcom/mojang/blaze3d/vertex/IVertexBuilder;ZLjava/util/Random;JI)Z", at = @At("HEAD"), cancellable = true)
+    private void preRenderBlockInWorld(IBlockDisplayReader world, IBakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, IVertexBuilder consumer, boolean cull, Random rand, long seed, int int_1, CallbackInfoReturnable<Boolean> cir) {
         GlobalRenderContext renderer = GlobalRenderContext.getInstance(world);
         BlockRenderer blockRenderer = renderer.getBlockRenderer();
 
@@ -47,8 +47,9 @@ public class MixinBlockModelRenderer {
      * @reason Use optimized vertex writer intrinsics, avoid allocations
      * @author JellySquid
      */
+    @Deprecated
     @Overwrite
-    public void render(MatrixStack.Entry entry, VertexConsumer vertexConsumer, BlockState blockState, BakedModel bakedModel, float red, float green, float blue, int light, int overlay) {
+    public void renderModelBrightnessColor(MatrixStack.Entry entry, IVertexBuilder vertexConsumer, BlockState blockState, IBakedModel bakedModel, float red, float green, float blue, int light, int overlay) {
         XoRoShiRoRandom random = this.random;
         QuadVertexConsumer quadConsumer = (QuadVertexConsumer) vertexConsumer;
 
@@ -80,7 +81,7 @@ public class MixinBlockModelRenderer {
         }
 
         for (BakedQuad bakedQuad : list) {
-            int color = bakedQuad.hasColor() ? defaultColor : 0xFFFFFFFF;
+            int color = bakedQuad.hasTintIndex() ? defaultColor : 0xFFFFFFFF;
 
             ModelQuadView quad = ((ModelQuadView) bakedQuad);
 
