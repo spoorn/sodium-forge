@@ -67,12 +67,12 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         VisGraph occluder = new VisGraph();
         ChunkRenderBounds.Builder bounds = new ChunkRenderBounds.Builder();
 
-        pipeline.init(this.slice, this.slice.getBlockOffsetX(), this.slice.getBlockOffsetY(), this.slice.getBlockOffsetZ());
+        pipeline.init(this.slice, this.slice.getOrigin());
         buffers.init(renderData);
 
-        int minX = this.render.getOriginX();
-        int minY = this.render.getOriginY();
-        int minZ = this.render.getOriginZ();
+        int baseX = this.render.getOriginX();
+        int baseY = this.render.getOriginY();
+        int baseZ = this.render.getOriginZ();
 
         BlockPos.Mutable pos = new BlockPos.Mutable();
         BlockPos offset = this.offset;
@@ -82,11 +82,11 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         // TODO: Since we're not sorting here anymore, no need to loop through coordinates twice
         BlockState[] blockStates = new BlockState[TOTAL_CHUNK_SIZE];
         Coordinate[] coordinates = new Coordinate[TOTAL_CHUNK_SIZE];
-        for (int y = minY; y < minY + CHUNK_BUILD_SIZE; y++) {
-            for (int z = minZ; z < minZ + CHUNK_BUILD_SIZE; z++) {
-                for (int x = minX; x < minX + CHUNK_BUILD_SIZE; x++) {
-                    BlockState curr = this.slice.getBlockState(x, y, z);
-                    int index = (x-minX)+((y-minY)*CHUNK_BUILD_SIZE)+((z-minZ)*CHUNK_BUILD_SIZE_2D);
+        for (int y = baseY; y < baseY + CHUNK_BUILD_SIZE; y++) {
+            for (int z = baseZ; z < baseZ + CHUNK_BUILD_SIZE; z++) {
+                for (int x = baseX; x < baseX + CHUNK_BUILD_SIZE; x++) {
+                    BlockState curr = this.slice.getOriginBlockState(x, y, z);
+                    int index = (x-baseX)+((y-baseY)*CHUNK_BUILD_SIZE)+((z-baseZ)*CHUNK_BUILD_SIZE_2D);
                     blockStates[index] = curr;
                     coordinates[index] = new Coordinate(x, y, z);
                     for (BlockRenderPass pass : BlockRenderPass.VALUES) {
@@ -115,7 +115,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 return null;
             }
             setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, blockStates,
-                    coordinate.x, coordinate.y, coordinate.z, minX, minY, minZ);
+                    coordinate.x, coordinate.y, coordinate.z, baseX, baseY, baseZ);
         }
 
         for (BlockRenderPass pass : BlockRenderPass.VALUES) {
