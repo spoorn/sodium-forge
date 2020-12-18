@@ -428,7 +428,7 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
     private static ChunkSection getChunkSection(Chunk chunk, SectionPos pos) {
         ChunkSection section = null;
 
-        if (!World.isYOutOfBounds(pos.getY())) {
+        if (!World.isYOutOfBounds(SectionPos.toWorld(pos.getY()))) {
             section = chunk.getSections()[pos.getY()];
         }
 
