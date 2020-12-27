@@ -2,8 +2,12 @@ package me.jellysquid.mods.sodium.mixin.features.buffer_builder.intrinsics;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import me.jellysquid.mods.sodium.client.model.consumer.LineVertexConsumer;
+import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexSinks;
+import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
+import me.jellysquid.mods.sodium.client.model.vertex.formats.line.LineVertexSink;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
+import me.jellysquid.mods.sodium.client.util.math.Matrix4fExtended;
+import me.jellysquid.mods.sodium.client.util.math.MatrixUtil;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.util.math.vector.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,31 +34,81 @@ public class MixinWorldRenderer {
 
         int color = ColorABGR.pack(red, green, blue, alpha);
 
-        LineVertexConsumer lines = (LineVertexConsumer) vertexConsumer;
-        lines.vertexLine(model, x1f, y1f, z1f, red, yAxisGreen, zAxisBlue, alpha);
-        lines.vertexLine(model, x2f, y1f, z1f, red, yAxisGreen, zAxisBlue, alpha);
-        lines.vertexLine(model, x1f, y1f, z1f, xAxisRed, green, zAxisBlue, alpha);
-        lines.vertexLine(model, x1f, y2f, z1f, xAxisRed, green, zAxisBlue, alpha);
-        lines.vertexLine(model, x1f, y1f, z1f, xAxisRed, yAxisGreen, blue, alpha);
-        lines.vertexLine(model, x1f, y1f, z2f, xAxisRed, yAxisGreen, blue, alpha);
-        lines.vertexLine(model, x2f, y1f, z1f, color);
-        lines.vertexLine(model, x2f, y2f, z1f, color);
-        lines.vertexLine(model, x2f, y2f, z1f, color);
-        lines.vertexLine(model, x1f, y2f, z1f, color);
-        lines.vertexLine(model, x1f, y2f, z1f, color);
-        lines.vertexLine(model, x1f, y2f, z2f, color);
-        lines.vertexLine(model, x1f, y2f, z2f, color);
-        lines.vertexLine(model, x1f, y1f, z2f, color);
-        lines.vertexLine(model, x1f, y1f, z2f, color);
-        lines.vertexLine(model, x2f, y1f, z2f, color);
-        lines.vertexLine(model, x2f, y1f, z2f, color);
-        lines.vertexLine(model, x2f, y1f, z1f, color);
-        lines.vertexLine(model, x1f, y2f, z2f, color);
-        lines.vertexLine(model, x2f, y2f, z2f, color);
-        lines.vertexLine(model, x2f, y1f, z2f, color);
-        lines.vertexLine(model, x2f, y2f, z2f, color);
-        lines.vertexLine(model, x2f, y2f, z1f, color);
-        lines.vertexLine(model, x2f, y2f, z2f, color);
+        Matrix4fExtended matrixExt = MatrixUtil.getExtendedMatrix(model);
+
+        float v1x = matrixExt.transformVecX(x1f, y1f, z1f);
+        float v1y = matrixExt.transformVecY(x1f, y1f, z1f);
+        float v1z = matrixExt.transformVecZ(x1f, y1f, z1f);
+        
+        float v2x = matrixExt.transformVecX(x2f, y1f, z1f);
+        float v2y = matrixExt.transformVecY(x2f, y1f, z1f);
+        float v2z = matrixExt.transformVecZ(x2f, y1f, z1f);
+        
+        float v3x = matrixExt.transformVecX(x1f, y2f, z1f);
+        float v3y = matrixExt.transformVecY(x1f, y2f, z1f);
+        float v3z = matrixExt.transformVecZ(x1f, y2f, z1f);
+        
+        float v4x = matrixExt.transformVecX(x1f, y1f, z2f);
+        float v4y = matrixExt.transformVecY(x1f, y1f, z2f);
+        float v4z = matrixExt.transformVecZ(x1f, y1f, z2f);
+        
+        float v5x = matrixExt.transformVecX(x2f, y2f, z1f);
+        float v5y = matrixExt.transformVecY(x2f, y2f, z1f);
+        float v5z = matrixExt.transformVecZ(x2f, y2f, z1f);
+        
+        float v6x = matrixExt.transformVecX(x1f, y2f, z2f);
+        float v6y = matrixExt.transformVecY(x1f, y2f, z2f);
+        float v6z = matrixExt.transformVecZ(x1f, y2f, z2f);
+        
+        float v7x = matrixExt.transformVecX(x2f, y1f, z2f);
+        float v7y = matrixExt.transformVecY(x2f, y1f, z2f);
+        float v7z = matrixExt.transformVecZ(x2f, y1f, z2f);
+        
+        float v8x = matrixExt.transformVecX(x2f, y2f, z2f);
+        float v8y = matrixExt.transformVecY(x2f, y2f, z2f);
+        float v8z = matrixExt.transformVecZ(x2f, y2f, z2f);
+
+        LineVertexSink lines = VertexDrain.of(vertexConsumer)
+                .createSink(DefaultVertexSinks.LINES);
+        lines.ensureCapacity(24);
+
+        lines.vertexLine(v1x, v1y, v1z, red, yAxisGreen, zAxisBlue, alpha);
+        lines.vertexLine(v2x, v2y, v2z, red, yAxisGreen, zAxisBlue, alpha);
+
+        lines.vertexLine(v1x, v1y, v1z, xAxisRed, green, zAxisBlue, alpha);
+        lines.vertexLine(v3x, v3y, v3z, xAxisRed, green, zAxisBlue, alpha);
+
+        lines.vertexLine(v1x, v1y, v1z, xAxisRed, yAxisGreen, blue, alpha);
+        lines.vertexLine(v4x, v4y, v4z, xAxisRed, yAxisGreen, blue, alpha);
+
+        lines.vertexLine(v2x, v2y, v2z, color);
+        lines.vertexLine(v5x, v5y, v5z, color);
+
+        lines.vertexLine(v5x, v5y, v5z, color);
+        lines.vertexLine(v3x, v3y, v3z, color);
+
+        lines.vertexLine(v3x, v3y, v3z, color);
+        lines.vertexLine(v6x, v6y, v6z, color);
+
+        lines.vertexLine(v6x, v6y, v6z, color);
+        lines.vertexLine(v4x, v4y, v4z, color);
+
+        lines.vertexLine(v4x, v4y, v4z, color);
+        lines.vertexLine(v7x, v7y, v7z, color);
+
+        lines.vertexLine(v7x, v7y, v7z, color);
+        lines.vertexLine(v2x, v2y, v2z, color);
+
+        lines.vertexLine(v6x, v6y, v6z, color);
+        lines.vertexLine(v8x, v8y, v8z, color);
+
+        lines.vertexLine(v7x, v7y, v7z, color);
+        lines.vertexLine(v8x, v8y, v8z, color);
+
+        lines.vertexLine(v5x, v5y, v5z, color);
+        lines.vertexLine(v8x, v8y, v8z, color);
+
+        lines.flush();
     }
 
 }

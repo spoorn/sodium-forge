@@ -2,9 +2,11 @@ package me.jellysquid.mods.sodium.mixin.features.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import me.jellysquid.mods.sodium.client.model.consumer.QuadVertexConsumer;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.model.quad.sink.FallbackQuadSink;
+import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexSinks;
+import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
+import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
 import me.jellysquid.mods.sodium.client.render.pipeline.BlockRenderer;
 import me.jellysquid.mods.sodium.client.render.pipeline.context.GlobalRenderContext;
 import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
@@ -50,8 +52,9 @@ public class MixinBlockModelRenderer {
      */
     @Overwrite(remap = false)
     public void renderModel(MatrixStack.Entry entry, IVertexBuilder vertexConsumer, BlockState blockState, IBakedModel bakedModel, float red, float green, float blue, int light, int overlay, IModelData modelData) {
+    QuadVertexSink drain = VertexDrain.of(vertexConsumer)
+                .createSink(DefaultVertexSinks.QUADS);
         XoRoShiRoRandom random = this.random;
-        QuadVertexConsumer quadConsumer = (QuadVertexConsumer) vertexConsumer;
 
         // Clamp color ranges
         red = MathHelper.clamp(red, 0.0F, 1.0F);
@@ -64,21 +67,25 @@ public class MixinBlockModelRenderer {
             List<BakedQuad> quads = bakedModel.getQuads(blockState, direction, random.setSeedAndReturn(42L), modelData);
 
             if (!quads.isEmpty()) {
-                renderQuad(entry, quadConsumer, defaultColor, quads, light, overlay);
+                renderQuad(entry, drain, defaultColor, quads, light, overlay);
             }
         }
 
         List<BakedQuad> quads = bakedModel.getQuads(blockState, null, random.setSeedAndReturn(42L), modelData);
 
         if (!quads.isEmpty()) {
-            renderQuad(entry, quadConsumer, defaultColor, quads, light, overlay);
+            renderQuad(entry, drain, defaultColor, quads, light, overlay);
         }
+
+        drain.flush();
     }
 
-    private static void renderQuad(MatrixStack.Entry entry, QuadVertexConsumer vertices, int defaultColor, List<BakedQuad> list, int light, int overlay) {
+    private static void renderQuad(MatrixStack.Entry entry, QuadVertexSink drain, int defaultColor, List<BakedQuad> list, int light, int overlay) {
         if (list.isEmpty()) {
             return;
         }
+
+        drain.ensureCapacity(list.size() * 4);
 
         for (BakedQuad bakedQuad : list) {
             int color = bakedQuad.hasTintIndex() ? defaultColor : 0xFFFFFFFF;
@@ -86,7 +93,7 @@ public class MixinBlockModelRenderer {
             ModelQuadView quad = ((ModelQuadView) bakedQuad);
 
             for (int i = 0; i < 4; i++) {
-                vertices.vertexQuad(entry, quad.getX(i), quad.getY(i), quad.getZ(i), color, quad.getTexU(i), quad.getTexV(i),
+                drain.writeQuad(entry, quad.getX(i), quad.getY(i), quad.getZ(i), color, quad.getTexU(i), quad.getTexV(i),
                         light, overlay, ModelQuadUtil.getFacingNormal(bakedQuad.getFace()));
             }
 
