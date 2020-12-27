@@ -1,7 +1,7 @@
 package me.jellysquid.mods.sodium.mixin.features.particle.fast_render;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexSinks;
+import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexTypes;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.particle.ParticleVertexSink;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
@@ -72,7 +72,7 @@ public abstract class MixinBillboardParticle extends Particle {
         int color = ColorABGR.pack(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha);
 
         ParticleVertexSink drain = VertexDrain.of(vertexConsumer)
-                .createSink(DefaultVertexSinks.PARTICLES);
+                .createSink(DefaultVertexTypes.PARTICLES);
 
         addVertex(drain, quaternion,-1.0F, -1.0F, x, y, z, maxU, maxV, color, light, size);
         addVertex(drain, quaternion,-1.0F, 1.0F, x, y, z, maxU, minV, color, light, size);

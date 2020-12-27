@@ -4,7 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.model.quad.sink.FallbackQuadSink;
-import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexSinks;
+import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexTypes;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
 import me.jellysquid.mods.sodium.client.render.pipeline.BlockRenderer;
@@ -53,7 +53,7 @@ public class MixinBlockModelRenderer {
     @Overwrite(remap = false)
     public void renderModel(MatrixStack.Entry entry, IVertexBuilder vertexConsumer, BlockState blockState, IBakedModel bakedModel, float red, float green, float blue, int light, int overlay, IModelData modelData) {
     QuadVertexSink drain = VertexDrain.of(vertexConsumer)
-                .createSink(DefaultVertexSinks.QUADS);
+                .createSink(DefaultVertexTypes.QUADS);
         XoRoShiRoRandom random = this.random;
 
         // Clamp color ranges

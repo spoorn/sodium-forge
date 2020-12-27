@@ -1,7 +1,7 @@
 package me.jellysquid.mods.sodium.mixin.features.gui.font;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexSinks;
+import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexTypes;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.glyph.GlyphVertexSink;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
@@ -64,7 +64,7 @@ public class MixinGlyphRenderer {
         int color = ColorABGR.pack(red, green, blue, alpha);
 
         GlyphVertexSink drain = VertexDrain.of(vertexConsumer)
-                .createSink(DefaultVertexSinks.GLYPHS);
+                .createSink(DefaultVertexTypes.GLYPHS);
         drain.ensureCapacity(4);
         drain.writeGlyph(matrix, x1 + w1, h1, 0.0F, color, this.u0, this.v0, light);
         drain.writeGlyph(matrix, x1 + w2, h2, 0.0F, color, this.u0, this.v1, light);
