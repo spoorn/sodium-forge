@@ -1,15 +1,15 @@
 package me.jellysquid.mods.sodium.client.model.vertex.formats.quad;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import me.jellysquid.mods.sodium.client.model.vertex.VertexType;
-import me.jellysquid.mods.sodium.client.model.vertex.VertexTypeBlittable;
 import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.writer.QuadVertexBufferWriterNio;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.writer.QuadVertexBufferWriterUnsafe;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.writer.QuadVertexWriterFallback;
+import me.jellysquid.mods.sodium.client.model.vertex.type.BlittableVertexType;
+import me.jellysquid.mods.sodium.client.model.vertex.type.VanillaVertexType;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 
-public class QuadVertexType implements VertexType<QuadVertexSink>, VertexTypeBlittable<QuadVertexSink> {
+public class QuadVertexType implements VanillaVertexType<QuadVertexSink>, BlittableVertexType<QuadVertexSink> {
     @Override
     public QuadVertexSink createFallbackWriter(IVertexBuilder consumer) {
         return new QuadVertexWriterFallback(consumer);
@@ -21,12 +21,12 @@ public class QuadVertexType implements VertexType<QuadVertexSink>, VertexTypeBli
     }
 
     @Override
-    public VertexFormat getBufferVertexFormat() {
+    public VertexFormat getVertexFormat() {
         return QuadVertexSink.VERTEX_FORMAT;
     }
 
     @Override
-    public VertexTypeBlittable<QuadVertexSink> asBlittable() {
+    public BlittableVertexType<QuadVertexSink> asBlittable() {
         return this;
     }
 }

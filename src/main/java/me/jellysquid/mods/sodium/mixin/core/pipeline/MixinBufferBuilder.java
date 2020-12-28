@@ -1,11 +1,12 @@
 package me.jellysquid.mods.sodium.mixin.core.pipeline;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import me.jellysquid.mods.sodium.client.gl.attribute.BufferVertexFormat;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexSink;
-import me.jellysquid.mods.sodium.client.model.vertex.VertexType;
-import me.jellysquid.mods.sodium.client.model.vertex.VertexTypeBlittable;
 import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
+import me.jellysquid.mods.sodium.client.model.vertex.type.BlittableVertexType;
+import me.jellysquid.mods.sodium.client.model.vertex.type.VertexType;
 import me.jellysquid.mods.sodium.client.util.UnsafeUtil;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GLAllocation;
@@ -72,25 +73,25 @@ public abstract class MixinBufferBuilder implements VertexBufferView, VertexDrai
     }
 
     @Override
-    public VertexFormat getVertexFormat() {
-        return this.vertexFormat;
+    public BufferVertexFormat getVertexFormat() {
+        return BufferVertexFormat.from(this.vertexFormat);
     }
 
     @Override
-    public void flush(int vertexCount, VertexFormat format) {
-        if (this.vertexFormat != format) {
+    public void flush(int vertexCount, BufferVertexFormat format) {
+        if (BufferVertexFormat.from(this.vertexFormat) != format) {
             throw new IllegalStateException("Mis-matched vertex format (expected: [" + format + "], currently using: [" + this.vertexFormat + "])");
         }
 
         this.vertexCount += vertexCount;
-        this.nextElementBytes += vertexCount * format.getSize();
+        this.nextElementBytes += vertexCount * format.getStride();
     }
 
     @Override
     public <T extends VertexSink> T createSink(VertexType<T> factory) {
-        VertexTypeBlittable<T> blittable = factory.asBlittable();
+        BlittableVertexType<T> blittable = factory.asBlittable();
 
-        if (blittable != null && blittable.getBufferVertexFormat() == this.vertexFormat)  {
+        if (blittable != null && blittable.getBufferVertexFormat() == this.getVertexFormat())  {
             return blittable.createBufferWriter(this, UnsafeUtil.isAvailable());
         }
 

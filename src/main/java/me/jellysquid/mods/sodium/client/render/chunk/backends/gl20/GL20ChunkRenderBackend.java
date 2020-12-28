@@ -1,9 +1,8 @@
 package me.jellysquid.mods.sodium.client.render.chunk.backends.gl20;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import me.jellysquid.mods.sodium.client.gl.SodiumVertexFormats;
-import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.gl.util.MemoryTracker;
+import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
 import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkRenderBackendOneshot;
 import net.minecraft.util.math.vector.Matrix4f;
@@ -14,8 +13,7 @@ import org.lwjgl.opengl.GL20;
  * A simple chunk rendering backend which mirrors that of vanilla's own pretty closely.
  */
 public class GL20ChunkRenderBackend extends ChunkRenderBackendOneshot<GL20GraphicsState> {
-
-    public GL20ChunkRenderBackend(GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
+    public GL20ChunkRenderBackend(ChunkVertexType format) {
         super(format);
     }
 

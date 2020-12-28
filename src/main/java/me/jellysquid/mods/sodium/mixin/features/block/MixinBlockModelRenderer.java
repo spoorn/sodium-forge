@@ -3,12 +3,9 @@ package me.jellysquid.mods.sodium.mixin.features.block;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
-import me.jellysquid.mods.sodium.client.model.quad.sink.FallbackQuadSink;
-import me.jellysquid.mods.sodium.client.model.vertex.DefaultVertexTypes;
+import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
-import me.jellysquid.mods.sodium.client.render.pipeline.BlockRenderer;
-import me.jellysquid.mods.sodium.client.render.pipeline.context.GlobalRenderContext;
 import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
 import me.jellysquid.mods.sodium.client.util.ModelQuadUtil;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
@@ -38,12 +35,12 @@ public class MixinBlockModelRenderer {
 
     @Inject(method = "renderModel(Lnet/minecraft/world/IBlockDisplayReader;Lnet/minecraft/client/renderer/model/IBakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lcom/mojang/blaze3d/matrix/MatrixStack;Lcom/mojang/blaze3d/vertex/IVertexBuilder;ZLjava/util/Random;JILnet/minecraftforge/client/model/data/IModelData;)Z", at = @At("HEAD"), cancellable = true, remap = false)
     private void preRenderBlockInWorld(IBlockDisplayReader world, IBakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, IVertexBuilder consumer, boolean cull, Random rand, long seed, int int_1, IModelData modelData, CallbackInfoReturnable<Boolean> cir) {
-        GlobalRenderContext renderer = GlobalRenderContext.getInstance(world);
+       /* GlobalRenderContext renderer = GlobalRenderContext.getInstance(world);
         BlockRenderer blockRenderer = renderer.getBlockRenderer();
 
         boolean ret = blockRenderer.renderModel(world, state, pos, model, new FallbackQuadSink(consumer, matrixStack), cull, seed, modelData);
 
-        cir.setReturnValue(ret);
+        cir.setReturnValue(ret);*/
     }
 
     /**
@@ -53,7 +50,7 @@ public class MixinBlockModelRenderer {
     @Overwrite(remap = false)
     public void renderModel(MatrixStack.Entry entry, IVertexBuilder vertexConsumer, BlockState blockState, IBakedModel bakedModel, float red, float green, float blue, int light, int overlay, IModelData modelData) {
     QuadVertexSink drain = VertexDrain.of(vertexConsumer)
-                .createSink(DefaultVertexTypes.QUADS);
+                .createSink(VanillaVertexTypes.QUADS);
         XoRoShiRoRandom random = this.random;
 
         // Clamp color ranges

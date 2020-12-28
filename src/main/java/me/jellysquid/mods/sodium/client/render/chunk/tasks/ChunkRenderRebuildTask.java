@@ -16,7 +16,6 @@ import me.jellysquid.mods.sodium.common.util.RenderTypeLookupUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.chunk.VisGraph;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
@@ -27,11 +26,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.model.ModelDataManager;
-import net.minecraftforge.client.model.data.EmptyModelData;
-import net.minecraftforge.client.model.data.IModelData;
-
-import java.util.Objects;
 
 /**
  * Rebuilds all the meshes of a chunk for each given render pass with non-occluded blocks. The result is then uploaded
@@ -65,8 +59,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         VisGraph occluder = new VisGraph();
         ChunkRenderBounds.Builder bounds = new ChunkRenderBounds.Builder();
 
+        buffers.init();
         pipeline.init(this.slice, this.slice.getOrigin());
-        buffers.init(renderData);
 
         int baseX = this.render.getOriginX();
         int baseY = this.render.getOriginY();
@@ -74,11 +68,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
         BlockPos.Mutable pos = new BlockPos.Mutable();
         BlockPos offset = this.offset;
-
-        // If cancelled, stop before doing more calculations
-        if (cancellationSource.isCancelled()) {
-            return null;
-        }
 
         boolean shouldSortBackwards = false;
 
@@ -130,11 +119,11 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     private void setupBlockRender(ChunkRenderContext pipeline, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData,
         VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState blockState,
         int x, int y, int z) {
-        Block block = blockState.getBlock();
-
         if (blockState.isAir()) {
             return;
         }
+
+        Block block = blockState.getBlock();
 
         pos.setPos(x, y, z);
 
@@ -162,10 +151,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             FluidState fluidState = block.getFluidState(blockState);
 
             if (!fluidState.isEmpty() && RenderTypeLookupUtil.canRenderInLayer(fluidState, layer)) {
-                ChunkBuildBuffers.ChunkBuildBufferDelegate builder2 = buffers.get(layer);
-                builder2.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
+                buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
-                if (pipeline.renderFluid(this.slice, fluidState, pos, builder2)) {
+                if (pipeline.renderFluid(this.slice, fluidState, pos, buffers.get(layer))) {
                     bounds.addBlock(x, y, z);
                 }
             }
@@ -175,14 +163,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             }
 
             // Solid blocks
-            ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
-            builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
+            buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
-            IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
-            if (modelData == null) {
-                modelData = EmptyModelData.INSTANCE;
-            }
-            if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
+            if (pipeline.renderBlock(this.slice, blockState, pos, buffers.get(layer), true)) {
                 bounds.addBlock(x, y, z);
             }
         }

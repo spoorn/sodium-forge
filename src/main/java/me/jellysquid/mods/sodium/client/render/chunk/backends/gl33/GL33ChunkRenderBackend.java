@@ -1,10 +1,9 @@
 package me.jellysquid.mods.sodium.client.render.chunk.backends.gl33;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import me.jellysquid.mods.sodium.client.gl.SodiumVertexFormats;
-import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.gl.func.GlFunctions;
 import me.jellysquid.mods.sodium.client.gl.util.MemoryTracker;
+import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
 import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkRenderBackendOneshot;
 
@@ -15,9 +14,8 @@ import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkRenderBackendO
  * allow the driver to skip validation logic that would otherwise be performed.
  */
 public class GL33ChunkRenderBackend extends ChunkRenderBackendOneshot<GL33GraphicsState> {
-
-    public GL33ChunkRenderBackend(GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
-        super(format);
+    public GL33ChunkRenderBackend(ChunkVertexType vertexType) {
+        super(vertexType);
     }
 
     @Override
