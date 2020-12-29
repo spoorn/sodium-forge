@@ -15,7 +15,7 @@ public class MixinGameOptions {
     public int renderDistanceChunks;
 
     @Shadow
-    public GraphicsFanciness field_238330_f_;
+    public GraphicsFanciness graphicFanciness;
 
     /**
      * @author JellySquid
@@ -29,6 +29,6 @@ public class MixinGameOptions {
             return CloudOption.OFF;
         }
 
-        return options.quality.cloudQuality.isFancy(this.field_238330_f_) ? CloudOption.FANCY : CloudOption.FAST;
+        return options.quality.cloudQuality.isFancy(this.graphicFanciness) ? CloudOption.FANCY : CloudOption.FAST;
     }
 }

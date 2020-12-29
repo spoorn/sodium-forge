@@ -22,6 +22,84 @@ public class SodiumConfig {
     private SodiumConfig() {
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
+
+        this.addMixinRule("ai", true);
+        this.addMixinRule("ai.goal", true);
+        this.addMixinRule("ai.nearby_entity_tracking", true);
+        this.addMixinRule("ai.pathing", true);
+        this.addMixinRule("ai.poi", true);
+        this.addMixinRule("ai.raid", true);
+        this.addMixinRule("ai.task", true);
+
+        this.addMixinRule("alloc", true);
+        this.addMixinRule("alloc.chunk_random", true);
+        this.addMixinRule("alloc.chunk_ticking", true);
+        this.addMixinRule("alloc.composter", true);
+        this.addMixinRule("alloc.entity_tracker", true);
+        this.addMixinRule("alloc.enum_values", true);
+        this.addMixinRule("alloc.world_ticking", true);
+
+        this.addMixinRule("block", true);
+        this.addMixinRule("block.flatten_states", true);
+
+        this.addMixinRule("cached_hashcode", true);
+
+        this.addMixinRule("chunk", true);
+        this.addMixinRule("chunk.count_oversized_blocks", true);
+        this.addMixinRule("chunk.entity_class_groups", true);
+        this.addMixinRule("chunk.no_locking", true);
+        this.addMixinRule("chunk.palette", true);
+        this.addMixinRule("chunk.section_update_tracking", true);
+        this.addMixinRule("chunk.serialization", true);
+
+        this.addMixinRule("collections", true);
+        this.addMixinRule("collections.entity_filtering", true);
+
+        this.addMixinRule("entity", true);
+        this.addMixinRule("entity.block_cache", true);
+        this.addMixinRule("entity.collisions", true);
+        this.addMixinRule("entity.data_tracker", true);
+        this.addMixinRule("entity.fast_suffocation_check", true);
+        this.addMixinRule("entity.gravity_check_block_below", true);
+        this.addMixinRule("entity.inactive_navigations", true);
+        this.addMixinRule("entity.replace_entitytype_predicates", true);
+        this.addMixinRule("entity.skip_fire_check", true);
+        this.addMixinRule("entity.stream_entity_collisions_lazily", true);
+
+        this.addMixinRule("gen", true);
+        this.addMixinRule("gen.biome_noise_cache", true);
+        this.addMixinRule("gen.chunk_region", true);
+        this.addMixinRule("gen.fast_island_noise", true);
+        this.addMixinRule("gen.fast_layer_sampling", true);
+        this.addMixinRule("gen.fast_multi_source_biomes", true);
+        this.addMixinRule("gen.fast_noise_interpolation", true);
+        this.addMixinRule("gen.features", true);
+        this.addMixinRule("gen.perlin_noise", true);
+        this.addMixinRule("gen.voronoi_biomes", true);
+
+        this.addMixinRule("math", true);
+        this.addMixinRule("math.fast_util", true);
+
+        this.addMixinRule("shapes", true);
+        this.addMixinRule("shapes.blockstate_cache", true);
+        this.addMixinRule("shapes.precompute_shape_arrays", true);
+        this.addMixinRule("shapes.shape_merging", true);
+        this.addMixinRule("shapes.specialized_shapes", true);
+
+        this.addMixinRule("tag", true);
+
+        this.addMixinRule("world", true);
+        this.addMixinRule("world.block_entity_ticking", true);
+        this.addMixinRule("world.chunk_access", true);
+        this.addMixinRule("world.chunk_inline_block_access", true);
+        this.addMixinRule("world.chunk_task_system", true);
+        this.addMixinRule("world.chunk_tickets", true);
+        this.addMixinRule("world.chunk_ticking", true);
+        this.addMixinRule("world.explosions", true);
+        this.addMixinRule("world.mob_spawning", true);
+        this.addMixinRule("world.player_chunk_tick", true);
+        this.addMixinRule("world.tick_scheduler", true);
+        
         this.addMixinRule("core", true); // TODO: Don't actually allow the user to disable this
 
         this.addMixinRule("features.block", true);

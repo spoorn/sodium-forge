@@ -99,7 +99,7 @@ public class BlockRenderer {
             BakedQuad quad = quads.get(i);
 
             QuadLightData light = this.cachedQuadLightData;
-            lighter.calculate((ModelQuadView) quad, pos, light, quad.getFace(), quad.func_239287_f_());
+            lighter.calculate((ModelQuadView) quad, pos, light, quad.getFace(), quad.applyDiffuseLighting());
 
             if (quad.hasTintIndex() && colorizer == null) {
                 colorizer = this.blockColors.getColorProvider(state);

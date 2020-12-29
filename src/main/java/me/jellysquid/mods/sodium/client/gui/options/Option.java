@@ -11,6 +11,8 @@ public interface Option<T> {
 
     ITextComponent getTooltip();
 
+    OptionImpact getImpact();
+
     Control<T> getControl();
 
     T getValue();

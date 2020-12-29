@@ -24,6 +24,7 @@ public class OptionImpl<S, T> implements Option<T> {
 
     private final String name;
     private final ITextComponent tooltip;
+    private final OptionImpact impact;
 
     private T value;
     private T modifiedValue;
@@ -36,11 +37,13 @@ public class OptionImpl<S, T> implements Option<T> {
                        OptionBinding<S, T> binding,
                        Function<OptionImpl<S, T>, Control<T>> control,
                        EnumSet<OptionFlag> flags,
+                       OptionImpact impact,
                        boolean enabled) {
         this.storage = storage;
         this.name = name;
         this.tooltip = new StringTextComponent(tooltip);
         this.binding = binding;
+        this.impact = impact;
         this.flags = flags;
         this.control = control.apply(this);
         this.enabled = enabled;
@@ -56,6 +59,11 @@ public class OptionImpl<S, T> implements Option<T> {
     @Override
     public ITextComponent getTooltip() {
         return this.tooltip;
+    }
+
+    @Override
+    public OptionImpact getImpact() {
+        return this.impact;
     }
 
     @Override
@@ -165,6 +173,12 @@ public class OptionImpl<S, T> implements Option<T> {
             return this;
         }
 
+        public Builder<S, T> setImpact(OptionImpact impact) {
+            this.impact = impact;
+
+            return this;
+        }
+
         public Builder<S, T> setEnabled(boolean value) {
             this.enabled = value;
 
@@ -183,7 +197,7 @@ public class OptionImpl<S, T> implements Option<T> {
             Validate.notNull(this.binding, "Option binding must be specified");
             Validate.notNull(this.control, "Control must be specified");
 
-            return new OptionImpl<>(this.storage, this.name, this.tooltip, this.binding, this.control, this.flags, this.enabled);
+            return new OptionImpl<>(this.storage, this.name, this.tooltip, this.binding, this.control, this.flags, this.impact, this.enabled);
         }
     }
 }

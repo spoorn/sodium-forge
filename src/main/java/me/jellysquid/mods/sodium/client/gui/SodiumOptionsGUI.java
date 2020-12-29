@@ -1,10 +1,7 @@
 package me.jellysquid.mods.sodium.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import me.jellysquid.mods.sodium.client.gui.options.Option;
-import me.jellysquid.mods.sodium.client.gui.options.OptionFlag;
-import me.jellysquid.mods.sodium.client.gui.options.OptionGroup;
-import me.jellysquid.mods.sodium.client.gui.options.OptionPage;
+import me.jellysquid.mods.sodium.client.gui.options.*;
 import me.jellysquid.mods.sodium.client.gui.options.control.Control;
 import me.jellysquid.mods.sodium.client.gui.options.control.ControlElement;
 import me.jellysquid.mods.sodium.client.gui.options.storage.OptionStorage;
@@ -17,10 +14,8 @@ import net.minecraft.client.gui.IRenderable;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.VideoSettingsScreen;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.ITextProperties;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.text.*;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -204,28 +199,23 @@ public class SodiumOptionsGUI extends Screen {
 
         ITextProperties title = new StringTextComponent(option.getName()).mergeStyle(TextFormatting.GRAY);
 
-        List<ITextProperties> text = this.font.func_238425_b_(title, textWidth);
-        text.addAll(this.font.func_238425_b_(option.getTooltip(), textWidth));
+        List<IReorderingProcessor> tooltip = new ArrayList<>(this.font.trimStringToWidth(option.getTooltip(), boxWidth - (textPadding * 2)));
+        OptionImpact impact = option.getImpact();
 
-        int boxHeight = (text.size() * 12) + boxPadding;
+        if (impact != null) {
+            tooltip.add(LanguageMap.getInstance().func_241870_a(new StringTextComponent(TextFormatting.GRAY + "Performance Impact: " + impact.toDisplayString())));
+        }
+        int boxHeight = (tooltip.size() * 12) + boxPadding;
         int boxYLimit = boxY + boxHeight;
         int boxYCutoff = this.height - 40;
-
         // If the box is going to be cutoff on the Y-axis, move it back up the difference
         if (boxYLimit > boxYCutoff) {
             boxY -= boxYLimit - boxYCutoff;
         }
-
         this.fillGradient(matrixStack, boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xE0000000, 0xE0000000);
 
-        for (int i = 0; i < text.size(); i++) {
-            ITextProperties str = text.get(i);
-
-            if (str.getString().isEmpty()) {
-                continue;
-            }
-
-            this.font.func_238422_b_(matrixStack, str, boxX + textPadding, boxY + textPadding + (i * 12), 0xFFFFFFFF);
+        for (int i = 0; i < tooltip.size(); i++) {
+            this.font.func_238422_b_(matrixStack, tooltip.get(i), boxX + textPadding, boxY + textPadding + (i * 12), 0xFFFFFFFF);
         }
     }
 

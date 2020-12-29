@@ -30,4 +30,11 @@ public class ChunkProgramOneshot extends ChunkProgram {
 
         GL20.glUniform4fv(this.dModelOffset, buf);
     }
+
+    @Override
+    public void delete() {
+        super.delete();
+
+        MemoryUtil.memFree(this.uModelOffsetBuffer);
+    }
 }

@@ -2,10 +2,7 @@ package me.jellysquid.mods.sodium.client.gui;
 
 import com.google.common.collect.ImmutableList;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
-import me.jellysquid.mods.sodium.client.gui.options.OptionFlag;
-import me.jellysquid.mods.sodium.client.gui.options.OptionGroup;
-import me.jellysquid.mods.sodium.client.gui.options.OptionImpl;
-import me.jellysquid.mods.sodium.client.gui.options.OptionPage;
+import me.jellysquid.mods.sodium.client.gui.options.*;
 import me.jellysquid.mods.sodium.client.gui.options.binding.compat.VanillaBooleanOptionBinding;
 import me.jellysquid.mods.sodium.client.gui.options.control.ControlValueFormatter;
 import me.jellysquid.mods.sodium.client.gui.options.control.CyclingControl;
@@ -39,6 +36,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.view_distance.tooltip"))
                         .setControl(option -> new SliderControl(option, 2, 32, 1, ControlValueFormatter.quantity("Chunks")))
                         .setBinding((options, value) -> options.renderDistanceChunks = value, options -> options.renderDistanceChunks)
+                        .setImpact(OptionImpact.HIGH)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, vanillaOpts)
@@ -54,19 +52,21 @@ public class SodiumGameOptionPages {
                         .setBinding((opts, value) -> {
                             opts.quality.enableClouds = value;
 
-                            if (Minecraft.func_238218_y_()) {
+                            if (Minecraft.isFabulousGraphicsEnabled()) {
                                 Framebuffer framebuffer = Minecraft.getInstance().worldRenderer.func_239232_u_();
                                 if (framebuffer != null) {
                                     framebuffer.framebufferClear(Minecraft.IS_RUNNING_ON_MAC);
                                 }
                             }
                         }, (opts) -> opts.quality.enableClouds)
+                        .setImpact(OptionImpact.LOW)
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)
                         .setName(I18n.format("sodium.options.fog.name"))
                         .setTooltip(I18n.format("sodium.options.fog.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.quality.enableFog = value, opts -> opts.quality.enableFog)
+                        .setImpact(OptionImpact.LOW)
                         .build())
                 .build());
 
@@ -105,6 +105,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.v_sync.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding(new VanillaBooleanOptionBinding(AbstractOption.VSYNC))
+                        .setImpact(OptionImpact.VARIES)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, vanillaOpts)
                         .setName(I18n.format("options.framerateLimit"))
@@ -144,9 +145,10 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.graphics_quality.tooltip"))
                         .setControl(option -> new CyclingControl<>(option, GraphicsFanciness.class, new String[] { I18n.format("options.graphics.fast"), I18n.format("options.graphics.fancy"), I18n.format("options.graphics.fabulous") }))
                         .setBinding(
-                                (opts, value) -> opts.field_238330_f_ = value,
-                                opts -> opts.field_238330_f_)
+                                (opts, value) -> opts.graphicFanciness = value,
+                                opts -> opts.graphicFanciness)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .setImpact(OptionImpact.HIGH)
                         .build())
                 .build());
 
@@ -156,24 +158,28 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.clouds_quality.tooltip"))
                         .setControl(option -> new CyclingControl<>(option, SodiumGameOptions.GraphicsQuality.class))
                         .setBinding((opts, value) -> opts.quality.cloudQuality = value, opts -> opts.quality.cloudQuality)
+                        .setImpact(OptionImpact.LOW)
                         .build())
                 .add(OptionImpl.createBuilder(SodiumGameOptions.GraphicsQuality.class, sodiumOpts)
                         .setName(I18n.format("sodium.options.weather_quality.name"))
                         .setTooltip(I18n.format("sodium.options.weather_quality.tooltip"))
                         .setControl(option -> new CyclingControl<>(option, SodiumGameOptions.GraphicsQuality.class))
                         .setBinding((opts, value) -> opts.quality.weatherQuality = value, opts -> opts.quality.weatherQuality)
+                        .setImpact(OptionImpact.MEDIUM)
                         .build())
                 .add(OptionImpl.createBuilder(ParticleStatus.class, vanillaOpts)
                         .setName(I18n.format("sodium.options.particle_quality.name"))
                         .setTooltip(I18n.format("sodium.options.particle_quality.tooltip"))
                         .setControl(opt -> new CyclingControl<>(opt, ParticleStatus.class, new String[] { "High", "Medium", "Low" }))
                         .setBinding((opts, value) -> opts.particles = value, (opts) -> opts.particles)
+                        .setImpact(OptionImpact.MEDIUM)
                         .build())
                 .add(OptionImpl.createBuilder(SodiumGameOptions.LightingQuality.class, sodiumOpts)
                         .setName(I18n.format("options.ao"))
                         .setTooltip(I18n.format("sodium.options.smooth_lighting.tooltip"))
                         .setControl(option -> new CyclingControl<>(option, SodiumGameOptions.LightingQuality.class))
                         .setBinding((opts, value) -> opts.quality.smoothLighting = value, opts -> opts.quality.smoothLighting)
+                        .setImpact(OptionImpact.MEDIUM)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, vanillaOpts)
@@ -181,13 +187,15 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.biome_blend.tooltip"))
                         .setControl(option -> new SliderControl(option, 0, 7, 1, ControlValueFormatter.quantityOrDisabled("block(s)", "None")))
                         .setBinding((opts, value) -> opts.biomeBlendRadius = value, opts -> opts.biomeBlendRadius)
+                        .setImpact(OptionImpact.LOW)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
                 .add(OptionImpl.createBuilder(int.class, vanillaOpts)
                         .setName(I18n.format("options.entityDistanceScaling"))
                         .setTooltip(I18n.format("sodium.options.entity_distance.tooltip"))
                         .setControl(option -> new SliderControl(option, 50, 500, 25, ControlValueFormatter.percentage()))
-                        .setBinding((opts, value) -> opts.field_238329_c_ = value / 100.0F, opts -> Math.round(opts.field_238329_c_ * 100.0F))
+                        .setBinding((opts, value) -> opts.entityDistanceScaling = value / 100.0F, opts -> Math.round(opts.entityDistanceScaling * 100.0F))
+                        .setImpact(OptionImpact.MEDIUM)
                         .build()
                 )
                 .add(OptionImpl.createBuilder(boolean.class, vanillaOpts)
@@ -195,12 +203,14 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.entity_shadows.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.entityShadows = value, opts -> opts.entityShadows)
+                        .setImpact(OptionImpact.LOW)
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)
                         .setName(I18n.format("sodium.options.vignette.name"))
                         .setTooltip(I18n.format("sodium.options.vignette.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.quality.enableVignette = value, opts -> opts.quality.enableVignette)
+                        .setImpact(OptionImpact.LOW)
                         .build())
                 .build());
 
@@ -211,6 +221,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.mipmap_levels.tooltip"))
                         .setControl(option -> new SliderControl(option, 0, 4, 1, ControlValueFormatter.multiplier()))
                         .setBinding((opts, value) -> opts.mipmapLevels = value, opts -> opts.mipmapLevels)
+                        .setImpact(OptionImpact.MEDIUM)
                         .setFlags(OptionFlag.REQUIRES_ASSET_RELOAD)
                         .build())
                 .build());
@@ -241,6 +252,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.use_chunk_face_culling.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.useChunkFaceCulling = value, opts -> opts.advanced.useChunkFaceCulling)
+                        .setImpact(OptionImpact.MEDIUM)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
@@ -249,6 +261,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.use_compact_vertex_format.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.useCompactVertexFormat = value, opts -> opts.advanced.useCompactVertexFormat)
+                        .setImpact(OptionImpact.MEDIUM)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
@@ -257,6 +270,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.use_fog_occlusion.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.useFogOcclusion = value, opts -> opts.advanced.useFogOcclusion)
+                        .setImpact(OptionImpact.MEDIUM)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
@@ -265,6 +279,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.use_entity_culling.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.useAdvancedEntityCulling = value, opts -> opts.advanced.useAdvancedEntityCulling)
+                        .setImpact(OptionImpact.MEDIUM)
                         .build()
                 )
                 .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)
@@ -272,6 +287,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.use_particle_culling.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.useParticleCulling = value, opts -> opts.advanced.useParticleCulling)
+                        .setImpact(OptionImpact.MEDIUM)
                         .build()
                 )
                 .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)
@@ -279,6 +295,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.animate_only_visible_textures.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.animateOnlyVisibleTextures = value, opts -> opts.advanced.animateOnlyVisibleTextures)
+                        .setImpact(OptionImpact.MEDIUM)
                         .build()
                 )
                 .build());
@@ -290,6 +307,7 @@ public class SodiumGameOptionPages {
                         .setControl(TickBoxControl::new)
                         .setEnabled(UnsafeUtil.isSupported())
                         .setBinding((opts, value) -> opts.advanced.useMemoryIntrinsics = value, opts -> opts.advanced.useMemoryIntrinsics)
+                        .setImpact(OptionImpact.MEDIUM)
                         .build()
                 )
                 .build());

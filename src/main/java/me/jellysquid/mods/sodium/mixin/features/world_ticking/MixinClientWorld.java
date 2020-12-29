@@ -30,9 +30,9 @@ public abstract class MixinClientWorld extends World {
     protected abstract void spawnFluidParticle(BlockPos pos, BlockState state, IParticleData parameters, boolean bl);
 
     protected MixinClientWorld(ISpawnWorldInfo mutableWorldProperties, RegistryKey<World> registryKey,
-                               RegistryKey<DimensionType> registryKey2, DimensionType dimensionType,
+                               DimensionType dimensionType,
                                Supplier<IProfiler> profiler, boolean bl, boolean bl2, long l) {
-        super(mutableWorldProperties, registryKey, registryKey2, dimensionType, profiler, bl, bl2, l);
+        super(mutableWorldProperties, registryKey, dimensionType, profiler, bl, bl2, l);
     }
 
     @Redirect(method = "animateTick(III)V", at = @At(value = "NEW", target = "java/util/Random"))
@@ -84,11 +84,11 @@ public abstract class MixinClientWorld extends World {
 
     private void performBiomeParticleDisplayTick(BlockPos pos, Random random) {
         ParticleEffectAmbience config = this.getBiome(pos)
-                .func_235090_t_()
+                .getAmbientParticle()
                 .orElse(null);
 
-        if (config != null && config.func_235047_a_(random)) {
-            this.addParticle(config.func_235044_a_(),
+        if (config != null && config.shouldParticleSpawn(random)) {
+            this.addParticle(config.getParticleOptions(),
                     pos.getX() + random.nextDouble(),
                     pos.getY() + random.nextDouble(),
                     pos.getZ() + random.nextDouble(),
