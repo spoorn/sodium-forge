@@ -15,7 +15,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkRenderBackendO
  */
 public class GL33ChunkRenderBackend extends ChunkRenderBackendOneshot<GL33GraphicsState> {
     public GL33ChunkRenderBackend(ChunkVertexType vertexType) {
-        super(vertexType);
+        super(GL33GraphicsState.class, vertexType);
     }
 
     @Override
@@ -26,13 +26,8 @@ public class GL33ChunkRenderBackend extends ChunkRenderBackendOneshot<GL33Graphi
     }
 
     @Override
-    public Class<GL33GraphicsState> getGraphicsStateType() {
-        return GL33GraphicsState.class;
-    }
-
-    @Override
-    protected GL33GraphicsState createGraphicsState(MemoryTracker memoryTracker, ChunkRenderContainer<GL33GraphicsState> container) {
-        return new GL33GraphicsState(memoryTracker, container);
+    protected GL33GraphicsState createGraphicsState(MemoryTracker memoryTracker, ChunkRenderContainer container, int id) {
+        return new GL33GraphicsState(memoryTracker, container, id);
     }
 
     public static boolean isSupported(boolean disableBlacklist) {

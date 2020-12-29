@@ -152,7 +152,7 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
         this.blockStates = new BlockState[BLOCK_COUNT];
     }
 
-    public void init(ChunkBuilder<?> builder, World world, SectionPos origin, Chunk[] chunks) {
+    public void init(ChunkBuilder builder, World world, SectionPos origin, Chunk[] chunks) {
         this.world = world;
         this.chunks = chunks;
         this.origin = origin;

@@ -12,13 +12,14 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegion;
 import java.util.Map;
 
 public class GL43GraphicsState extends ChunkGraphicsState {
-    private final ChunkRegion<GL43GraphicsState> region;
+    private final ChunkRegion region;
 
     private final GlBufferRegion segment;
     private final long[] parts;
 
-    public GL43GraphicsState(ChunkRenderContainer<?> container, ChunkRegion<GL43GraphicsState> region, GlBufferRegion segment, ChunkMeshData meshData, GlVertexFormat<?> vertexFormat) {
-        super(container);
+    public GL43GraphicsState(ChunkRenderContainer container, ChunkRegion region,
+                            GlBufferRegion segment, ChunkMeshData meshData, GlVertexFormat<?> vertexFormat, int id) {
+        super(container, id);
 
         this.region = region;
         this.segment = segment;
@@ -41,7 +42,7 @@ public class GL43GraphicsState extends ChunkGraphicsState {
         this.segment.delete();
     }
 
-    public ChunkRegion<GL43GraphicsState> getRegion() {
+    public ChunkRegion getRegion() {
         return this.region;
     }
 

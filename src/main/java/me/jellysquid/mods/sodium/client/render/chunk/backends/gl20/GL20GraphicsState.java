@@ -14,8 +14,8 @@ public class GL20GraphicsState extends ChunkOneshotGraphicsState {
     private final GlBuffer vertexBuffer;
     private GlVertexFormat<?> vertexFormat;
 
-    public GL20GraphicsState(MemoryTracker memoryTracker, ChunkRenderContainer<?> container) {
-        super(memoryTracker, container);
+    public GL20GraphicsState(MemoryTracker memoryTracker, ChunkRenderContainer container, int id) {
+        super(memoryTracker, container, id);
 
         this.vertexBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);
     }
