@@ -88,7 +88,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                         }
                     }
 
-                    setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, state, x, y, z);
+                    setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, state, x, y, z,
+                            baseX, baseY, baseZ);
                 }
             }
         }
@@ -118,7 +119,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
     private void setupBlockRender(ChunkRenderContext pipeline, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData,
         VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState blockState,
-        int x, int y, int z) {
+        int x, int y, int z, int baseX, int baseY, int baseZ) {
         if (blockState.isAir()) {
             return;
         }
@@ -131,6 +132,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             occluder.setOpaqueCube(pos);
         }
 
+        int boundsX = x-baseX, boundsY = y-baseY, boundsZ = z-baseZ;
+
         if (blockState.hasTileEntity()) {
             TileEntity entity = this.slice.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
 
@@ -140,7 +143,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 if (renderer != null) {
                     renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
 
-                    bounds.addBlock(x, y, z);
+                    bounds.addBlock(boundsX, boundsY, boundsZ);
                 }
             }
         }
@@ -154,7 +157,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
                 if (pipeline.renderFluid(this.slice, fluidState, pos, buffers.get(layer))) {
-                    bounds.addBlock(x, y, z);
+                    bounds.addBlock(boundsX, boundsY, boundsZ);
                 }
             }
 
@@ -166,7 +169,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
             if (pipeline.renderBlock(this.slice, blockState, pos, buffers.get(layer), true)) {
-                bounds.addBlock(x, y, z);
+                bounds.addBlock(boundsX, boundsY, boundsZ);
             }
         }
         ForgeHooksClient.setRenderLayer(null);
