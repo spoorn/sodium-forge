@@ -48,35 +48,35 @@ public class ChunkRenderBounds {
                 return new ChunkRenderBounds(origin);
             }
 
-            int x1 = origin.getWorldStartX() + left(this.x);
-            int x2 = origin.getWorldEndX() + right(this.x);
+            int x1 = origin.getWorldStartX() + leftBound(this.x);
+            int x2 = origin.getWorldEndX() + rightBound(this.x);
 
-            int y1 = origin.getWorldStartY() + left(this.y);
-            int y2 = origin.getWorldEndY() + right(this.y);
+            int y1 = origin.getWorldStartY() + leftBound(this.y);
+            int y2 = origin.getWorldEndY() + rightBound(this.y);
 
-            int z1 = origin.getWorldStartZ() + left(this.z);
-            int z2 = origin.getWorldEndZ() + right(this.z);
+            int z1 = origin.getWorldStartZ() + leftBound(this.z);
+            int z2 = origin.getWorldEndZ() + rightBound(this.z);
 
             // Expand the bounding box by 8 blocks (half a chunk) in order to deal with diagonal surfaces
             return new ChunkRenderBounds(
                     Math.max(x1, origin.getWorldStartX()) - 8.0f,
                     Math.max(y1, origin.getWorldStartY()) - 8.0f,
                     Math.max(z1, origin.getWorldStartZ()) - 8.0f,
-
-                    Math.min(x2 + 1, origin.getWorldEndX()) + 8.0f,
-                    Math.min(y2 + 1, origin.getWorldEndY()) + 8.0f,
-                    Math.min(z2 + 1, origin.getWorldEndZ()) + 8.0f
+                    
+                    Math.min(x2, origin.getWorldEndX()) + 8.0f,
+                    Math.min(y2, origin.getWorldEndY()) + 8.0f,
+                    Math.min(z2, origin.getWorldEndZ()) + 8.0f
             );
         }
 
         // Return the left-bound of the bit-masked axis
-        private static int left(int i) {
+        private static int leftBound(int i) {
             return Integer.numberOfTrailingZeros(i);
         }
 
         // Return the right-bound of the bit-masked axis
-        private static int right(int i) {
-            return Integer.numberOfTrailingZeros(i << 16);
+        private static int rightBound(int i) {
+            return 32 - Integer.numberOfLeadingZeros(i);
         }
     }
 }
