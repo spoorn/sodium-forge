@@ -28,7 +28,7 @@ public class NoiseChunkGeneratorMixin {
      * @author SuperCoder79
      */
     @Overwrite
-    private double func_222552_a(int x, int y, int z, double horizontalScale, double verticalScale, double horizontalStretch, double verticalStretch) {
+    public double func_222552_a(int x, int y, int z, double horizontalScale, double verticalScale, double horizontalStretch, double verticalStretch) {
         // To generate it's terrain, Minecraft uses two different perlin noises.
         // It interpolates these two noises to create the final sample at a position.
         // However, the interpolation noise is not all that good and spends most of it's time at > 1 or < 0, rendering
