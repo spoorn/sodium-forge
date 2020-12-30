@@ -50,11 +50,11 @@ public abstract class PalettedContainerMixin<T> {
 
     @Shadow
     @Final
-    private Function<CompoundNBT, T> serializer;
+    private Function<CompoundNBT, T> deserializer;
 
     @Shadow
     @Final
-    private Function<T, CompoundNBT> deserializer;
+    private Function<T, CompoundNBT> serializer;
 
     @Shadow
     protected BitArray storage;
@@ -92,7 +92,7 @@ public abstract class PalettedContainerMixin<T> {
 
         // If we aren't going to use an empty data array, start a compaction
         if (dataArray == null) {
-            LithiumHashPalette<T> compactedPalette = new LithiumHashPalette<>(this.registry, this.bits, null, this.serializer, this.deserializer);
+            LithiumHashPalette<T> compactedPalette = new LithiumHashPalette<>(this.registry, this.bits, null, this.deserializer, this.serializer);
 
             short[] array = cachedCompactionArrays.get();
             ((CompactingPackedIntegerArray) this.storage).compact(this.palette, compactedPalette, array);

@@ -10,8 +10,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.ICollisionReader;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.IChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
@@ -69,7 +69,7 @@ public abstract class LandPathNodeMakerMixin {
             // if the cached chunk section was initialized will early-exit.
             if (!World.isYOutOfBounds(y)) {
                 // This cast is always safe and is necessary to obtain direct references to chunk sections.
-                Chunk chunk = (Chunk) ((ICollisionReader) world).getBlockReader(x >> 4, z >> 4);
+                IChunk chunk = (IChunk) ((ICollisionReader) world).getBlockReader(x >> 4, z >> 4);
 
                 // If the chunk is absent, the cached section above will remain null, as there is no chunk section anyways.
                 // An empty chunk or section will never pose any danger sources, which will be caught later.

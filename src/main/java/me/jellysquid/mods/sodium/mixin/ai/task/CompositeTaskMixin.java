@@ -33,7 +33,7 @@ public class CompositeTaskMixin<E extends LivingEntity> {
     public boolean shouldContinueExecuting(ServerWorld world, E entity, long time) {
         for (Task<? super E> task : WeightedListIterable.cast(this.field_220419_e)) {
             if (task.getStatus() == Task.Status.RUNNING) {
-                if (((TaskAccessorMixin<E>)task).shouldContinueExecuting(world, entity, time)) {
+                if (((TaskAccessorMixin<E>)task).ishouldContinueExecuting(world, entity, time)) {
                     return true;
                 }
             }

@@ -10,6 +10,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface VoxelShapeAccessorMixin {
 
     @Invoker("getValues")
-    DoubleList getValues(Direction.Axis axis);
+    DoubleList igetValues(Direction.Axis axis);
 
 }

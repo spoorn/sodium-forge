@@ -4,7 +4,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.IChunk;
 import net.minecraft.world.gen.WorldGenRegion;
 import net.minecraft.world.server.ServerWorld;
 import org.spongepowered.asm.mixin.Final;
@@ -28,17 +28,17 @@ public abstract class ChunkRegionMixin {
     private int field_217380_e;
 
     // Array view of the chunks in the region to avoid an unnecessary de-reference
-    private Chunk[] chunksArr;
+    private IChunk[] chunksArr;
 
     // The starting position of this region
     private int minChunkX, minChunkZ;
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void init(ServerWorld world, List<Chunk> chunks, CallbackInfo ci) {
+    private void init(ServerWorld world, List<IChunk> chunks, CallbackInfo ci) {
         this.minChunkX = this.field_241160_n_.x;
         this.minChunkZ = this.field_241160_n_.z;
 
-        this.chunksArr = chunks.toArray(new Chunk[0]);
+        this.chunksArr = chunks.toArray(new IChunk[0]);
     }
 
     /**

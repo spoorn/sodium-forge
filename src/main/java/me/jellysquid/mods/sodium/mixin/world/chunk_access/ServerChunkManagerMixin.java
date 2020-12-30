@@ -4,7 +4,6 @@ import com.mojang.datafixers.util.Either;
 import me.jellysquid.mods.lithium.common.world.chunk.ChunkHolderExtended;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.IChunk;
 import net.minecraft.world.server.*;
@@ -225,7 +224,7 @@ public abstract class ServerChunkManagerMixin {
     /**
      * The array of values associated with each key in the recent lookup cache.
      */
-    private final IChunk[] cacheChunks = new Chunk[4];
+    private final IChunk[] cacheChunks = new IChunk[4];
 
     /**
      * Encodes a chunk position and status into a long. Uses 28 bits for each coordinate value, and 8 bits for the

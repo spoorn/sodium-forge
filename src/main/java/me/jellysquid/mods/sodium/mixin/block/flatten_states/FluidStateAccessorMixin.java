@@ -8,5 +8,5 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface FluidStateAccessorMixin {
 
     @Invoker("isEmpty")
-    boolean isEmpty();
+    boolean iisEmpty();
 }

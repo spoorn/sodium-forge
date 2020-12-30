@@ -11,5 +11,5 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface TaskAccessorMixin<E extends LivingEntity> {
 
     @Invoker("shouldContinueExecuting")
-    boolean shouldContinueExecuting(ServerWorld worldIn, E entityIn, long gameTimeIn);
+    boolean ishouldContinueExecuting(ServerWorld worldIn, E entityIn, long gameTimeIn);
 }

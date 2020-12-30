@@ -22,7 +22,7 @@ public abstract class FluidStateMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initFluidCache(Fluid fluid, ImmutableMap<Property<?>, Comparable<?>> propertyMap,
                                 MapCodec<FluidState> codec, CallbackInfo ci) {
-        this.isEmptyCache = ((FluidStateAccessorMixin)this.getFluid()).isEmpty();
+        this.isEmptyCache = ((FluidStateAccessorMixin)this.getFluid()).iisEmpty();
     }
 
     /**

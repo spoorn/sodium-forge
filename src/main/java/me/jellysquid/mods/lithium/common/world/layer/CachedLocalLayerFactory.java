@@ -12,7 +12,7 @@ public final class CachedLocalLayerFactory {
         return createMemoized(() -> {
             IExtendedNoiseRandom<R> clonedContext = context.cloneContext();
             return clonedContext.makeArea((x, z) -> {
-                clonedContext.pickRandom(x, z);
+                clonedContext.setPosition(x, z);
                 return layer.apply(clonedContext, x, z);
             });
         });
@@ -24,7 +24,7 @@ public final class CachedLocalLayerFactory {
             R parentSampler = parent.make();
 
             return clonedContext.makeArea((x, z) -> {
-                clonedContext.pickRandom(x, z);
+                clonedContext.setPosition(x, z);
                 return layer.apply(clonedContext, parentSampler, x, z);
             }, parentSampler);
         });
@@ -37,7 +37,7 @@ public final class CachedLocalLayerFactory {
             R sampler2 = layer2.make();
 
             return clonedContext.makeArea((x, z) -> {
-                clonedContext.pickRandom(x, z);
+                clonedContext.setPosition(x, z);
                 return layer.apply(clonedContext, sampler1, sampler2, x, z);
             }, sampler1, sampler2);
         });

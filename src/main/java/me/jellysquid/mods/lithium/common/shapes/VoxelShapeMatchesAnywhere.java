@@ -66,9 +66,9 @@ public class VoxelShapeMatchesAnywhere {
 
             //test the area inside otherShape
             VoxelShapePart voxelSet = otherShape.part;
-            DoubleList pointPositionsX = ((VoxelShapeAccessorMixin)otherShape).getValues(X);
-            DoubleList pointPositionsY = ((VoxelShapeAccessorMixin)otherShape).getValues(Y);
-            DoubleList pointPositionsZ = ((VoxelShapeAccessorMixin)otherShape).getValues(Z);
+            DoubleList pointPositionsX = ((VoxelShapeAccessorMixin)otherShape).igetValues(X);
+            DoubleList pointPositionsY = ((VoxelShapeAccessorMixin)otherShape).igetValues(Y);
+            DoubleList pointPositionsZ = ((VoxelShapeAccessorMixin)otherShape).igetValues(Z);
 
             int xMax = voxelSet.getEnd(X); // xMax <= pointPositionsX.size()
             int yMax = voxelSet.getEnd(Y);

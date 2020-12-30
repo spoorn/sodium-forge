@@ -39,7 +39,7 @@ public class ChunkCacheMixin {
     protected int chunkZ;
 
     // A 1D view of the chunks available to this cache
-    private Chunk[] chunksFlat;
+    private IChunk[] chunksFlat;
 
     // The x/z length of this cache
     private int xLen, zLen;
@@ -73,7 +73,7 @@ public class ChunkCacheMixin {
             int chunkZ = (z >> 4) - this.chunkZ;
 
             if (chunkX >= 0 && chunkX < this.xLen && chunkZ >= 0 && chunkZ < this.zLen) {
-                Chunk chunk = this.chunksFlat[(chunkX * this.zLen) + chunkZ];
+                IChunk chunk = this.chunksFlat[(chunkX * this.zLen) + chunkZ];
 
                 // Avoid going through Chunk#getBlockState
                 if (chunk != null) {
