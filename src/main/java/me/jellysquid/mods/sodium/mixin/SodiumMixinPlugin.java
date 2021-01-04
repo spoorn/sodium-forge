@@ -72,6 +72,16 @@ public class SodiumMixinPlugin implements IMixinConfigPlugin {
             }
         }
 
+        // mod compat
+        try {
+            Class.forName("com.minecraftabnormals.abnormals_core.core.AbnormalsCore", false, SodiumMixinPlugin.class.getClassLoader());
+            if (mixinClassName.equals("me.jellysquid.mods.sodium.mixin.features.world_ticking.MixinClientWorld")) {
+                return false;
+            }
+        } catch(ClassNotFoundException e) {
+            //yeah abnormalscore isn't there, do nothing
+        }
+
         return option.isEnabled();
     }
     @Override
