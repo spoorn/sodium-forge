@@ -62,7 +62,7 @@ public class ChunkRenderBounds {
                     Math.max(x1, origin.getWorldStartX()) - 8.0f,
                     Math.max(y1, origin.getWorldStartY()) - 8.0f,
                     Math.max(z1, origin.getWorldStartZ()) - 8.0f,
-                    
+
                     Math.min(x2, origin.getWorldEndX()) + 8.0f,
                     Math.min(y2, origin.getWorldEndY()) + 8.0f,
                     Math.min(z2, origin.getWorldEndZ()) + 8.0f
