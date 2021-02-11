@@ -226,7 +226,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         profiler.endSection();
 
-        Entity.setRenderDistanceWeight(MathHelper.clamp((double) this.client.gameSettings.renderDistanceChunks / 8.0D, 1.0D, 2.5D));
+        Entity.setRenderDistanceWeight(MathHelper.clamp((double) this.client.gameSettings.renderDistanceChunks / 8.0D, 1.0D, 2.5D) * (double) this.client.gameSettings.entityDistanceScaling);
     }
 
 
