@@ -41,7 +41,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
-
+import com.feed_the_beast.mods.ftbchunks.client.FTBChunksClient;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -338,6 +338,9 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     public void onChunkAdded(int x, int z) {
         this.loadedChunkPositions.add(ChunkPos.asLong(x, z));
         this.chunkRenderManager.onChunkAdded(x, z);
+        if (SodiumClientMod.ftbChunksLoaded) {
+            FTBChunksClient.rerenderCache.add(new ChunkPos(x, z));
+        }
     }
 
     @Override

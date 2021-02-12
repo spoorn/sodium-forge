@@ -5,6 +5,7 @@ import me.jellysquid.mods.sodium.client.util.UnsafeUtil;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import net.minecraftforge.fml.ModList;
 
 import java.io.File;
 
@@ -12,8 +13,9 @@ import java.io.File;
 public class SodiumClientMod {
     private static SodiumGameOptions CONFIG;
     private static Logger LOGGER;
-
+    public static boolean ftbChunksLoaded;
     public SodiumClientMod() {
+        ftbChunksLoaded = ModList.get().isLoaded("ftbchunks");
         // Register the setup method for modloading
         //FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
     }

@@ -6,7 +6,7 @@ import net.minecraft.world.ICollisionReader;
 
 public interface BlockCollisionPredicate {
     BlockCollisionPredicate ANY = (world, pos, state) -> true;
-    BlockCollisionPredicate SUFFOCATES = (world, pos, state) -> state.causesSuffocation(world, pos);
+    BlockCollisionPredicate SUFFOCATES = (world, pos, state) -> state.hasOpaqueCollisionShape(world, pos);
 
     /**
      * @param world The world of which collision tests are being performed in

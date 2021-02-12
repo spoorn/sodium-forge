@@ -1,44 +1,36 @@
 ![Project icon](https://git-assets.jellysquid.me/hotlink-ok/sodium/icon-rounded-128px.png)
 
-# Sodium (Forge fork)
+# Sodium/Lithium/Phosphor (Forge fork)
 ![GitHub license](https://img.shields.io/github/license/jellysquid3/sodium-fabric.svg)
-![GitHub issues](https://img.shields.io/github/issues/jellysquid3/sodium-fabric.svg)
 ![GitHub tag](https://img.shields.io/github/tag/jellysquid3/sodium-fabric.svg)
-[![Discord chat](https://img.shields.io/badge/chat%20on-discord-7289DA)](https://jellysquid.me/discord)
-[![CurseForge downloads](http://cf.way2muchnoise.eu/full_394468_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/sodium)
 
-### This is Forge edition of Sodium
+### This is Forge edition of Sodium/Lithium/Phosphor
 
 Sodium is a free and open-source optimization mod for the Minecraft client that improves frame rates, reduces
 micro-stutter, and fixes graphical issues in Minecraft. 
 
-:warning: Sodium has had a lot of time to shape up lately, but the mod is still alpha software. You may run into small
-graphical issues or crashes while using it. Additionally, the
-[Fabric Rendering API](https://fabricmc.net/wiki/documentation:rendering) is not yet supported, which may cause crashes
-or prevent other mods from rendering correctly. Please be aware of these issues before using it in your game.
+:warning: This fork uses outdated dev branch of original repo, though this fork is functional, stuff will be broken. 
 
+This fork includes Lithium, as [original repo](https://github.com/CaffeineMC/lithium-fabric) says:
+
+* Lithium is a free and open-source Minecraft mod which works to optimize many areas of the game in order to provide
+  better overall performance. It works on both the **client and server**, and **doesn't require the mod to be installed
+  on both sides**. 
+  
+This fork includes Phosphor, as [original repo](https://github.com/CaffeineMC/phosphor-fabric) says:
+
+ * Phosphor is a free and open-source Minecraft mod (under GNU GPLv3) aiming to save your CPU cycles and improve performance by optimizing one of Minecraft's most inefficient areas-- the lighting engine.
+   It works on **both the client and server**, and can be installed on servers **without requiring clients to also have the mod**
+ * The mod is designed to be as minimal as possible in the changes it makes, and as such, does not modify the light model or interfaces of vanilla Minecraft. Because of this, Phosphor should be compatible with many Minecraft mods (so long as they do not make drastic changes to how the lighting engine works.) If you've ran into a compatibility problem, please open an issue!
 ### Downloads
 
-You can find downloads for Sodium on either the [official CurseForge page](https://www.curseforge.com/minecraft/mc-mods/sodium)
-or through the [GitHub releases page](https://github.com/jellysquid3/sodium-fabric/releases). Usually, builds will be
-made available on GitHub slightly sooner than other locations.
-
+Currently, only on [release page](github.com/Pannoniae/sodium-forge/releases/latest).
 ### Community
+Please do not join Caffeine discord if you intend to get support about this fork. All forks or unofficial version 
+of sodium/phosphor/lithium are not support by original authors, if you encounter any issues, check current issues on this repo or 
+make a new issue. 
 
-If you'd like to get help with the mod, check out the latest developments, or be notified when there's a new release,
-the Discord community might be for you! You can join the official server for my mods by clicking
-[here](https://jellysquid.me/discord).
-
-### Translations
-
-Translations to other languages are managed on [our OneSky site](https://jellysquid.oneskyapp.com/). If you're
-interested in improving language support for Sodium, you should also [join the Discord server](https://jellysquid.me/discord)
-to chat with other contributors. Each submitted translation requires either a number of approval votes from the community
-or approval from a reviewer in order to be included in the mod. 
-
-In the future, these translations will be automatically downloaded and included in the mod at compile time. For the time
-being you will need to manually export the translation files from OneSky and add them to the
-`src/main/resources/assets/sodium/lang` directory in order to see them in-game.
+######If you'd like to get help with the mod, check out the latest developments, or be notified when there's a new release, the Discord community might be for you! You can join the official server for my mods by clicking [here](https://jellysquid.me/discord).
 
 ### Building from source
 
