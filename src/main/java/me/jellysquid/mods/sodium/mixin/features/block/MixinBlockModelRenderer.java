@@ -20,6 +20,7 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.IBlockDisplayReader;
+import net.minecraftforge.client.model.data.IModelData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
@@ -33,8 +34,8 @@ import java.util.Random;
 public class MixinBlockModelRenderer {
     private final XoRoShiRoRandom random = new XoRoShiRoRandom();
 
-    @Inject(method = "renderModel(Lnet/minecraft/world/IBlockDisplayReader;Lnet/minecraft/client/renderer/model/IBakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lcom/mojang/blaze3d/matrix/MatrixStack;Lcom/mojang/blaze3d/vertex/IVertexBuilder;ZLjava/util/Random;JI)Z", at = @At("HEAD"), cancellable = true)
-    private void preRenderBlockInWorld(IBlockDisplayReader world, IBakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, IVertexBuilder consumer, boolean cull, Random rand, long seed, int int_1, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "renderModel(Lnet/minecraft/world/IBlockDisplayReader;Lnet/minecraft/client/renderer/model/IBakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lcom/mojang/blaze3d/matrix/MatrixStack;Lcom/mojang/blaze3d/vertex/IVertexBuilder;ZLjava/util/Random;JILnet/minecraftforge/client/model/data/IModelData;)Z", at = @At("HEAD"), cancellable = true, remap = false)
+    private void preRenderBlockInWorld(IBlockDisplayReader world, IBakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, IVertexBuilder consumer, boolean cull, Random rand, long seed, int int_1, IModelData modelData, CallbackInfoReturnable<Boolean> cir) {
         GlobalRenderContext renderer = GlobalRenderContext.getInstance(world);
         BlockRenderer blockRenderer = renderer.getBlockRenderer();
 
@@ -47,9 +48,8 @@ public class MixinBlockModelRenderer {
      * @reason Use optimized vertex writer intrinsics, avoid allocations
      * @author JellySquid
      */
-    @Deprecated
-    @Overwrite
-    public void renderModelBrightnessColor(MatrixStack.Entry entry, IVertexBuilder vertexConsumer, BlockState blockState, IBakedModel bakedModel, float red, float green, float blue, int light, int overlay) {
+    @Overwrite(remap = false)
+    public void renderModel(MatrixStack.Entry entry, IVertexBuilder vertexConsumer, BlockState blockState, IBakedModel bakedModel, float red, float green, float blue, int light, int overlay, IModelData modelData) {
         XoRoShiRoRandom random = this.random;
         QuadVertexConsumer quadConsumer = (QuadVertexConsumer) vertexConsumer;
 
@@ -61,14 +61,14 @@ public class MixinBlockModelRenderer {
         int defaultColor = ColorABGR.pack(red, green, blue, 1.0F);
 
         for (Direction direction : DirectionUtil.ALL_DIRECTIONS) {
-            List<BakedQuad> quads = bakedModel.getQuads(blockState, direction, random.setSeedAndReturn(42L));
+            List<BakedQuad> quads = bakedModel.getQuads(blockState, direction, random.setSeedAndReturn(42L), modelData);
 
             if (!quads.isEmpty()) {
                 renderQuad(entry, quadConsumer, defaultColor, quads, light, overlay);
             }
         }
 
-        List<BakedQuad> quads = bakedModel.getQuads(blockState, null, random.setSeedAndReturn(42L));
+        List<BakedQuad> quads = bakedModel.getQuads(blockState, null, random.setSeedAndReturn(42L), modelData);
 
         if (!quads.isEmpty()) {
             renderQuad(entry, quadConsumer, defaultColor, quads, light, overlay);

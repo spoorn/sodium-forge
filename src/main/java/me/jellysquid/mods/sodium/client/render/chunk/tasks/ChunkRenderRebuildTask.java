@@ -111,7 +111,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                         }
                     }
 
-                    if (block.isTileEntityProvider()) {
+                    if (blockState.hasTileEntity()) {
                         TileEntity entity = this.slice.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
 
                         if (entity != null) {

@@ -3,7 +3,7 @@ package me.jellysquid.mods.sodium.client.render.chunk.shader.texture;
 import me.jellysquid.mods.sodium.client.gl.sampler.GlSampler;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgram;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.lwjgl.opengl.GL11;
@@ -43,7 +43,7 @@ public class ChunkProgramMultiTexture extends ChunkProgramTextureComponent {
         LightmapTextureManagerAccessor lightmapTextureManager =
                 ((LightmapTextureManagerAccessor) client.gameRenderer.getLightTexture());
 
-        Texture blockAtlasTex = textureManager.getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+        Texture blockAtlasTex = textureManager.getTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE);
         Texture lightTex = lightmapTextureManager.getTexture();
 
         this.bindTexture(blockAtlasTex, ChunkProgramTextureUnit.BLOCK_ATLAS);

@@ -2,7 +2,7 @@ package me.jellysquid.mods.sodium.client.render.chunk.shader.texture;
 
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgram;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.inventory.container.PlayerContainer;
 import org.lwjgl.opengl.GL20;
 
 public class ChunkProgramSingleTexture extends ChunkProgramTextureComponent {
@@ -33,7 +33,7 @@ public class ChunkProgramSingleTexture extends ChunkProgramTextureComponent {
     @Override
     public void setMipmapping(boolean mipped) {
         Minecraft.getInstance().getTextureManager()
-                .getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE)
+                .getTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE)
                 .setBlurMipmapDirect(false, mipped);
     }
 }
