@@ -24,7 +24,7 @@ This fork includes Phosphor, as [original repo](https://github.com/CaffeineMC/ph
  * The mod is designed to be as minimal as possible in the changes it makes, and as such, does not modify the light model or interfaces of vanilla Minecraft. Because of this, Phosphor should be compatible with many Minecraft mods (so long as they do not make drastic changes to how the lighting engine works.) If you've ran into a compatibility problem, please open an issue!
 ### Downloads
 
-Currently, only on [release page](github.com/Pannoniae/sodium-forge/releases/latest).
+Currently, only on [release page](https://github.com/Pannoniae/sodium-forge/releases/latest/).
 ### Community
 Please do not join Caffeine discord if you intend to get support about this fork. All forks or unofficial version 
 of sodium/phosphor/lithium are not support by original authors, if you encounter any issues, check current issues on this repo or 
