@@ -19,7 +19,7 @@ modId="sodium" #mandatory
 # The version number of the mod - there's a few well known ${} variables useable here or just hardcode it
 version="${file.jarVersion}" #mandatory
  # A display name for the mod
-displayName="Soidum" #mandatory
+displayName="SodiumoPhosphoroLithium" #mandatory
 # A URL to query for updates for this mod. See the JSON update specification <here>
 #updateJSONURL="http://myurl.me/" #optional
 # A URL for the "homepage" for this mod, displayed in the mod UI
@@ -27,9 +27,9 @@ displayURL="https://jellysquid.me" #optional
 # A file name (in the root of the mod JAR) containing a logo for display
 logoFile="examplemod.png" #optional
 # A text field displayed in the mod UI
-credits="" #optional
+credits="hanetzer" #optional
 # A text field displayed in the mod UI
-authors="JellySquid and Pannoniae" #optional
+authors="JellySquid, Pannoniae and somewhat yatsukiko" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''
 Sodium is an free and open-source optimization mod for Minecraft which improves frame rates and reduces lag spikes.
@@ -50,6 +50,6 @@ Sodium is an free and open-source optimization mod for Minecraft which improves 
 [[dependencies.examplemod]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.16.1]"
+    versionRange="[1.16.5]"
     ordering="NONE"
     side="BOTH"
