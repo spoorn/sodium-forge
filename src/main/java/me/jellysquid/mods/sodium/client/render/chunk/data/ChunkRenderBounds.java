@@ -57,15 +57,14 @@ public class ChunkRenderBounds {
             int z1 = origin.getWorldStartZ() + leftBound(this.z);
             int z2 = origin.getWorldEndZ() + rightBound(this.z);
 
-            // Expand the bounding box by 8 blocks (half a chunk) in order to deal with diagonal surfaces
             return new ChunkRenderBounds(
-                    Math.max(x1, origin.getWorldStartX()) - 8.0f,
-                    Math.max(y1, origin.getWorldStartY()) - 8.0f,
-                    Math.max(z1, origin.getWorldStartZ()) - 8.0f,
+                    Math.max(x1, origin.getWorldStartX()) - 0.5f,
+                    Math.max(y1, origin.getWorldStartY()) - 0.5f,
+                    Math.max(z1, origin.getWorldStartZ()) - 0.5f,
 
-                    Math.min(x2, origin.getWorldEndX()) + 8.0f,
-                    Math.min(y2, origin.getWorldEndY()) + 8.0f,
-                    Math.min(z2, origin.getWorldEndZ()) + 8.0f
+                    Math.min(x2, origin.getWorldEndX()) + 0.5f,
+                    Math.min(y2, origin.getWorldEndY()) + 0.5f,
+                    Math.min(z2, origin.getWorldEndZ()) + 0.5f
             );
         }
 

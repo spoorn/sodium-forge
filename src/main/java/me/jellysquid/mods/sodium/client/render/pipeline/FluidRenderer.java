@@ -142,33 +142,36 @@ public class FluidRenderer {
 
             Vector3d velocity = fluidState.getFlow(world, pos);
 
-            TextureAtlasSprite TextureAtlasSprite;
+            TextureAtlasSprite sprite;
+            ModelQuadFacing facing;
             float u1, u2, u3, u4;
             float v1, v2, v3, v4;
 
             if (velocity.x == 0.0D && velocity.z == 0.0D) {
-                TextureAtlasSprite = sprites[0];
-                u1 = TextureAtlasSprite.getInterpolatedU(0.0D);
-                v1 = TextureAtlasSprite.getInterpolatedV(0.0D);
+                sprite = sprites[0];
+                facing = ModelQuadFacing.UP;
+                u1 = sprite.getInterpolatedU(0.0D);
+                v1 = sprite.getInterpolatedV(0.0D);
                 u2 = u1;
-                v2 = TextureAtlasSprite.getInterpolatedV(16.0D);
-                u3 = TextureAtlasSprite.getInterpolatedU(16.0D);
+                v2 = sprite.getInterpolatedV(16.0D);
+                u3 = sprite.getInterpolatedU(16.0D);
                 v3 = v2;
                 u4 = u3;
                 v4 = v1;
             } else {
-                TextureAtlasSprite = sprites[1];
+                sprite = sprites[1];
+                facing = ModelQuadFacing.UNASSIGNED;
                 float dir = (float) MathHelper.atan2(velocity.z, velocity.x) - (1.5707964f);
                 float sin = MathHelper.sin(dir) * 0.25F;
                 float cos = MathHelper.cos(dir) * 0.25F;
-                u1 = TextureAtlasSprite.getInterpolatedU(8.0F + (-cos - sin) * 16.0F);
-                v1 = TextureAtlasSprite.getInterpolatedV(8.0F + (-cos + sin) * 16.0F);
-                u2 = TextureAtlasSprite.getInterpolatedU(8.0F + (-cos + sin) * 16.0F);
-                v2 = TextureAtlasSprite.getInterpolatedV(8.0F + (cos + sin) * 16.0F);
-                u3 = TextureAtlasSprite.getInterpolatedU(8.0F + (cos + sin) * 16.0F);
-                v3 = TextureAtlasSprite.getInterpolatedV(8.0F + (cos - sin) * 16.0F);
-                u4 = TextureAtlasSprite.getInterpolatedU(8.0F + (cos - sin) * 16.0F);
-                v4 = TextureAtlasSprite.getInterpolatedV(8.0F + (-cos - sin) * 16.0F);
+                u1 = sprite.getInterpolatedU(8.0F + (-cos - sin) * 16.0F);
+                v1 = sprite.getInterpolatedV(8.0F + (-cos + sin) * 16.0F);
+                u2 = sprite.getInterpolatedU(8.0F + (-cos + sin) * 16.0F);
+                v2 = sprite.getInterpolatedV(8.0F + (cos + sin) * 16.0F);
+                u3 = sprite.getInterpolatedU(8.0F + (cos + sin) * 16.0F);
+                v3 = sprite.getInterpolatedV(8.0F + (cos - sin) * 16.0F);
+                u4 = sprite.getInterpolatedU(8.0F + (cos - sin) * 16.0F);
+                v4 = sprite.getInterpolatedV(8.0F + (-cos - sin) * 16.0F);
             }
 
             float uAvg = (u1 + u2 + u3 + u4) / 4.0F;
@@ -186,7 +189,7 @@ public class FluidRenderer {
             v3 = MathHelper.lerp(s3, v3, vAvg);
             v4 = MathHelper.lerp(s3, v4, vAvg);
 
-            quad.setSprite(TextureAtlasSprite);
+            quad.setSprite(sprite);
 
             this.setVertex(quad, 0, 0.0f, h1, 0.0f, u1, v1);
             this.setVertex(quad, 1, 0.0f, h2, 1.0F, u2, v2);
@@ -194,7 +197,7 @@ public class FluidRenderer {
             this.setVertex(quad, 3, 1.0F, h4, 0.0f, u4, v4);
 
             this.calculateQuadColors(quad, world, pos, lighter, Direction.UP, 1.0F, !lava);
-            this.flushQuad(buffers, quad, Direction.UP, false);
+            this.flushQuad(buffers, quad, facing, false);
 
             if (fluidState.shouldRenderSides(world, this.scratchPos.setPos(posX, posY + 1, posZ))) {
                 this.setVertex(quad, 3, 0.0f, h1, 0.0f, u1, v1);
@@ -202,7 +205,7 @@ public class FluidRenderer {
                 this.setVertex(quad, 1, 1.0F, h3, 1.0F, u3, v3);
                 this.setVertex(quad, 0, 1.0F, h4, 0.0f, u4, v4);
 
-                this.flushQuad(buffers, quad, Direction.DOWN, true);
+                this.flushQuad(buffers, quad, ModelQuadFacing.DOWN, true);
             }
 
             rendered = true;
@@ -223,7 +226,7 @@ public class FluidRenderer {
             this.setVertex(quad, 3, 1.0F, yOffset, 1.0F, maxU, maxV);
 
             this.calculateQuadColors(quad, world, pos, lighter, Direction.DOWN, 1.0F, !lava);
-            this.flushQuad(buffers, quad, Direction.DOWN, false);
+            this.flushQuad(buffers, quad, ModelQuadFacing.DOWN, false);
 
             rendered = true;
         }
@@ -323,7 +326,7 @@ public class FluidRenderer {
                 float br = dir.getAxis() == Direction.Axis.Z ? 0.8F : 0.6F;
 
                 this.calculateQuadColors(quad, world, pos, lighter, dir, br, !lava);
-                this.flushQuad(buffers, quad, dir, false);
+                this.flushQuad(buffers, quad, ModelQuadFacing.fromDirection(dir), false);
 
                 if (TextureAtlasSprite != this.waterOverlaySprite) {
                     this.setVertex(quad, 0, x1, c1, z1, u1, v1);
@@ -331,7 +334,7 @@ public class FluidRenderer {
                     this.setVertex(quad, 2, x2, yOffset, z2, u2, v3);
                     this.setVertex(quad, 3, x2, c2, z2, u2, v2);
 
-                    this.flushQuad(buffers, quad, dir, true);
+                    this.flushQuad(buffers, quad, ModelQuadFacing.fromDirection(dir), true);
                 }
 
                 rendered = true;
@@ -356,7 +359,7 @@ public class FluidRenderer {
         }
     }
 
-    private void flushQuad(ChunkModelBuffers buffers, ModelQuadView quad, Direction dir, boolean flip) {
+    private void flushQuad(ChunkModelBuffers buffers, ModelQuadView quad, ModelQuadFacing facing, boolean flip) {
         int vertexIdx, lightOrder;
 
         if (flip) {
@@ -367,7 +370,7 @@ public class FluidRenderer {
             lightOrder = 1;
         }
 
-        ModelVertexSink sink = buffers.getSink(ModelQuadFacing.fromDirection(dir));
+        ModelVertexSink sink = buffers.getSink(facing);
         sink.ensureCapacity(4);
 
         for (int i = 0; i < 4; i++) {
