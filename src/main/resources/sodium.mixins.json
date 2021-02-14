@@ -168,6 +168,7 @@
     "features.entity.shadow_clipping.MixinEntityRenderDispatcher",
     "features.entity.smooth_lighting.MixinEntityRenderer",
     "features.gui.MixinDebugHud",
+    "features.gui.fast_loading_screen.MixinLevelLoadingScreen",
     "features.gui.font.MixinGlyphRenderer",
     //"features.item.MixinItemRenderer",
     "features.matrix_stack.MixinMatrixStack",
