@@ -3,7 +3,7 @@ package me.jellysquid.mods.sodium.mixin.world.block_entity_ticking;
 import me.jellysquid.mods.lithium.common.util.collections.BlockEntityList;
 import me.jellysquid.mods.lithium.common.util.collections.HashedReferenceList;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.renderer.texture.ITickable;
+import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.profiler.IProfiler;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.RegistryKey;
@@ -99,7 +99,7 @@ public abstract class WorldMixin implements IWorld {
             // Try-add directly to avoid the double map lookup, helps speed things along
             if (this.blockEntities$lithium.addIfAbsent(entity)) {
                 //vanilla has an extra updateListeners(...) call on the client here, but the one below should be enough
-                if (entity instanceof ITickable) {
+                if (entity instanceof ITickableTileEntity) {
                     this.tickableTileEntities.add(entity);
                 }
 
