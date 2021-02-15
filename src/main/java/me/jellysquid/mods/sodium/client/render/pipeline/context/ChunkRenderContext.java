@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockDisplayReader;
+import net.minecraftforge.client.model.data.IModelData;
 
 public class ChunkRenderContext {
     private final ArrayLightDataCache lightDataCache;
@@ -36,11 +37,11 @@ public class ChunkRenderContext {
         this.models = client.getModelManager().getBlockModelShapes();
     }
 
-    public boolean renderBlock(IBlockDisplayReader world, BlockState state, BlockPos pos, ModelQuadSinkDelegate consumer, boolean cull) {
+    public boolean renderBlock(IBlockDisplayReader world, BlockState state, BlockPos pos, ModelQuadSinkDelegate consumer, boolean cull, IModelData modelData) {
         IBakedModel model = this.models.getModel(state);
         long seed = state.getPositionRandom(pos);
 
-        return this.blockRenderer.renderModel(world, state, pos, model, consumer, cull, seed);
+        return this.blockRenderer.renderModel(world, state, pos, model, consumer, cull, seed, modelData);
     }
 
     public boolean renderFluid(IBlockDisplayReader world, FluidState fluidState, BlockPos.Mutable pos, ModelQuadSinkDelegate consumer) {

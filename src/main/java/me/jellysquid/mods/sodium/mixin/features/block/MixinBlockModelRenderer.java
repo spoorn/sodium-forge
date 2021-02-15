@@ -39,7 +39,7 @@ public class MixinBlockModelRenderer {
         GlobalRenderContext renderer = GlobalRenderContext.getInstance(world);
         BlockRenderer blockRenderer = renderer.getBlockRenderer();
 
-        boolean ret = blockRenderer.renderModel(world, state, pos, model, new FallbackQuadSink(consumer, matrixStack), cull, seed);
+        boolean ret = blockRenderer.renderModel(world, state, pos, model, new FallbackQuadSink(consumer, matrixStack), cull, seed, modelData);
 
         cir.setReturnValue(ret);
     }
