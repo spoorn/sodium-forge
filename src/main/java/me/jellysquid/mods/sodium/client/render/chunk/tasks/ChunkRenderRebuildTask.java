@@ -29,6 +29,7 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.ModelDataManager;
+import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.client.model.data.IModelData;
 
 import java.util.Objects;
@@ -104,6 +105,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                             builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
                             IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
+                            if (modelData == null) {
+                                modelData = EmptyModelData.INSTANCE;
+                            }
                             if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
                                 bounds.addBlock(x, y, z);
                             }
