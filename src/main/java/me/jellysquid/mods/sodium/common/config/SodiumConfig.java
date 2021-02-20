@@ -25,7 +25,7 @@ public class SodiumConfig {
 
         this.addMixinRule("ai", true);
         this.addMixinRule("ai.goal", true);
-        this.addMixinRule("ai.nearby_entity_tracking", false);
+        this.addMixinRule("ai.nearby_entity_tracking", true);
         this.addMixinRule("ai.pathing", true);
         this.addMixinRule("ai.poi", true);
         this.addMixinRule("ai.raid", true);
