@@ -6,6 +6,9 @@
   "injectors": {
     "defaultRequire": 1
   },
+  "overwrites": {
+    "conformVisibility": true
+  },
   "mixins": [
     "ai.goal.GoalSelectorMixin",
     "ai.nearby_entity_tracking.LivingEntityMixin",
