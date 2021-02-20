@@ -25,12 +25,11 @@ This fork includes Phosphor, as [original repo](https://github.com/CaffeineMC/ph
 ### Downloads
 
 Currently, only on [release page](https://github.com/Pannoniae/sodium-forge/releases/latest/).
+
 ### Community
 Please do not join Caffeine discord if you intend to get support about this fork. All forks or unofficial version 
 of sodium/phosphor/lithium are not support by original authors, if you encounter any issues, check current issues on this repo or 
 make a new issue. 
-
-######If you'd like to get help with the mod, check out the latest developments, or be notified when there's a new release, the Discord community might be for you! You can join the official server for my mods by clicking [here](https://jellysquid.me/discord).
 
 ### Building from source
 
