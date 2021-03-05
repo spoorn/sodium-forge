@@ -71,7 +71,7 @@ public abstract class ChunkRenderShaderBackend<T extends ChunkGraphicsState, P e
     public void begin(MatrixStack matrixStack, Matrix4f projection) {
         this.activeProgram = this.programs.get(ChunkFogMode.getActiveMode());
         this.activeProgram.bind(matrixStack);
-        this.activeProgram.setup(matrixStack, projection);
+        this.activeProgram.setup(matrixStack, this.vertexType.getModelScale(), this.vertexType.getTextureScale(), projection);
     }
 
     @Override
