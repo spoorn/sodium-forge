@@ -3,7 +3,7 @@ buildscript {
         maven { url = 'https://files.minecraftforge.net/maven' }
         jcenter()
         mavenCentral()
-        maven {url='https://dist.creeper.host/Sponge/maven'}
+        maven {url='https://repo.spongepowered.org/maven'}
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
@@ -21,7 +21,7 @@ repositories {
     }
 }
 
-version = '2.0'
+version = '2.1'
 group = 'me.jellysquid.mods.sodium' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'sodium-forge'
 
