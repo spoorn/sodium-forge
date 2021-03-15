@@ -2,7 +2,6 @@ package me.jellysquid.mods.sodium.client.render.chunk.backends.gl43;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.arena.GlBufferArena;
 import me.jellysquid.mods.sodium.client.gl.arena.GlBufferRegion;
 import me.jellysquid.mods.sodium.client.gl.array.GlVertexArray;
@@ -29,6 +28,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegionManager;
 import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Shader-based chunk renderer which makes use of a custom memory allocator on top of large buffer objects to allow
@@ -87,7 +89,8 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     private final GlMutableBuffer commandBuffer;
 
     private final ChunkDrawParamsVector uniformBufferBuilder;
-    private final IndirectCommandBufferVector commandBufferBuilder;
+    private final IndirectCommandBufferVector commandClientBufferBuilder;
+
     private final MemoryTracker memoryTracker = new MemoryTracker();
 
     public GL43ChunkRenderBackend(ChunkVertexType vertexType) {
@@ -95,11 +98,12 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
 
         this.bufferManager = new ChunkRegionManager(this.memoryTracker);
         this.uploadBuffer = new GlMutableBuffer(GL15.GL_STREAM_COPY);
-        this.uniformBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);
-        this.commandBuffer = new GlMutableBuffer(GL15.GL_STREAM_DRAW);
 
+        this.uniformBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);
         this.uniformBufferBuilder = ChunkDrawParamsVector.create(2048);
-        this.commandBufferBuilder = IndirectCommandBufferVector.create(2048);
+
+        this.commandBuffer = isWindowsIntelDriver() ? null : new GlMutableBuffer(GL15.GL_STATIC_DRAW);
+        this.commandClientBufferBuilder = IndirectCommandBufferVector.create(2048);
     }
 
     @Override
@@ -164,11 +168,16 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     public void render(ChunkRenderListIterator renders, ChunkCameraContext camera, Matrix4f projection) {
         this.bufferManager.cleanup();
         this.setupDrawBatches(renders, camera);
-        this.setupCommandBuffers();
+        this.buildCommandBuffer();
+
+        if (this.commandBuffer != null) {
+            this.commandBuffer.bind(GL40.GL_DRAW_INDIRECT_BUFFER);
+            this.commandBuffer.upload(GL40.GL_DRAW_INDIRECT_BUFFER, this.commandClientBufferBuilder.getBuffer());
+        }
 
         GlVertexArray prevVao = null;
 
-        int commandStart = 0;
+        long commandStart = this.commandBuffer == null ? this.commandClientBufferBuilder.getBufferAddress() : 0L;
 
         for (ChunkRegion region : this.pendingBatches) {
             GlVertexArray vao = region.getVertexArray();
@@ -186,9 +195,9 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
             ChunkDrawCallBatcher batch = region.getDrawBatcher();
 
             GlFunctions.INDIRECT_DRAW.glMultiDrawArraysIndirect(GL11.GL_QUADS, commandStart, batch.getCount(), 0 /* tightly packed */);
+            commandStart += batch.getArrayLength();
 
             prevVao = vao;
-            commandStart += batch.getArrayLength();
         }
 
         this.pendingBatches.clear();
@@ -198,23 +207,23 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
         }
 
         this.uniformBuffer.unbind(GL15.GL_ARRAY_BUFFER);
-        this.commandBuffer.unbind(GL40.GL_DRAW_INDIRECT_BUFFER);
+
+        if (this.commandBuffer != null) {
+            this.commandBuffer.unbind(GL40.GL_DRAW_INDIRECT_BUFFER);
+        }
     }
 
-    private void setupCommandBuffers() {
-        this.commandBufferBuilder.begin();
+    private void buildCommandBuffer() {
+        this.commandClientBufferBuilder.begin();
 
         for (ChunkRegion region : this.pendingBatches) {
             ChunkDrawCallBatcher batcher = region.getDrawBatcher();
             batcher.end();
 
-            this.commandBufferBuilder.pushCommandBuffer(batcher);
+            this.commandClientBufferBuilder.pushCommandBuffer(batcher);
         }
 
-        this.commandBufferBuilder.end();
-
-        this.commandBuffer.bind(GL40.GL_DRAW_INDIRECT_BUFFER);
-        this.commandBuffer.upload(GL40.GL_DRAW_INDIRECT_BUFFER, this.commandBufferBuilder.getBuffer());
+        this.commandClientBufferBuilder.end();
     }
 
     private void setupArrayBufferState(GlBufferArena arena) {
@@ -337,22 +346,20 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
 
         this.bufferManager.delete();
         this.uploadBuffer.delete();
+
+        if (this.commandBuffer != null) {
+            this.commandBuffer.delete();
+        }
+
+        this.commandClientBufferBuilder.delete();
+
         this.uniformBuffer.delete();
-        this.commandBuffer.delete();
         this.uniformBufferBuilder.delete();
-        this.commandBufferBuilder.delete();
     }
 
-    public static boolean isSupported(boolean disableBlacklist) {
-        if (!disableBlacklist) {
-            try {
-                if (isIntelGpu()) {
-                    return false;
-                }
-            } catch (Exception e) {
-                SodiumClientMod.logger().warn("An unexpected exception was thrown while trying to parse " +
-                        "the current OpenGL renderer's strings", e);
-            }
+    public static boolean isSupported(boolean disableDriverBlacklist) {
+        if (!disableDriverBlacklist && isKnownBrokenIntelDriver()) {
+            return false;
         }
 
         return GlFunctions.isVertexArraySupported() &&
@@ -363,19 +370,52 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
 
     /**
      * Determines whether or not the current OpenGL renderer is an integrated Intel GPU on Windows.
-     * These drivers on Windows are known to create significant trouble with the multi-draw renderer.
+     * These drivers on Windows are known to fail when using command buffers.
      */
-    private static boolean isIntelGpu() {
+    private static boolean isWindowsIntelDriver() {
         // We only care about Windows
-        // The open-source drivers on Linux are not known to have driver bugs with multi-draw
+        // The open-source drivers on Linux are not known to have driver bugs with indirect command buffers
         if (Util.getOSType() != Util.OS.WINDOWS) {
             return false;
         }
 
-        String vendor = Objects.requireNonNull(GL11.glGetString(GL11.GL_VENDOR));
-
         // Check to see if the GPU vendor is Intel
-        return vendor.equals("Intel");
+        return Objects.equals(GL11.glGetString(GL11.GL_VENDOR), "Intel");
+    }
+
+    /**
+     * Determines whether or not the current OpenGL renderer is an old integrated Intel GPU (prior to Skylake/Gen8) on
+     * Windows. These drivers on Windows are unsupported and known to create significant trouble with the multi-draw
+     * renderer.
+     */
+    private static boolean isKnownBrokenIntelDriver() {
+        if (!isWindowsIntelDriver()) {
+            return false;
+        }
+
+        String renderer = Objects.requireNonNull(GL11.glGetString(GL11.GL_RENDERER));
+        String version = Objects.requireNonNull(GL11.glGetString(GL11.GL_VERSION));
+
+        // Check to see if the GPU's name matches any known Intel GPU names
+        if (!renderer.matches("^Intel\\(R\\) (U?HD|Iris( Pro)?) Graphics (\\d+)?$")) {
+            return false;
+        }
+
+        // https://www.intel.com/content/www/us/en/support/articles/000005654/graphics.html
+        Matcher matcher = Pattern.compile("(\\d.\\d.\\d) - Build (\\d+).(\\d+).(\\d+).(\\d+)")
+                .matcher(version);
+
+        // If the version pattern doesn't match, assume we're dealing with something special
+        if (!matcher.matches()) {
+            return false;
+        }
+
+        // The fourth group is the major build number
+        String majorBuildString = matcher.group(4);
+        int majorBuildNumber = Integer.parseInt(majorBuildString);
+
+        // Anything with a major build of >=100 is Gen8 or newer
+        return majorBuildNumber < 100;
     }
 
     @Override
@@ -392,8 +432,11 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
         int ratio = (int) Math.floor(((double) used / (double) allocated) * 100.0D);
 
         List<String> list = new ArrayList<>();
-        list.add(String.format("VRAM Pool: %d/%d MB (%d%%)", MemoryTracker.toMiB(used), MemoryTracker.toMiB(allocated), ratio));
-        list.add(String.format("Allocated Buffers: %s", this.bufferManager.getAllocatedRegionCount()));
+        list.add(String.format("VRAM Pool: %d/%d MiB %s(%d%%)%s", MemoryTracker.toMiB(used), MemoryTracker.toMiB(allocated),
+                ratio >= 95 ? TextFormatting.RED : TextFormatting.RESET, ratio, TextFormatting.RESET));
+        list.add(String.format("VRAM Regions: %s", this.bufferManager.getAllocatedRegionCount()));
+        list.add(String.format("Submission Mode: %s", this.commandBuffer != null ?
+                TextFormatting.AQUA + "Buffer" : TextFormatting.LIGHT_PURPLE + "Client Memory"));
 
         return list;
     }
