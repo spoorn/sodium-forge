@@ -1,6 +1,7 @@
 package me.jellysquid.mods.sodium.client.render.chunk.shader;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
@@ -13,7 +14,7 @@ import java.util.function.Function;
 /**
  * A forward-rendering shader program for chunks.
  */
-public abstract class ChunkProgram extends GlProgram {
+public class ChunkProgram extends GlProgram {
     // Uniform variable binding indexes
     private final int uModelViewProjectionMatrix;
     private final int uModelScale;
@@ -24,8 +25,8 @@ public abstract class ChunkProgram extends GlProgram {
     // The fog shader component used by this program in order to setup the appropriate GL state
     private final ChunkShaderFogComponent fogShader;
 
-    protected ChunkProgram(ResourceLocation name, int handle, Function<ChunkProgram, ChunkShaderFogComponent> fogShaderFunction) {
-        super(name, handle);
+    protected ChunkProgram(RenderDevice owner, ResourceLocation name, int handle, Function<ChunkProgram, ChunkShaderFogComponent> fogShaderFunction) {
+        super(owner, name, handle);
 
         this.uModelViewProjectionMatrix = this.getUniformLocation("u_ModelViewProjectionMatrix");
         this.uBlockTex = this.getUniformLocation("u_BlockTex");

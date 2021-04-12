@@ -1,7 +1,8 @@
-package me.jellysquid.mods.sodium.client.render.chunk.backends.gl43;
+package me.jellysquid.mods.sodium.client.render.chunk.backends.multidraw;
 
-import me.jellysquid.mods.sodium.client.gl.arena.GlBufferRegion;
+import me.jellysquid.mods.sodium.client.gl.arena.GlBufferSegment;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
+import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.gl.util.BufferSlice;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
@@ -11,13 +12,13 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegion;
 
 import java.util.Map;
 
-public class GL43GraphicsState extends ChunkGraphicsState {
-    private final ChunkRegion<GL43GraphicsState> region;
+public class MultidrawGraphicsState extends ChunkGraphicsState {
+    private final ChunkRegion<MultidrawGraphicsState> region;
 
-    private final GlBufferRegion segment;
+    private final GlBufferSegment segment;
     private final long[] parts;
 
-    public GL43GraphicsState(ChunkRenderContainer<?> container, ChunkRegion<GL43GraphicsState> region, GlBufferRegion segment, ChunkMeshData meshData, GlVertexFormat<?> vertexFormat) {
+    public MultidrawGraphicsState(ChunkRenderContainer<?> container, ChunkRegion<MultidrawGraphicsState> region, GlBufferSegment segment, ChunkMeshData meshData, GlVertexFormat<?> vertexFormat) {
         super(container);
 
         this.region = region;
@@ -37,11 +38,11 @@ public class GL43GraphicsState extends ChunkGraphicsState {
     }
 
     @Override
-    public void delete() {
+    public void delete(CommandList commandList) {
         this.segment.delete();
     }
 
-    public ChunkRegion<GL43GraphicsState> getRegion() {
+    public ChunkRegion<MultidrawGraphicsState> getRegion() {
         return this.region;
     }
 

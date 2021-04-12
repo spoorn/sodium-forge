@@ -2,6 +2,7 @@ package me.jellysquid.mods.sodium.mixin.features.chunk_rendering;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -10,8 +11,6 @@ import net.minecraft.client.renderer.culling.ClippingHelper;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Matrix4f;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL46;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -48,7 +47,13 @@ public abstract class MixinWorldRenderer {
 
     @Inject(method = "setWorldAndLoadRenderers", at = @At("RETURN"))
     private void onWorldChanged(ClientWorld world, CallbackInfo ci) {
-        this.renderer.setWorld(world);
+        RenderDevice.enterManagedCode();
+
+        try {
+            this.renderer.setWorld(world);
+        } finally {
+            RenderDevice.exitManagedCode();
+        }
     }
 
     /**
@@ -79,27 +84,16 @@ public abstract class MixinWorldRenderer {
      * @author JellySquid
      */
     @Overwrite
-    private void renderBlockLayer(RenderType renderLayer, MatrixStack matrixStack, double d, double e, double f) {
+    private void renderBlockLayer(RenderType renderLayer, MatrixStack matrixStack, double x, double y, double z) {
         // Disabling depth mask makes liquid behind transparent blocks appear better, but causes some entities
         // in oceans to appear as if they are in front of the transparent block since we aren't using a zbuffer.
         // TODO: figure out how to render translucent blocks better
-        if (renderLayer == RenderType.getTranslucent() || renderLayer == RenderType.getTripwire()) {
-            //GL46.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-            //GL46.glDisable(GL11.GL_CULL_FACE);
-            //GL46.glDepthFunc(GL11.GL_ALWAYS);
-            //GL46.glDepthMask(false);
-            //GL46.glDisable(GL11.GL_DEPTH_TEST);
-            GL46.glEnable(GL11.GL_BLEND);
-            GL46.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        }
-        this.renderer.drawChunkLayer(renderLayer, matrixStack, d, e, f);
-        if (renderLayer == RenderType.getTranslucent() || renderLayer == RenderType.getTripwire()) {
-            //GL46.glDisable(GL11.GL_CULL_FACE);
-            //GL46.glDepthFunc(GL11.GL_LESS);
-            //GL46.glEnable(GL11.GL_DEPTH_TEST);
-            //GL46.glDepthMask(true);
-            GL46.glDisable(GL11.GL_BLEND);
-            GL46.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        RenderDevice.enterManagedCode();
+
+        try {
+            this.renderer.drawChunkLayer(renderLayer, matrixStack, x, y, z);
+        } finally {
+            RenderDevice.exitManagedCode();
         }
     }
 
@@ -107,10 +101,16 @@ public abstract class MixinWorldRenderer {
      * Use our own renderer and pass in all necessary information.
      */
     @Redirect(method = "updateCameraAndRender", at = @At(value = "INVOKE", target="Lnet/minecraft/client/renderer/WorldRenderer;" +
-            "setupTerrain(Lnet/minecraft/client/renderer/ActiveRenderInfo;Lnet/minecraft/client/renderer/culling/ClippingHelper;ZIZ)V"))
+        "setupTerrain(Lnet/minecraft/client/renderer/ActiveRenderInfo;Lnet/minecraft/client/renderer/culling/ClippingHelper;ZIZ)V"))
     private void setupTerrain(WorldRenderer worldRenderer, ActiveRenderInfo camera, ClippingHelper frustum, boolean hasForcedFrustum, int frame, boolean spectator,
-                              MatrixStack matrixStackIn, float partialTicks, long finishTimeNano, boolean drawBlockOutline, ActiveRenderInfo activeRenderInfoIn, GameRenderer gameRendererIn, LightTexture lightmapIn, Matrix4f projectionIn) {
-        this.renderer.updateChunks(camera, frustum, hasForcedFrustum, frame, spectator, projectionIn);
+    MatrixStack matrixStackIn, float partialTicks, long finishTimeNano, boolean drawBlockOutline, ActiveRenderInfo activeRenderInfoIn, GameRenderer gameRendererIn, LightTexture lightmapIn, Matrix4f projectionIn) {
+        RenderDevice.enterManagedCode();
+
+        try {
+            this.renderer.updateChunks(camera, frustum, hasForcedFrustum, frame, spectator, projectionIn);
+        } finally {
+            RenderDevice.exitManagedCode();
+        }
     }
 
     /**
@@ -151,7 +151,13 @@ public abstract class MixinWorldRenderer {
 
     @Inject(method = "loadRenderers", at = @At("RETURN"))
     private void onReload(CallbackInfo ci) {
-        this.renderer.reload();
+        RenderDevice.enterManagedCode();
+
+        try {
+            this.renderer.reload();
+        } finally {
+            RenderDevice.exitManagedCode();
+        }
     }
 
     @Inject(method = "updateCameraAndRender", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/WorldRenderer;setTileEntities:Ljava/util/Set;", shift = At.Shift.BEFORE, ordinal = 0))

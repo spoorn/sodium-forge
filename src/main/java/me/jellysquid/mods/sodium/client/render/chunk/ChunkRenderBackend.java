@@ -1,6 +1,8 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import me.jellysquid.mods.sodium.client.gl.device.CommandList;
+import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
 import me.jellysquid.mods.sodium.client.render.chunk.lists.ChunkRenderListIterator;
@@ -21,18 +23,18 @@ public interface ChunkRenderBackend<T extends ChunkGraphicsState> {
      * Drains the iterator of items and processes each build task's result serially. After this method returns, all
      * drained results should be processed.
      */
-    void upload(Iterator<ChunkBuildResult<T>> queue);
+    void upload(CommandList commandList, Iterator<ChunkBuildResult<T>> queue);
 
     /**
      * Renders the given chunk render list to the active framebuffer.
-     *
+     * @param commandList The command list which OpenGL commands should be serialized to
      * @param renders An iterator over the list of chunks to be rendered
      * @param camera The camera context containing chunk offsets for the current render
      * @param projection Projection Matrix precalculated by Vanilla Minecraft
      */
-    void render(ChunkRenderListIterator<T> renders, ChunkCameraContext camera, Matrix4f projection);
+    void render(CommandList commandList, ChunkRenderListIterator<T> renders, ChunkCameraContext camera, Matrix4f projection);
 
-    void createShaders();
+    void createShaders(RenderDevice device);
 
     void begin(MatrixStack matrixStack, Matrix4f projection);
 
