@@ -61,8 +61,8 @@ public class ChunkProgram extends GlProgram {
             /*
 
                 try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                    FloatBuffer buf = LegacyMatrixStackHelper.getModelViewProjectionMatrix(matrices, memoryStack);
-                    GL20C.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, buf);
+                    GL20C.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false,
+                            GameRendererContext.getModelViewProjectionMatrix(matrixStack.peek(), memoryStack));
                 }
              */
             }
