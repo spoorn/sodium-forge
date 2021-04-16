@@ -11,7 +11,6 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
-import me.jellysquid.mods.sodium.client.gl.util.GlFogHelper;
 import me.jellysquid.mods.sodium.client.gui.SodiumGameOptions;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderBackend;
@@ -239,7 +238,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         // We don't have a great way to check if underwater fog is being used, so assume that terrain will only ever
         // use linear fog. This will not disable fog in the Nether.
-        if (!SodiumClientMod.options().quality.enableFog && GlFogHelper.isFogLinear()) {
+        if (!SodiumClientMod.options().quality.enableFog) {
             RenderSystem.disableFog();
         }
 

@@ -7,6 +7,7 @@ import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
 import me.jellysquid.mods.sodium.client.gl.shader.GlShader;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderLoader;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderType;
+import me.jellysquid.mods.sodium.client.gl.compat.LegacyFogHelper;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderBackend;
@@ -62,8 +63,8 @@ public abstract class ChunkRenderShaderBackend<T extends ChunkGraphicsState>
 
     @Override
     public void begin(MatrixStack matrixStack, Matrix4f projection) {
-        this.activeProgram = this.programs.get(ChunkFogMode.getActiveMode());
-        this.activeProgram.bind(matrixStack);
+        this.activeProgram = this.programs.get(LegacyFogHelper.getFogMode());
+        this.activeProgram.bind();
         this.activeProgram.setup(matrixStack, this.vertexType.getModelScale(), this.vertexType.getTextureScale(), projection);
     }
 

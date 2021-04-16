@@ -17,6 +17,7 @@ import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.listener.TrackingChunkStatusListener;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20C;
 import org.spongepowered.asm.mixin.*;
 
 /**
@@ -62,7 +63,7 @@ public class MixinLevelLoadingScreen {
         RenderSystem.defaultBlendFunc();
         
         BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        buffer.begin(GL20C.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
         BasicScreenQuadVertexSink sink = VertexDrain.of(buffer).createSink(VanillaVertexTypes.BASIC_SCREEN_QUADS);
 

@@ -6,6 +6,7 @@ import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL20C;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
@@ -38,11 +39,11 @@ public class ChunkProgram extends GlProgram {
     }
 
     public void setup(MatrixStack matrixStack, float modelScale, float textureScale, Matrix4f projection) {
-        GL20.glUniform1i(this.uBlockTex, 0);
-        GL20.glUniform1i(this.uLightTex, 2);
+        GL20C.glUniform1i(this.uBlockTex, 0);
+        GL20C.glUniform1i(this.uLightTex, 2);
 
-        GL20.glUniform3f(this.uModelScale, modelScale, modelScale, modelScale);
-        GL20.glUniform2f(this.uTextureScale, textureScale, textureScale);
+        GL20C.glUniform3f(this.uModelScale, modelScale, modelScale, modelScale);
+        GL20C.glUniform2f(this.uTextureScale, textureScale, textureScale);
 
         this.fogShader.setup();
 
@@ -57,19 +58,13 @@ public class ChunkProgram extends GlProgram {
             GL20.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, bufModelViewProjection);
             // If for some reason vanilla minecraft doesn't expose the projection matrix anymore, we can fetch it
             // if it was pushed onto the GL stack with below code
-            /*else {
+            /*
 
-            GL15.glGetFloatv(GL15.GL_PROJECTION_MATRIX, bufProjection);
-            matrices.getMatrix().write(bufModelView);
-
-            GL11.glPushMatrix();
-            GL11.glLoadMatrixf(bufProjection);
-            GL11.glMultMatrixf(bufModelView);
-            GL15.glGetFloatv(GL15.GL_MODELVIEW_MATRIX, bufModelViewProjection);
-            GL11.glPopMatrix();
-
-            GL20.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, bufModelViewProjection);
-            }*/
-        }
+                try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                    FloatBuffer buf = LegacyMatrixStackHelper.getModelViewProjectionMatrix(matrices, memoryStack);
+                    GL20C.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, buf);
+                }
+             */
+            }
     }
 }
