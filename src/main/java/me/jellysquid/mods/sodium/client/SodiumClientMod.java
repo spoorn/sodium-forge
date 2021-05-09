@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import net.minecraftforge.fml.ModList;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 @Mod("sodium")
 public class SodiumClientMod {
@@ -47,7 +48,7 @@ public class SodiumClientMod {
     }
 
     private static SodiumGameOptions loadConfig() {
-        SodiumGameOptions config = SodiumGameOptions.load(new File("config/sodium-options.json"));
+        SodiumGameOptions config = SodiumGameOptions.load(Paths.get("config", "sodium-options.json"));
         onConfigChanged(config);
 
         return config;
