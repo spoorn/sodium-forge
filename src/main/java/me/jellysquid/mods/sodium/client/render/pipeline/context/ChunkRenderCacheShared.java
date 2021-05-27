@@ -5,24 +5,24 @@ import me.jellysquid.mods.sodium.client.model.light.LightPipelineProvider;
 import me.jellysquid.mods.sodium.client.model.light.cache.HashLightDataCache;
 import me.jellysquid.mods.sodium.client.model.quad.blender.BiomeColorBlender;
 import me.jellysquid.mods.sodium.client.render.pipeline.BlockRenderer;
-import me.jellysquid.mods.sodium.client.render.pipeline.RenderContextCommon;
+import me.jellysquid.mods.sodium.client.render.pipeline.ChunkRenderCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.IBlockDisplayReader;
 
 import java.util.Map;
 
-public class GlobalRenderContext {
-    private static final Map<IBlockDisplayReader, GlobalRenderContext> INSTANCES = new Reference2ObjectOpenHashMap<>();
+public class ChunkRenderCacheShared extends ChunkRenderCache {
+    private static final Map<IBlockDisplayReader, ChunkRenderCacheShared> INSTANCES = new Reference2ObjectOpenHashMap<>();
 
     private final BlockRenderer blockRenderer;
     private final HashLightDataCache lightCache;
 
-    private GlobalRenderContext(IBlockDisplayReader world) {
-        Minecraft client = Minecraft.getInstance();
+    private ChunkRenderCacheShared(IBlockDisplayReader world) {
+            Minecraft client = Minecraft.getInstance();
 
         this.lightCache = new HashLightDataCache(world);
 
-        BiomeColorBlender biomeColorBlender = RenderContextCommon.createBiomeColorBlender();
+        BiomeColorBlender biomeColorBlender = this.createBiomeColorBlender();
         LightPipelineProvider lightPipelineProvider = new LightPipelineProvider(this.lightCache);
 
         this.blockRenderer = new BlockRenderer(client, lightPipelineProvider, biomeColorBlender);
@@ -36,8 +36,8 @@ public class GlobalRenderContext {
         this.lightCache.clearCache();
     }
 
-    public static GlobalRenderContext getInstance(IBlockDisplayReader world) {
-        GlobalRenderContext instance = INSTANCES.get(world);
+    public static ChunkRenderCacheShared getInstance(IBlockDisplayReader world) {
+        ChunkRenderCacheShared instance = INSTANCES.get(world);
 
         if (instance == null) {
             throw new IllegalStateException("No global renderer exists");
@@ -57,11 +57,11 @@ public class GlobalRenderContext {
             throw new IllegalStateException("Render context already exists for world: " + world);
         }
 
-        INSTANCES.put(world, new GlobalRenderContext(world));
+        INSTANCES.put(world, new ChunkRenderCacheShared(world));
     }
 
     public static void resetCaches() {
-        for (GlobalRenderContext context : INSTANCES.values()) {
+        for (ChunkRenderCacheShared context : INSTANCES.values()) {
             context.resetCache();
         }
     }

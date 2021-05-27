@@ -1,6 +1,7 @@
 package me.jellysquid.mods.sodium.client.model.light.cache;
 
 import me.jellysquid.mods.sodium.client.model.light.data.LightDataAccess;
+import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import net.minecraft.util.math.SectionPos;
 import net.minecraft.world.IBlockDisplayReader;
 
@@ -9,7 +10,7 @@ import java.util.Arrays;
 /**
  * A light data cache which uses a flat-array to store the light data for the blocks in a given chunk and its direct
  * neighbors. This is considerably faster than using a hash table to lookup values for a given block position and
- * can be re-used by {@link me.jellysquid.mods.sodium.client.world.WorldSlice} to avoid allocations.
+ * can be re-used by {@link WorldSlice} to avoid allocations.
  */
 public class ArrayLightDataCache extends LightDataAccess {
     private static final int NEIGHBOR_BLOCK_RADIUS = 2;
@@ -18,13 +19,12 @@ public class ArrayLightDataCache extends LightDataAccess {
     private final long[] light;
     private int xOffset, yOffset, zOffset;
 
-    public ArrayLightDataCache() {
+    public ArrayLightDataCache(IBlockDisplayReader world) {
+        this.world = world;
         this.light = new long[BLOCK_LENGTH * BLOCK_LENGTH * BLOCK_LENGTH];
     }
 
-    public void init(IBlockDisplayReader world, SectionPos origin) {
-        this.world = world;
-
+    public void reset(SectionPos origin) {
         this.xOffset = origin.getWorldStartX() - NEIGHBOR_BLOCK_RADIUS;
         this.yOffset = origin.getWorldStartY() - NEIGHBOR_BLOCK_RADIUS;
         this.zOffset = origin.getWorldStartZ() - NEIGHBOR_BLOCK_RADIUS;

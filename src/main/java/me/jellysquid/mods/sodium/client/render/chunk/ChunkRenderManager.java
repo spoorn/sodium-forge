@@ -323,13 +323,11 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     @Override
     public void onChunkAdded(int x, int z) {
-        this.builder.onChunkStatusChanged(x, z);
         this.loadChunk(x, z);
     }
 
     @Override
     public void onChunkRemoved(int x, int z) {
-        this.builder.onChunkStatusChanged(x, z);
         this.unloadChunk(x, z);
     }
 
@@ -562,6 +560,8 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
             this.dirty = true;
         }
+
+        this.builder.onChunkDataChanged(x, y, z);
     }
 
     public boolean isChunkPrioritized(ChunkRenderContainer<T> render) {
