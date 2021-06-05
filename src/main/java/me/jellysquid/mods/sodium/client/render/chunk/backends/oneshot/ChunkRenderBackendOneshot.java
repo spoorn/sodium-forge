@@ -17,7 +17,6 @@ import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkRenderShaderBackend;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderBindingPoints;
 import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
-import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.system.MemoryStack;
 
@@ -69,7 +68,7 @@ public class ChunkRenderBackendOneshot extends ChunkRenderShaderBackend<ChunkOne
     }
 
     @Override
-    public void render(CommandList commandList, ChunkRenderListIterator<ChunkOneshotGraphicsState> it, ChunkCameraContext camera, Matrix4f projection) {
+    public void render(CommandList commandList, ChunkRenderListIterator<ChunkOneshotGraphicsState> it, ChunkCameraContext camera) {
         while (it.hasNext()) {
             ChunkOneshotGraphicsState state = it.getGraphicsState();
             int visibleFaces = it.getVisibleFaces();

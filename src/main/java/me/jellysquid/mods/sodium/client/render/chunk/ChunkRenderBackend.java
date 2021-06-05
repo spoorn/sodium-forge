@@ -30,9 +30,8 @@ public interface ChunkRenderBackend<T extends ChunkGraphicsState> {
      * @param commandList The command list which OpenGL commands should be serialized to
      * @param renders An iterator over the list of chunks to be rendered
      * @param camera The camera context containing chunk offsets for the current render
-     * @param projection Projection Matrix precalculated by Vanilla Minecraft
      */
-    void render(CommandList commandList, ChunkRenderListIterator<T> renders, ChunkCameraContext camera, Matrix4f projection);
+    void render(CommandList commandList, ChunkRenderListIterator<T> renders, ChunkCameraContext camera);
 
     void createShaders(RenderDevice device);
 

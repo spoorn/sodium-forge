@@ -85,9 +85,6 @@ public abstract class MixinWorldRenderer {
      */
     @Overwrite
     private void renderBlockLayer(RenderType renderLayer, MatrixStack matrixStack, double x, double y, double z) {
-        // Disabling depth mask makes liquid behind transparent blocks appear better, but causes some entities
-        // in oceans to appear as if they are in front of the transparent block since we aren't using a zbuffer.
-        // TODO: figure out how to render translucent blocks better
         RenderDevice.enterManagedCode();
 
         try {

@@ -32,7 +32,6 @@ import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkRenderShaderBac
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderBindingPoints;
 import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL20C;
 
@@ -190,7 +189,7 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
     }
 
     @Override
-    public void render(CommandList commandList, ChunkRenderListIterator<MultidrawGraphicsState> renders, ChunkCameraContext camera, Matrix4f projection) {
+    public void render(CommandList commandList, ChunkRenderListIterator<MultidrawGraphicsState> renders, ChunkCameraContext camera) {
         this.bufferManager.cleanup();
 
         this.setupDrawBatches(commandList, renders, camera);
