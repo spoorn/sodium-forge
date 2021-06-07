@@ -1,3 +1,5 @@
+Curseforge link: https://www.curseforge.com/minecraft/mc-mods/sodium-reforged
+
 ![Project icon](https://git-assets.jellysquid.me/hotlink-ok/sodium/icon-rounded-128px.png)
 
 # Sodium/Lithium/Phosphor (Forge fork)
