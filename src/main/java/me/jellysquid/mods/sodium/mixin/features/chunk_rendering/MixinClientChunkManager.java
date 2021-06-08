@@ -1,29 +1,40 @@
 package me.jellysquid.mods.sodium.mixin.features.chunk_rendering;
 
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import me.jellysquid.mods.sodium.client.world.ChunkStatusListener;
 import me.jellysquid.mods.sodium.client.world.ChunkStatusListenerManager;
 import net.minecraft.client.multiplayer.ClientChunkProvider;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.biome.BiomeContainer;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkStatus;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 @Mixin(ClientChunkProvider.class)
-public class MixinClientChunkManager implements ChunkStatusListenerManager {
+public abstract class MixinClientChunkManager implements ChunkStatusListenerManager {
+    @Shadow
+    @Nullable
+    public abstract Chunk getChunk(int i, int j, ChunkStatus chunkStatus, boolean bl);
+
+    private final LongOpenHashSet loadedChunks = new LongOpenHashSet();
     private ChunkStatusListener listener;
 
     @Inject(method = "loadChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/world/ClientWorld;onChunkLoaded(II)V", shift = At.Shift.AFTER))
     private void afterLoadChunkFromPacket(int chunkX, int chunkZ, BiomeContainer biomeContainerIn, PacketBuffer packetIn, CompoundNBT nbtTagIn, int sizeIn, boolean fullChunk, CallbackInfoReturnable<Chunk> cir) {
         if (this.listener != null) {
             this.listener.onChunkAdded(chunkX, chunkZ);
+            this.loadedChunks.add(ChunkPos.asLong(chunkX, chunkZ));
         }
     }
 
@@ -31,6 +42,27 @@ public class MixinClientChunkManager implements ChunkStatusListenerManager {
     private void afterUnloadChunk(int x, int z, CallbackInfo ci) {
         if (this.listener != null) {
             this.listener.onChunkRemoved(x, z);
+            this.loadedChunks.remove(ChunkPos.asLong(x, z));
+        }
+    }
+
+    @Inject(method = "setViewDistance", at = @At("RETURN"))
+    private void afterLoadDistanceChanged(int loadDistance, CallbackInfo ci) {
+        LongIterator it = this.loadedChunks.iterator();
+
+        while (it.hasNext()) {
+            long pos = it.nextLong();
+
+            int x = ChunkPos.getX(pos);
+            int z = ChunkPos.getZ(pos);
+
+            if (this.getChunk(x, z, ChunkStatus.FULL, false) == null) {
+                it.remove();
+
+                if (this.listener != null) {
+                    this.listener.onChunkRemoved(x, z);
+                }
+            }
         }
     }
 
