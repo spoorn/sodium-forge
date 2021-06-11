@@ -86,7 +86,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private final ClientWorld world;
 
     private final ChunkCuller culler;
-    private final boolean useChunkFaceCulling;
+    private final boolean useBlockFaceCulling;
 
     private float cameraX, cameraY, cameraZ;
     private boolean dirty;
@@ -125,11 +125,11 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         }
 
         this.culler = new ChunkGraphCuller(world, renderDistance);
-        this.useChunkFaceCulling = SodiumClientMod.options().advanced.useChunkFaceCulling;
         this.translucencySorting = SodiumClientMod.options().advanced.translucencySorting;
         this.translucencyBlockRenderDistance = Math.min(9216, (renderDistance << 4) * (renderDistance << 4));
 
         TranslucentPoolUtil.resetTranslucentRebuilds();
+        this.useBlockFaceCulling = SodiumClientMod.options().advanced.useBlockFaceCulling;
     }
 
     public void update(ActiveRenderInfo camera, FrustumExtended frustum, int frame, boolean spectator) {
@@ -241,7 +241,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     private int computeVisibleFaces(ChunkRenderContainer<T> render) {
         // If chunk face culling is disabled, render all faces
-        if (!this.useChunkFaceCulling) {
+        if (!this.useBlockFaceCulling) {
             return ChunkFaceFlags.ALL;
         }
 
