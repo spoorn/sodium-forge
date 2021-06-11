@@ -175,9 +175,9 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         // Reset camera position changed flag
         chunkRenderManager.setCameraPosChanged(false);
+        this.useEntityCulling = SodiumClientMod.options().advanced.useEntityCulling;
 
         this.chunkRenderManager.setProjection(projection);
-        this.useEntityCulling = SodiumClientMod.options().advanced.useAdvancedEntityCulling;
 
         IProfiler profiler = this.client.getProfiler();
         profiler.startSection("camera_setup");
@@ -297,9 +297,9 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     private static ChunkRenderBackend<?> createChunkRenderBackend(RenderDevice device,
                                                                   SodiumGameOptions options,
                                                                   ChunkVertexType vertexFormat) {
-        boolean disableBlacklist = SodiumClientMod.options().advanced.disableDriverBlacklist;
+        boolean disableBlacklist = SodiumClientMod.options().advanced.ignoreDriverBlacklist;
 
-        if (options.advanced.useMultidraw && MultidrawChunkRenderBackend.isSupported(disableBlacklist)) {
+        if (options.advanced.useChunkMultidraw && MultidrawChunkRenderBackend.isSupported(disableBlacklist)) {
             return new MultidrawChunkRenderBackend(device, vertexFormat);
         } else {
             return new ChunkRenderBackendOneshot(vertexFormat);

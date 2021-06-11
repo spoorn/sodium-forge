@@ -64,7 +64,7 @@ public class SodiumClientMod {
     }
 
     public static void onConfigChanged(SodiumGameOptions options) {
-        UnsafeUtil.setEnabled(options.advanced.useMemoryIntrinsics);
+        UnsafeUtil.setEnabled(options.advanced.allowDirectMemoryAccess);
     }
 
     public static String getVersion() {
