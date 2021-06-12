@@ -54,6 +54,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     private final Minecraft client;
 
     private ClientWorld world;
+    private int renderDistance;
 
     private double lastCameraX, lastCameraY, lastCameraZ;
     private double lastCameraPitch, lastCameraYaw;
@@ -179,6 +180,10 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         this.chunkRenderManager.setProjection(projection);
 
+        if (this.client.gameSettings.renderDistanceChunks != this.renderDistance) {
+            this.reload();
+        }
+
         IProfiler profiler = this.client.getProfiler();
         profiler.startSection("camera_setup");
 
@@ -275,6 +280,8 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         RenderDevice device = RenderDevice.INSTANCE;
 
+        this.renderDistance = this.client.gameSettings.renderDistanceChunks;
+
         SodiumGameOptions opts = SodiumClientMod.options();
 
         this.renderPassManager = BlockRenderPassManager.createDefaultMappings();
@@ -290,7 +297,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         this.chunkRenderBackend = createChunkRenderBackend(device, opts, vertexFormat);
         this.chunkRenderBackend.createShaders(device);
 
-        this.chunkRenderManager = new ChunkRenderManager<>(this, this.chunkRenderBackend, this.renderPassManager, this.world, this.client.gameSettings.renderDistanceChunks);
+        this.chunkRenderManager = new ChunkRenderManager<>(this, this.chunkRenderBackend, this.renderPassManager, this.world, this.renderDistance);
         this.chunkRenderManager.restoreChunks(this.loadedChunkPositions);
     }
 
