@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.BooleanSupplier;
 
 @Mixin(ClientChunkProvider.class)
 public abstract class MixinClientChunkManager implements ChunkStatusListenerManager {
@@ -28,6 +29,8 @@ public abstract class MixinClientChunkManager implements ChunkStatusListenerMana
     public abstract Chunk getChunk(int i, int j, ChunkStatus chunkStatus, boolean bl);
 
     private final LongOpenHashSet loadedChunks = new LongOpenHashSet();
+    private boolean needsTrackingUpdate = false;
+
     private ChunkStatusListener listener;
 
     @Inject(method = "loadChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/world/ClientWorld;onChunkLoaded(II)V", shift = At.Shift.AFTER))
@@ -46,8 +49,12 @@ public abstract class MixinClientChunkManager implements ChunkStatusListenerMana
         }
     }
 
-    @Inject(method = "setViewDistance", at = @At("RETURN"))
-    private void afterLoadDistanceChanged(int loadDistance, CallbackInfo ci) {
+    @Inject(method = "tick", at = @At("RETURN"))
+    private void afterTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+        if (!this.needsTrackingUpdate) {
+            return;
+        }
+
         LongIterator it = this.loadedChunks.iterator();
 
         while (it.hasNext()) {
@@ -64,6 +71,21 @@ public abstract class MixinClientChunkManager implements ChunkStatusListenerMana
                 }
             }
         }
+
+        this.needsTrackingUpdate = false;
+    }
+
+    @Inject(method = "setCenter(II)V", at = @At("RETURN"))
+    private void afterChunkMapCenterChanged(int x, int z, CallbackInfo ci) {
+        this.needsTrackingUpdate = true;
+    }
+
+    @Inject(method = "setViewDistance",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/client/multiplayer/ClientChunkProvider$ChunkArray;replace(ILnet/minecraft/world/chunk/Chunk;)V",
+                    shift = At.Shift.AFTER))
+    private void afterLoadDistanceChanged(int loadDistance, CallbackInfo ci) {
+        this.needsTrackingUpdate = true;
     }
 
     @Override
