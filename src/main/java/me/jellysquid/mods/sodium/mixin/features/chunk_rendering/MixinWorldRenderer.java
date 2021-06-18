@@ -87,12 +87,13 @@ public abstract class MixinWorldRenderer {
     }
 
     /**
-     * @reason Redirect the terrain setup phase to our renderer
-     * @author JellySquid
+     * Use our own renderer and pass in all necessary information.
      */
-    @Overwrite
-    private void setupTerrain(ActiveRenderInfo camera, ClippingHelper frustum, boolean hasForcedFrustum, int frame, boolean spectator) {
-        this.renderer.updateChunks(camera, frustum, hasForcedFrustum, frame, spectator);
+    @Redirect(method = "updateCameraAndRender", at = @At(value = "INVOKE", target="Lnet/minecraft/client/renderer/WorldRenderer;" +
+            "setupTerrain(Lnet/minecraft/client/renderer/ActiveRenderInfo;Lnet/minecraft/client/renderer/culling/ClippingHelper;ZIZ)V"))
+    private void setupTerrain(WorldRenderer worldRenderer, ActiveRenderInfo camera, ClippingHelper frustum, boolean hasForcedFrustum, int frame, boolean spectator,
+                              MatrixStack matrixStackIn, float partialTicks, long finishTimeNano, boolean drawBlockOutline, ActiveRenderInfo activeRenderInfoIn, GameRenderer gameRendererIn, LightTexture lightmapIn, Matrix4f projectionIn) {
+        this.renderer.updateChunks(camera, frustum, hasForcedFrustum, frame, spectator, projectionIn);
     }
 
     /**

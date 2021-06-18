@@ -5,8 +5,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.texture.ChunkProgramTextureComponent;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
+import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryStack;
 
@@ -41,24 +40,27 @@ public abstract class ChunkProgram extends GlProgram {
         this.components = ImmutableList.of(this.texture, this.fog);
     }
 
-    @Override
-    public void bind(MatrixStack matrixStack) {
+    public void bind(MatrixStack matrixStack, Matrix4f projection) {
         super.bind(matrixStack);
 
         for (ShaderComponent component : this.components) {
-             component.bind();
+            component.bind();
         }
 
         GL20.glUniform3f(this.uModelScale, MODEL_SIZE, MODEL_SIZE, MODEL_SIZE);
 
         MatrixStack.Entry matrices = matrixStack.getLast();
 
-        // Since vanilla doesn't expose the projection matrix anywhere, we need to grab it from the OpenGL state
-        // This isn't super fast, but should be sufficient enough to remain compatible with any state modifying code
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer bufProjection = stack.mallocFloat(16);
-            FloatBuffer bufModelView = stack.mallocFloat(16);
             FloatBuffer bufModelViewProjection = stack.mallocFloat(16);
+
+            Matrix4f modelView = matrices.getMatrix().copy();
+            modelView.multiplyBackward(projection);
+            modelView.write(bufModelViewProjection);
+            GL20.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, bufModelViewProjection);
+            // If for some reason vanilla minecraft doesn't expose the projection matrix anymore, we can fetch it
+            // if it was pushed onto the GL stack with below code
+            /*else {
 
             GL15.glGetFloatv(GL15.GL_PROJECTION_MATRIX, bufProjection);
             matrices.getMatrix().write(bufModelView);
@@ -70,6 +72,7 @@ public abstract class ChunkProgram extends GlProgram {
             GL11.glPopMatrix();
 
             GL20.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, bufModelViewProjection);
+            }*/
         }
     }
 

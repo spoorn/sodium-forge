@@ -40,6 +40,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 
 import java.util.Set;
@@ -146,9 +147,10 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     /**
      * Called prior to any chunk rendering in order to update necessary state.
      */
-    public void updateChunks(ActiveRenderInfo camera, ClippingHelper frustum, boolean hasForcedFrustum, int frame, boolean spectator) {
+    public void updateChunks(ActiveRenderInfo camera, ClippingHelper frustum, boolean hasForcedFrustum, int frame, boolean spectator, Matrix4f projection) {
         this.frustum = frustum;
 
+        this.chunkRenderManager.setProjection(projection);
         this.useEntityCulling = SodiumClientMod.options().advanced.useAdvancedEntityCulling;
 
         if (this.client.gameSettings.renderDistanceChunks != this.renderDistance) {

@@ -15,6 +15,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.passes.impl.SingleTextureRe
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgramComponentBuilder;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.texture.ChunkProgramSingleTexture;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 
@@ -45,8 +46,8 @@ public class GL20ChunkRenderBackend extends ChunkRenderBackendOneshot<GL20Graphi
     }
 
     @Override
-    public void beginRender(MatrixStack matrixStack, BlockRenderPass pass) {
-        super.beginRender(matrixStack, pass);
+    public void beginRender(MatrixStack matrixStack, BlockRenderPass pass, Matrix4f projection) {
+        super.beginRender(matrixStack, pass, projection);
 
         this.vertexFormat.enableVertexAttributes();
 

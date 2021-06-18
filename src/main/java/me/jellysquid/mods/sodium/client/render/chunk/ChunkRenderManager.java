@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
+import lombok.Setter;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.util.GlFogHelper;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
@@ -31,6 +32,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.SectionPos;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.world.chunk.ChunkSection;
 
 import java.util.*;
@@ -85,6 +87,9 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private boolean useAggressiveCulling;
 
     private int visibleChunkCount;
+
+    @Setter
+    private Matrix4f projection;
 
     @SuppressWarnings("unchecked")
     public ChunkRenderManager(SodiumWorldRenderer renderer, ChunkRenderBackend<T> backend, ClientWorld world, int renderDistance) {
@@ -404,7 +409,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         ChunkRenderListIterator<T> iterator = this.chunkRenderLists[pass.ordinal()]
                 .iterator(pass.isForwardRendering());
 
-        this.backend.renderChunks(matrixStack, pass, iterator, new ChunkCameraContext(x, y, z));
+        this.backend.renderChunks(matrixStack, pass, iterator, new ChunkCameraContext(x, y, z), projection);
     }
 
     public void tickVisibleRenders() {
