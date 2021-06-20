@@ -101,9 +101,9 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
 
         this.renderPassManager = MultiTextureRenderPipeline.create();
         this.bufferManager = new ChunkRegionManager<>(this.memoryTracker);
-        this.uploadBuffer = new GlMutableBuffer(GL15.GL_STREAM_COPY);
+        this.uploadBuffer = new GlMutableBuffer(GL15.GL_STREAM_DRAW);
         this.uniformBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);
-        this.commandBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);
+        this.commandBuffer = new GlMutableBuffer(GL15.GL_STREAM_DRAW);
 
         this.uniformBufferBuilder = ChunkDrawParamsVector.create(2048);
         this.commandBufferBuilder = IndirectCommandBufferVector.create(2048);
