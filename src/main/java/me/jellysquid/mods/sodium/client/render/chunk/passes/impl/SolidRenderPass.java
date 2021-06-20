@@ -8,7 +8,7 @@ import net.minecraft.util.ResourceLocation;
 
 public class SolidRenderPass extends BlockRenderPass {
     public SolidRenderPass(int ordinal, ResourceLocation id, BlockLayer... layers) {
-        super(ordinal, id, true, layers);
+        super(ordinal, id, true, false, layers);
     }
 
     @Override

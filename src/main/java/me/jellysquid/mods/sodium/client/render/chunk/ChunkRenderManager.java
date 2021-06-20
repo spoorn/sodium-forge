@@ -1,6 +1,7 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import it.unimi.dsi.fastutil.Function;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -66,6 +67,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> iterationQueue = new ObjectArrayFIFOQueue<>();
     private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> importantRebuildQueue = new ObjectArrayFIFOQueue<>();
     private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> rebuildQueue = new ObjectArrayFIFOQueue<>();
+    private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> deniedQueue = new ObjectArrayFIFOQueue<>();
 
     @SuppressWarnings("unchecked")
     private final ChunkRenderList<T>[] chunkRenderLists;
@@ -82,6 +84,8 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private double fogRenderCutoff;
     private boolean useOcclusionCulling, useFogCulling;
     private boolean dirty;
+    @Setter
+    private boolean cameraChanged;
 
     private double cameraX, cameraY, cameraZ;
     private boolean useAggressiveCulling;
@@ -90,6 +94,9 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     @Setter
     private Matrix4f projection;
+
+    private FrustumExtended currFrustum;
+    private int currFrame;
 
     @SuppressWarnings("unchecked")
     public ChunkRenderManager(SodiumWorldRenderer renderer, ChunkRenderBackend<T> backend, ClientWorld world, int renderDistance) {
@@ -114,16 +121,38 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.init(camera, frustum, frame, spectator);
 
         ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue = this.iterationQueue;
+        this.currFrame = frame;
+        this.currFrustum = frustum;
 
+        processRebuildQueues(iterationQueue, obj -> {
+            ChunkRenderContainer<T> render = (ChunkRenderContainer<T>) obj;
+            return render.needsRebuild() && render.canRebuild();
+        }, true);
+
+        this.dirty = false;
+    }
+
+    public void updateDeniedQueue() {
+        processRebuildQueues(deniedQueue, (render) -> this.cameraChanged, false);
+    }
+
+    public void clearDeniedQueue() {
+        this.deniedQueue.clear();
+    }
+
+    private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue, Function<ChunkRenderContainer<T>, Boolean> rebuildTest, boolean useDeniedQueue) {
         while (!queue.isEmpty()) {
             ChunkRenderContainer<T> render = queue.dequeue();
 
-            if (render.needsRebuild() && render.canRebuild()) {
+            // TODO: Make it an optional setting to re-render if camera has changed
+            if (rebuildTest.apply(render)) {
                 if (render.needsImportantRebuild()) {
                     this.importantRebuildQueue.enqueue(render);
                 } else {
                     this.rebuildQueue.enqueue(render);
                 }
+            } else if (useDeniedQueue) {
+                deniedQueue.enqueue(render);
             }
 
             if (!render.isEmpty()) {
@@ -138,12 +167,10 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
             for (Direction dir : DirectionUtil.ALL_DIRECTIONS) {
                 if (!render.canCull(dir)) {
-                    this.addChunkNeighbor(render, frustum, dir, frame);
+                    this.addChunkNeighbor(render, currFrustum, dir, currFrame);
                 }
             }
         }
-
-        this.dirty = false;
     }
 
     private void addChunkNeighbor(ChunkRenderContainer<T> parent, FrustumExtended frustum, Direction dir, int frame) {
@@ -463,6 +490,14 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     public void markDirty() {
         this.dirty = true;
+    }
+
+    public void markCameraChanged() {
+        this.cameraChanged = true;
+    }
+
+    public boolean didCameraChange() {
+        return this.cameraChanged;
     }
 
     public boolean isDirty() {

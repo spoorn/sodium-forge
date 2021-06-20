@@ -32,6 +32,8 @@ import net.minecraftforge.client.model.ModelDataManager;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.client.model.data.IModelData;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
@@ -42,12 +44,17 @@ import java.util.Objects;
  * array allocations, they are pooled to ensure that the garbage collector doesn't become overloaded.
  */
 public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkRenderBuildTask<T> {
+
+    // 16x16x16
+    private static final int CHUNK_BUILD_SIZE = 16;
+
     private final ChunkRenderBackend<T> renderBackend;
     private final ChunkRenderContainer<T> render;
     private final ChunkBuilder<T> chunkBuilder;
     private final Vector3d camera;
     private final WorldSlice slice;
     private final BlockPos offset;
+    private final Comparator<Coordinate> coordinateComparator;
 
     public ChunkRenderRebuildTask(ChunkBuilder<T> chunkBuilder, ChunkRenderBackend<T> renderBackend, ChunkRenderContainer<T> render, WorldSlice slice) {
         this.renderBackend = renderBackend;
@@ -56,6 +63,12 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         this.camera = chunkBuilder.getCameraPosition();
         this.slice = slice;
         this.offset = render.getRenderOrigin();
+        this.coordinateComparator = (Coordinate a, Coordinate b) -> {
+            double distA = sqDistanceToCamera(a);
+            double distB = sqDistanceToCamera(b);
+            // Reverse so further coordinates are rendered first
+            return Double.compare(distB, distA);
+        };
     }
 
     @Override
@@ -71,82 +84,97 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         int minY = this.render.getOriginY();
         int minZ = this.render.getOriginZ();
 
-        int maxX = minX + 16;
-        int maxY = minY + 16;
-        int maxZ = minZ + 16;
-
         BlockPos.Mutable pos = new BlockPos.Mutable();
         BlockPos offset = this.offset;
 
-        for (int y = minY; y < maxY; y++) {
+        Coordinate[] coordinates = new Coordinate[CHUNK_BUILD_SIZE*CHUNK_BUILD_SIZE*CHUNK_BUILD_SIZE];
+
+        for (int i = 0; i < CHUNK_BUILD_SIZE; i++) {
+            for (int j = 0; j < CHUNK_BUILD_SIZE; j++) {
+                for (int k = 0; k < CHUNK_BUILD_SIZE; k++) {
+                    coordinates[i+(j*CHUNK_BUILD_SIZE)+(k*CHUNK_BUILD_SIZE*CHUNK_BUILD_SIZE)] = new Coordinate(i+minX, j+minY, k+minZ);
+                }
+            }
+        }
+
+        // Sort coordinates so we render further coordinates before closer ones.  Ideally this should be done only for
+        // translucent quads, but haven't figured out how to know if we are working with translucent renders at this
+        // moment.  Also, sorting here isn't perfect as it's not actually sorting the individual vertices, but just the
+        // (central?) coordinate of the quad.  But at least it looks better than before.
+        // This mostly fixes things like translucent stained blocks behind each other, but fluids within stained glass
+        // still looks a bit odd.  Seems like we run into the problem where the fluid behind a glass block can overlap
+        // and be in front of the glass block.  May be because again, we aren't working with individual vertices.
+        Arrays.sort(coordinates, coordinateComparator);
+
+        for (Coordinate coordinate : coordinates) {
+            int y = coordinate.y;
             if (cancellationSource.isCancelled()) {
                 return null;
             }
 
-            for (int z = minZ; z < maxZ; z++) {
-                for (int x = minX; x < maxX; x++) {
-                    BlockState blockState = this.slice.getBlockState(x, y, z);
-                    Block block = blockState.getBlock();
+            int z = coordinate.z;
+            int x = coordinate.x;
+            BlockState blockState = this.slice.getBlockState(x, y, z);
+            Block block = blockState.getBlock();
 
-                    if (blockState.isAir()) {
+            if (blockState.isAir()) {
+                continue;
+            }
+
+            pos.setPos(x, y, z);
+
+            if (block.getRenderType(blockState) == BlockRenderType.MODEL) {
+                for (RenderType layer : RenderType.getBlockRenderTypes()) {
+                    if (!RenderTypeLookup.canRenderInLayer(blockState, layer)) {
                         continue;
                     }
 
-                    pos.setPos(x, y, z);
+                    ForgeHooksClient.setRenderLayer(layer);
+                    ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
+                    builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
-                    if (block.getRenderType(blockState) == BlockRenderType.MODEL) {
-                        for (RenderType layer : RenderType.getBlockRenderTypes()) {
-                            if (!RenderTypeLookup.canRenderInLayer(blockState, layer)) {
-                                continue;
-                            }
-
-                            ForgeHooksClient.setRenderLayer(layer);
-                            ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
-                            builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
-
-                            IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
-                            if (modelData == null) {
-                                modelData = EmptyModelData.INSTANCE;
-                            }
-                            if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
-                                bounds.addBlock(x, y, z);
-                            }
-                            ForgeHooksClient.setRenderLayer(null);
-                        }
+                    IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
+                    if (modelData == null) {
+                        modelData = EmptyModelData.INSTANCE;
                     }
-
-                    FluidState fluidState = block.getFluidState(blockState);
-
-                    if (!fluidState.isEmpty()) {
-                        RenderType layer = RenderTypeLookup.getRenderType(fluidState);
-
-                        ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
-                        builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
-
-                        if (pipeline.renderFluid(this.slice, fluidState, pos, builder)) {
-                            bounds.addBlock(x, y, z);
-                        }
+                    if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
+                        bounds.addBlock(x, y, z);
                     }
+                    ForgeHooksClient.setRenderLayer(null);
+                }
+            }
 
-                    if (blockState.hasTileEntity()) {
-                        TileEntity entity = this.slice.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
+            FluidState fluidState = block.getFluidState(blockState);
 
-                        if (entity != null) {
-                            TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(entity);
+            if (!fluidState.isEmpty()) {
+                RenderType layer = RenderTypeLookup.getRenderType(fluidState);
 
-                            if (renderer != null) {
-                                renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
+                ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
+                builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
-                                bounds.addBlock(x, y, z);
-                            }
-                        }
-                    }
+                if (pipeline.renderFluid(this.slice, fluidState, pos, builder)) {
+                    bounds.addBlock(x, y, z);
+                }
+            }
 
-                    if (blockState.isOpaqueCube(this.slice, pos)) {
-                        occluder.setOpaqueCube(pos);
+            if (blockState.hasTileEntity()) {
+                TileEntity entity = this.slice.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
+
+                if (entity != null) {
+                    TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(entity);
+
+                    if (renderer != null) {
+                        renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
+
+                        bounds.addBlock(x, y, z);
                     }
                 }
             }
+
+            if (blockState.isOpaqueCube(this.slice, pos)) {
+                occluder.setOpaqueCube(pos);
+            }
+
         }
 
         for (BlockRenderPass pass : this.renderBackend.getRenderPassManager().getSortedPasses()) {
@@ -166,5 +194,19 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     @Override
     public void releaseResources() {
         this.chunkBuilder.releaseWorldSlice(this.slice);
+    }
+
+    private double sqDistanceToCamera(Coordinate c) {
+        return (camera.x - c.x) * (camera.x - c.x) + (camera.y - c.y) * (camera.y - c.y) + (camera.z - c.z) * (camera.z - c.z);
+    }
+
+    public static class Coordinate {
+        public int x, y, z;
+
+        public Coordinate(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
     }
 }

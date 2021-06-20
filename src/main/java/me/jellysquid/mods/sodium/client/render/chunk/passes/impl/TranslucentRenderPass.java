@@ -7,7 +7,7 @@ import net.minecraft.util.ResourceLocation;
 
 public class TranslucentRenderPass extends BlockRenderPass {
     public TranslucentRenderPass(int ordinal, ResourceLocation id, BlockLayer... layers) {
-        super(ordinal, id, false, layers);
+        super(ordinal, id, false, true, layers);
     }
 
     @Override

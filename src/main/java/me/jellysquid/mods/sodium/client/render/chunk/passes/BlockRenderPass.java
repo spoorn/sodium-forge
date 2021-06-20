@@ -6,13 +6,15 @@ public abstract class BlockRenderPass {
     private final ResourceLocation id;
     private final BlockLayer[] layers;
     private final boolean forward;
+    private final boolean translucent;
     private final int ordinal;
 
-    public BlockRenderPass(int ordinal, ResourceLocation id, boolean forward, BlockLayer... layers) {
+    public BlockRenderPass(int ordinal, ResourceLocation id, boolean forward, boolean translucent, BlockLayer... layers) {
         this.ordinal = ordinal;
         this.id = id;
         this.layers = layers;
         this.forward = forward;
+        this.translucent = translucent;
     }
 
     public abstract void beginRender();
@@ -21,6 +23,10 @@ public abstract class BlockRenderPass {
 
     public final boolean isForwardRendering() {
         return this.forward;
+    }
+
+    public final boolean isTranslucent() {
+        return this.translucent;
     }
 
     public final int ordinal() {

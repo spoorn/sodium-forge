@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.culling.ClippingHelper;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Matrix4f;
+import org.lwjgl.opengl.GL46;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -82,7 +83,10 @@ public abstract class MixinWorldRenderer {
         if (renderLayer == RenderType.getSolid()) {
             this.renderer.drawChunkLayers(WorldRenderPhase.OPAQUE, matrixStack, x, y, z);
         } else if (renderLayer == RenderType.getTranslucent()) {
+            // Disable depth mask since translucent blocks should not disable blocks behind
+            GL46.glDepthMask(false);
             this.renderer.drawChunkLayers(WorldRenderPhase.TRANSLUCENT, matrixStack, x, y, z);
+            GL46.glDepthMask(true);
         }
     }
 

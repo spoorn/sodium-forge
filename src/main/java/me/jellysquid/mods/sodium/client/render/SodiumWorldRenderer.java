@@ -27,7 +27,6 @@ import me.jellysquid.mods.sodium.client.world.ChunkStatusListener;
 import me.jellysquid.mods.sodium.client.world.ChunkStatusListenerManager;
 import me.jellysquid.mods.sodium.common.util.ListUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.culling.ClippingHelper;
 import net.minecraft.client.renderer.model.ModelBakery;
@@ -160,9 +159,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         IProfiler profiler = this.client.getProfiler();
         profiler.startSection("camera_setup");
 
-        ClientPlayerEntity player = this.client.player;
-
-        if (player == null) {
+        if (this.client.player == null) {
             throw new IllegalStateException("Client instance has no active player entity");
         }
 
@@ -178,6 +175,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         if (dirty) {
             this.chunkRenderManager.markDirty();
+            this.chunkRenderManager.markCameraChanged();
         }
 
         this.lastCameraX = cameraPos.x;
@@ -217,6 +215,14 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
      */
     public void drawChunkLayer(BlockRenderPass pass, MatrixStack matrixStack, double x, double y, double z) {
         pass.beginRender();
+
+        if (pass.isTranslucent() && chunkRenderManager.didCameraChange()) {
+            // Rerender translucent blocks
+            chunkRenderManager.updateDeniedQueue();
+            chunkRenderManager.setCameraChanged(false);
+        } else {
+            chunkRenderManager.clearDeniedQueue();
+        }
 
         // We don't have a great way to check if underwater fog is being used, so assume that terrain will only ever
         // use linear fog. This will not disable fog in the Nether.

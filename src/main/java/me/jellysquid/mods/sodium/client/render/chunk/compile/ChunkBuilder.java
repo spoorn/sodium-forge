@@ -367,7 +367,8 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
                 synchronized (ChunkBuilder.this.jobNotifier) {
                     try {
                         ChunkBuilder.this.jobNotifier.wait();
-                    } catch (InterruptedException ignored) {
+                    } catch (InterruptedException e) {
+                        LOGGER.error("ChunkBuilder Thread interrupted", e);
                     }
                 }
             }
