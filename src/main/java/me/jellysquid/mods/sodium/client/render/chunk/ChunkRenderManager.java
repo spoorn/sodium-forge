@@ -136,10 +136,6 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         processRebuildQueues(deniedQueue, (render) -> this.cameraChanged, false);
     }
 
-    public void clearDeniedQueue() {
-        this.deniedQueue.clear();
-    }
-
     private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue, Function<ChunkRenderContainer<T>, Boolean> rebuildTest, boolean useDeniedQueue) {
         while (!queue.isEmpty()) {
             ChunkRenderContainer<T> render = queue.dequeue();
@@ -494,10 +490,6 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     public void markCameraChanged() {
         this.cameraChanged = true;
-    }
-
-    public boolean didCameraChange() {
-        return this.cameraChanged;
     }
 
     public boolean isDirty() {

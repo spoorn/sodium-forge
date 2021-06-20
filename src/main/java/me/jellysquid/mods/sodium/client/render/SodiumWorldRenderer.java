@@ -216,12 +216,11 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     public void drawChunkLayer(BlockRenderPass pass, MatrixStack matrixStack, double x, double y, double z) {
         pass.beginRender();
 
-        if (pass.isTranslucent() && chunkRenderManager.didCameraChange()) {
+        if (pass.isTranslucent()) {
             // Rerender translucent blocks
+            // Assumes setupTerrain was only called once before, otherwise the deniedQueue would be huge
             chunkRenderManager.updateDeniedQueue();
             chunkRenderManager.setCameraChanged(false);
-        } else {
-            chunkRenderManager.clearDeniedQueue();
         }
 
         // We don't have a great way to check if underwater fog is being used, so assume that terrain will only ever
