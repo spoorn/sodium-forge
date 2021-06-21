@@ -69,6 +69,10 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             // Reverse so further coordinates are rendered first
             return Double.compare(distB, distA);
         };
+
+        // Start off with sorting backwards for when renderer first initializes so translucent blocks render properly
+        // if the render container contains translucent blocks
+        this.render.updateTranslucentBlockState(null);
     }
 
     @Override
@@ -87,94 +91,45 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         BlockPos.Mutable pos = new BlockPos.Mutable();
         BlockPos offset = this.offset;
 
-        Coordinate[] coordinates = new Coordinate[CHUNK_BUILD_SIZE*CHUNK_BUILD_SIZE*CHUNK_BUILD_SIZE];
+        if (render.shouldSortBackwards()) {
+            Coordinate[] coordinates = new Coordinate[CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE];
 
-        for (int i = 0; i < CHUNK_BUILD_SIZE; i++) {
-            for (int j = 0; j < CHUNK_BUILD_SIZE; j++) {
-                for (int k = 0; k < CHUNK_BUILD_SIZE; k++) {
-                    coordinates[i+(j*CHUNK_BUILD_SIZE)+(k*CHUNK_BUILD_SIZE*CHUNK_BUILD_SIZE)] = new Coordinate(i+minX, j+minY, k+minZ);
-                }
-            }
-        }
-
-        // Sort coordinates so we render further coordinates before closer ones.  Ideally this should be done only for
-        // translucent quads, but haven't figured out how to know if we are working with translucent renders at this
-        // moment.  Also, sorting here isn't perfect as it's not actually sorting the individual vertices, but just the
-        // (central?) coordinate of the quad.  But at least it looks better than before.
-        // This mostly fixes things like translucent stained blocks behind each other, but fluids within stained glass
-        // still looks a bit odd.  Seems like we run into the problem where the fluid behind a glass block can overlap
-        // and be in front of the glass block.  May be because again, we aren't working with individual vertices.
-        Arrays.sort(coordinates, coordinateComparator);
-
-        for (Coordinate coordinate : coordinates) {
-            int y = coordinate.y;
-            if (cancellationSource.isCancelled()) {
-                return null;
-            }
-
-            int z = coordinate.z;
-            int x = coordinate.x;
-            BlockState blockState = this.slice.getBlockState(x, y, z);
-            Block block = blockState.getBlock();
-
-            if (blockState.isAir()) {
-                continue;
-            }
-
-            pos.setPos(x, y, z);
-
-            if (block.getRenderType(blockState) == BlockRenderType.MODEL) {
-                for (RenderType layer : RenderType.getBlockRenderTypes()) {
-                    if (!RenderTypeLookup.canRenderInLayer(blockState, layer)) {
-                        continue;
-                    }
-
-                    ForgeHooksClient.setRenderLayer(layer);
-                    ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
-                    builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
-
-                    IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
-                    if (modelData == null) {
-                        modelData = EmptyModelData.INSTANCE;
-                    }
-                    if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
-                        bounds.addBlock(x, y, z);
-                    }
-                    ForgeHooksClient.setRenderLayer(null);
-                }
-            }
-
-            FluidState fluidState = block.getFluidState(blockState);
-
-            if (!fluidState.isEmpty()) {
-                RenderType layer = RenderTypeLookup.getRenderType(fluidState);
-
-                ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
-                builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
-
-                if (pipeline.renderFluid(this.slice, fluidState, pos, builder)) {
-                    bounds.addBlock(x, y, z);
-                }
-            }
-
-            if (blockState.hasTileEntity()) {
-                TileEntity entity = this.slice.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
-
-                if (entity != null) {
-                    TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(entity);
-
-                    if (renderer != null) {
-                        renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
-
-                        bounds.addBlock(x, y, z);
+            for (int i = 0; i < CHUNK_BUILD_SIZE; i++) {
+                for (int j = 0; j < CHUNK_BUILD_SIZE; j++) {
+                    for (int k = 0; k < CHUNK_BUILD_SIZE; k++) {
+                        coordinates[i + (j * CHUNK_BUILD_SIZE) + (k * CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE)] = new Coordinate(i + minX, j + minY, k + minZ);
                     }
                 }
             }
 
-            if (blockState.isOpaqueCube(this.slice, pos)) {
-                occluder.setOpaqueCube(pos);
-            }
+            // Sort coordinates so we render further coordinates before closer ones.  Ideally this should be done only for
+            // translucent quads, but haven't figured out how to know if we are working with translucent renders at this
+            // moment.  Also, sorting here isn't perfect as it's not actually sorting the individual vertices, but just the
+            // (central?) coordinate of the quad.  But at least it looks better than before.
+            // This mostly fixes things like translucent stained blocks behind each other, but fluids within stained glass
+            // still looks a bit odd.  Seems like we run into the problem where the fluid behind a glass block can overlap
+            // and be in front of the glass block.  May be because again, we aren't working with individual vertices.
+            Arrays.sort(coordinates, coordinateComparator);
 
+            for (Coordinate coordinate : coordinates) {
+                if (cancellationSource.isCancelled()) {
+                    return null;
+                }
+                setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, coordinate.x, coordinate.y, coordinate.z);
+            }
+        } else {
+            // Non sort block
+            for (int y = minY; y < minY + CHUNK_BUILD_SIZE; y++) {
+                if (cancellationSource.isCancelled()) {
+                    return null;
+                }
+
+                for (int z = minZ; z < minZ + CHUNK_BUILD_SIZE; z++) {
+                    for (int x = minX; x < minX + CHUNK_BUILD_SIZE; x++) {
+                        setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, x, y, z);
+                    }
+                }
+            }
         }
 
         for (BlockRenderPass pass : this.renderBackend.getRenderPassManager().getSortedPasses()) {
@@ -194,6 +149,70 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     @Override
     public void releaseResources() {
         this.chunkBuilder.releaseWorldSlice(this.slice);
+    }
+
+    private void setupBlockRender(ChunkRenderContext pipeline, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData,
+        VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, int x, int y, int z) {
+        BlockState blockState = this.slice.getBlockState(x, y, z);
+        Block block = blockState.getBlock();
+
+        if (blockState.isAir()) {
+            return;
+        }
+
+        pos.setPos(x, y, z);
+
+        if (block.getRenderType(blockState) == BlockRenderType.MODEL) {
+            for (RenderType layer : RenderType.getBlockRenderTypes()) {
+                if (!RenderTypeLookup.canRenderInLayer(blockState, layer)) {
+                    continue;
+                }
+
+                ForgeHooksClient.setRenderLayer(layer);
+                ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
+                builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
+
+                IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
+                if (modelData == null) {
+                    modelData = EmptyModelData.INSTANCE;
+                }
+                if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
+                    bounds.addBlock(x, y, z);
+                }
+                ForgeHooksClient.setRenderLayer(null);
+            }
+        }
+
+        FluidState fluidState = block.getFluidState(blockState);
+
+        if (!fluidState.isEmpty()) {
+            RenderType layer = RenderTypeLookup.getRenderType(fluidState);
+
+            ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
+            builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
+
+            if (pipeline.renderFluid(this.slice, fluidState, pos, builder)) {
+                bounds.addBlock(x, y, z);
+            }
+        }
+
+        if (blockState.hasTileEntity()) {
+            TileEntity entity = this.slice.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
+
+            if (entity != null) {
+                TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(entity);
+
+                if (renderer != null) {
+                    renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
+
+                    bounds.addBlock(x, y, z);
+                }
+            }
+        }
+
+        if (blockState.isOpaqueCube(this.slice, pos)) {
+            occluder.setOpaqueCube(pos);
+        }
     }
 
     private double sqDistanceToCamera(Coordinate c) {

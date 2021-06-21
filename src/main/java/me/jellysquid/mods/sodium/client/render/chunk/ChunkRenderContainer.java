@@ -1,9 +1,11 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
+import lombok.Setter;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderBounds;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
+import me.jellysquid.mods.sodium.client.render.chunk.passes.impl.MultiTextureRenderPipeline;
 import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
@@ -11,13 +13,18 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.SectionPos;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.reflect.Array;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * The render state object for a chunk section. This contains all the graphics state for each render pass along with
  * data about the render in the chunk visibility graph.
+ *
+ * @NotThreadSafe Assumes a ChunkRenderContainer is only being accessed by a single thread at a time.  Otherwise,
+ * fields such as sortBackwards will conflict.
  */
+@NotThreadSafe
 public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     private final SodiumWorldRenderer worldRenderer;
     private final int chunkX, chunkY, chunkZ;
@@ -38,6 +45,10 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     private final ChunkRenderContainer<T>[] adjacent;
     private boolean tickable;
 
+    private boolean hasTranslucentBlocks;
+    @Setter
+    private boolean sortBackwards;
+
     public ChunkRenderContainer(ChunkRenderBackend<T> backend, SodiumWorldRenderer worldRenderer, int chunkX, int chunkY, int chunkZ) {
         this.worldRenderer = worldRenderer;
 
@@ -50,6 +61,9 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
 
         //noinspection unchecked
         this.graphicsStates = (T[]) Array.newInstance(backend.getGraphicsStateType(), backend.getRenderPassManager().getPassCount());
+
+        hasTranslucentBlocks = false;
+        sortBackwards = false;
     }
 
     /**
@@ -115,6 +129,10 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         }
     }
 
+    public boolean hasTranslucentBlocks() {
+        return hasTranslucentBlocks;
+    }
+
     public void setData(ChunkRenderData info) {
         if (info == null) {
             throw new NullPointerException("Mesh information must not be null");
@@ -136,6 +154,24 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         this.tickable = !info.getAnimatedSprites().isEmpty();
     }
 
+    public void updateTranslucentBlockState(BlockRenderPass pass) {
+        // If chunk changed, check if there are any translucent blocks again
+        hasTranslucentBlocks = false;
+        for (BlockRenderPass translucentPass : MultiTextureRenderPipeline.TRANSLUCENT_PASSES) {
+            if (data.getMesh(translucentPass) != null) {
+                hasTranslucentBlocks = true;
+                break;
+            }
+        }
+
+        // The "|| hasTranslucentBlocks" is to ensure translucent blocks are always rendered back to front
+        if ((pass != null && !pass.isForwardRendering()) || hasTranslucentBlocks) {
+            sortBackwards = true;
+        } else {
+            sortBackwards = false;
+        }
+    }
+
     /**
      * Marks this render as needing an update. Important updates are scheduled as "blocking" and will prevent the next
      * frame from being rendered until the update is performed.
@@ -147,7 +183,6 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
 
         this.needsImportantRebuild = important;
         this.needsRebuild = true;
-
         return changed;
     }
 
@@ -284,6 +319,10 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         double zDist = z - this.getCenterZ();
 
         return (xDist * xDist) + (yDist * yDist) + (zDist * zDist);
+    }
+
+    public boolean shouldSortBackwards() {
+        return sortBackwards;
     }
 
     /**

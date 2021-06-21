@@ -149,6 +149,10 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     public void updateChunks(ActiveRenderInfo camera, ClippingHelper frustum, boolean hasForcedFrustum, int frame, boolean spectator, Matrix4f projection) {
         this.frustum = frustum;
 
+        // Denied queue used for translucent passes, clear it between each render pass and reset cameraChanged
+        chunkRenderManager.setCameraChanged(false);
+        this.chunkRenderManager.clearDeniedQueue();
+
         this.chunkRenderManager.setProjection(projection);
         this.useEntityCulling = SodiumClientMod.options().advanced.useAdvancedEntityCulling;
 
@@ -216,12 +220,10 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     public void drawChunkLayer(BlockRenderPass pass, MatrixStack matrixStack, double x, double y, double z) {
         pass.beginRender();
 
-        if (pass.isTranslucent()) {
-            // Rerender translucent blocks
-            // Assumes setupTerrain was only called once before, otherwise the deniedQueue would be huge
-            chunkRenderManager.updateDeniedQueue();
-            chunkRenderManager.setCameraChanged(false);
-        }
+        // Recalculate translucent blocks.
+        // Assumes setupTerrain was only called once before, otherwise the deniedQueue would be overflowing
+        if (pass.isTranslucent())
+            chunkRenderManager.processDeniedQueue(pass);
 
         // We don't have a great way to check if underwater fog is being used, so assume that terrain will only ever
         // use linear fog. This will not disable fog in the Nether.
@@ -230,7 +232,6 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         }
 
         this.chunkRenderManager.renderChunks(matrixStack, pass, x, y, z);
-
         pass.endRender();
 
         RenderSystem.clearCurrentColor();

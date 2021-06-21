@@ -99,7 +99,7 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     public GL43ChunkRenderBackend(GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
         super(format);
 
-        this.renderPassManager = MultiTextureRenderPipeline.create();
+        this.renderPassManager = MultiTextureRenderPipeline.BLOCK_RENDER_PASS_MANAGER;
         this.bufferManager = new ChunkRegionManager<>(this.memoryTracker);
         this.uploadBuffer = new GlMutableBuffer(GL15.GL_STREAM_DRAW);
         this.uniformBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);

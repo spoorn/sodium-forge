@@ -127,18 +127,30 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         processRebuildQueues(iterationQueue, obj -> {
             ChunkRenderContainer<T> render = (ChunkRenderContainer<T>) obj;
             return render.needsRebuild() && render.canRebuild();
-        }, true);
+        }, true, null);
 
         this.dirty = false;
     }
 
-    public void updateDeniedQueue() {
-        processRebuildQueues(deniedQueue, (render) -> this.cameraChanged, false);
+    public void processDeniedQueue(BlockRenderPass pass) {
+        processRebuildQueues(deniedQueue, (render) -> this.cameraChanged, false, pass);
     }
 
-    private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue, Function<ChunkRenderContainer<T>, Boolean> rebuildTest, boolean useDeniedQueue) {
+    public void clearDeniedQueue() {
+        deniedQueue.clear();
+    }
+
+    private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue, Function<ChunkRenderContainer<T>,
+            Boolean> rebuildTest, boolean useDeniedQueue, BlockRenderPass pass) {
+        boolean isTranslucentPass = pass != null && pass.isTranslucent();
         while (!queue.isEmpty()) {
             ChunkRenderContainer<T> render = queue.dequeue();
+
+            render.updateTranslucentBlockState(pass);
+            // During translucent pass, if a render container does not have any translucent blocks, skip rerendering for it
+            if (isTranslucentPass && !useDeniedQueue && !render.hasTranslucentBlocks()) {
+                continue;
+            }
 
             // TODO: Make it an optional setting to re-render if camera has changed
             if (rebuildTest.apply(render)) {
@@ -150,6 +162,10 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
             } else if (useDeniedQueue) {
                 deniedQueue.enqueue(render);
             }
+
+            // We don't need to do the rest if this is for the translucent pass since it was already done during setupTerrain
+            if (isTranslucentPass)
+                continue;
 
             if (!render.isEmpty()) {
                 this.addChunkToRenderLists(render);
