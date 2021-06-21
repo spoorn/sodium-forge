@@ -1,6 +1,5 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
-import lombok.Setter;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderBounds;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
@@ -13,18 +12,13 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.SectionPos;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.reflect.Array;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * The render state object for a chunk section. This contains all the graphics state for each render pass along with
  * data about the render in the chunk visibility graph.
- *
- * @NotThreadSafe Assumes a ChunkRenderContainer is only being accessed by a single thread at a time.  Otherwise,
- * fields such as sortBackwards will conflict.
  */
-@NotThreadSafe
 public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     private final SodiumWorldRenderer worldRenderer;
     private final int chunkX, chunkY, chunkZ;
@@ -46,8 +40,6 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     private boolean tickable;
 
     private boolean hasTranslucentBlocks;
-    @Setter
-    private boolean sortBackwards;
 
     public ChunkRenderContainer(ChunkRenderBackend<T> backend, SodiumWorldRenderer worldRenderer, int chunkX, int chunkY, int chunkZ) {
         this.worldRenderer = worldRenderer;
@@ -63,7 +55,6 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         this.graphicsStates = (T[]) Array.newInstance(backend.getGraphicsStateType(), backend.getRenderPassManager().getPassCount());
 
         hasTranslucentBlocks = false;
-        sortBackwards = false;
     }
 
     /**
@@ -162,13 +153,6 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
                 hasTranslucentBlocks = true;
                 break;
             }
-        }
-
-        // The "|| hasTranslucentBlocks" is to ensure translucent blocks are always rendered back to front
-        if ((pass != null && !pass.isForwardRendering()) || hasTranslucentBlocks) {
-            sortBackwards = true;
-        } else {
-            sortBackwards = false;
         }
     }
 
@@ -319,10 +303,6 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         double zDist = z - this.getCenterZ();
 
         return (xDist * xDist) + (yDist * yDist) + (zDist * zDist);
-    }
-
-    public boolean shouldSortBackwards() {
-        return sortBackwards;
     }
 
     /**

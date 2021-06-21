@@ -26,6 +26,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.ModelDataManager;
@@ -47,6 +48,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
     // 16x16x16
     private static final int CHUNK_BUILD_SIZE = 16;
+    private static final int CHUNK_BUILD_SIZE_2D = CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE;
+    private static final int TOTAL_CHUNK_SIZE = CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE;
 
     private final ChunkRenderBackend<T> renderBackend;
     private final ChunkRenderContainer<T> render;
@@ -69,10 +72,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             // Reverse so further coordinates are rendered first
             return Double.compare(distB, distA);
         };
-
-        // Start off with sorting backwards for when renderer first initializes so translucent blocks render properly
-        // if the render container contains translucent blocks
-        this.render.updateTranslucentBlockState(null);
     }
 
     @Override
@@ -91,45 +90,47 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         BlockPos.Mutable pos = new BlockPos.Mutable();
         BlockPos offset = this.offset;
 
-        if (render.shouldSortBackwards()) {
-            Coordinate[] coordinates = new Coordinate[CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE];
+        boolean shouldSortBackwards = false;
 
-            for (int i = 0; i < CHUNK_BUILD_SIZE; i++) {
-                for (int j = 0; j < CHUNK_BUILD_SIZE; j++) {
-                    for (int k = 0; k < CHUNK_BUILD_SIZE; k++) {
-                        coordinates[i + (j * CHUNK_BUILD_SIZE) + (k * CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE)] = new Coordinate(i + minX, j + minY, k + minZ);
+        BlockState[] blockStates = new BlockState[TOTAL_CHUNK_SIZE];
+        Coordinate[] coordinates = new Coordinate[TOTAL_CHUNK_SIZE];
+        World world = Minecraft.getInstance().world;
+        for (int y = minY; y < minY + CHUNK_BUILD_SIZE; y++) {
+            for (int z = minZ; z < minZ + CHUNK_BUILD_SIZE; z++) {
+                for (int x = minX; x < minX + CHUNK_BUILD_SIZE; x++) {
+                    BlockState curr = this.slice.getBlockState(x, y, z);
+                    int index = (x-minX)+((y-minY)*CHUNK_BUILD_SIZE)+((z-minZ)*CHUNK_BUILD_SIZE_2D);
+                    blockStates[index] = curr;
+                    coordinates[index] = new Coordinate(x, y, z);
+                    if (!curr.isAir() && curr.getFluidState().isEmpty() && !curr.isOpaqueCube(world, new BlockPos(x, y, z))) {
+                        shouldSortBackwards = true;
                     }
                 }
             }
+        }
 
-            // Sort coordinates so we render further coordinates before closer ones.  Ideally this should be done only for
-            // translucent quads, but haven't figured out how to know if we are working with translucent renders at this
-            // moment.  Also, sorting here isn't perfect as it's not actually sorting the individual vertices, but just the
-            // (central?) coordinate of the quad.  But at least it looks better than before.
-            // This mostly fixes things like translucent stained blocks behind each other, but fluids within stained glass
-            // still looks a bit odd.  Seems like we run into the problem where the fluid behind a glass block can overlap
-            // and be in front of the glass block.  May be because again, we aren't working with individual vertices.
+        // If cancelled, stop before doing more calculations
+        if (cancellationSource.isCancelled()) {
+            return null;
+        }
+
+        // Sort coordinates so we render further coordinates before closer ones.  Ideally this should be done only for
+        // translucent quads themselves, but for now we make do with the whole block coordinate.
+        // Sorting here isn't perfect as it's not actually sorting the individual vertices, but just the
+        // (central?) coordinate of the quad.  But at least it looks better than before.
+        // This mostly fixes things like translucent stained blocks behind each other, but fluids within stained glass
+        // still looks a bit odd.  Seems like we run into the problem where the fluid behind a glass block can overlap
+        // and be in front of the glass block.  May be because again, we aren't working with individual vertices.
+        if (shouldSortBackwards) {
             Arrays.sort(coordinates, coordinateComparator);
+        }
 
-            for (Coordinate coordinate : coordinates) {
-                if (cancellationSource.isCancelled()) {
-                    return null;
-                }
-                setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, coordinate.x, coordinate.y, coordinate.z);
+        for (Coordinate coordinate : coordinates) {
+            if (cancellationSource.isCancelled()) {
+                return null;
             }
-        } else {
-            // Non sort block
-            for (int y = minY; y < minY + CHUNK_BUILD_SIZE; y++) {
-                if (cancellationSource.isCancelled()) {
-                    return null;
-                }
-
-                for (int z = minZ; z < minZ + CHUNK_BUILD_SIZE; z++) {
-                    for (int x = minX; x < minX + CHUNK_BUILD_SIZE; x++) {
-                        setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, x, y, z);
-                    }
-                }
-            }
+            setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, blockStates,
+                    coordinate.x, coordinate.y, coordinate.z, minX, minY, minZ);
         }
 
         for (BlockRenderPass pass : this.renderBackend.getRenderPassManager().getSortedPasses()) {
@@ -152,8 +153,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     }
 
     private void setupBlockRender(ChunkRenderContext pipeline, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData,
-        VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, int x, int y, int z) {
-        BlockState blockState = this.slice.getBlockState(x, y, z);
+        VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState[] blockStates,
+        int x, int y, int z, int minX, int minY, int minZ) {
+        BlockState blockState = blockStates[(x-minX)+((y-minY)*CHUNK_BUILD_SIZE)+((z-minZ)*CHUNK_BUILD_SIZE_2D)];
         Block block = blockState.getBlock();
 
         if (blockState.isAir()) {
