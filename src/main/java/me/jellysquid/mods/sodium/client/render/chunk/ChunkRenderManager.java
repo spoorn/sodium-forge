@@ -1,7 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import it.unimi.dsi.fastutil.Function;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -23,6 +22,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.client.world.ChunkStatusListener;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
+import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
 import me.jellysquid.mods.sodium.common.util.collections.FutureDequeDrain;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
@@ -67,7 +67,6 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> iterationQueue = new ObjectArrayFIFOQueue<>();
     private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> importantRebuildQueue = new ObjectArrayFIFOQueue<>();
     private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> rebuildQueue = new ObjectArrayFIFOQueue<>();
-    private final ObjectArrayFIFOQueue<ChunkRenderContainer<T>> deniedQueue = new ObjectArrayFIFOQueue<>();
 
     @SuppressWarnings("unchecked")
     private final ChunkRenderList<T>[] chunkRenderLists;
@@ -115,57 +114,49 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         for (int i = 0; i < this.chunkRenderLists.length; i++) {
             this.chunkRenderLists[i] = new ChunkRenderList<>();
         }
+
+        TranslucentPoolUtil.resetTranslucentRebuilds();
     }
 
     public void updateGraph(ActiveRenderInfo camera, FrustumExtended frustum, int frame, boolean spectator) {
         this.init(camera, frustum, frame, spectator);
 
-        ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue = this.iterationQueue;
         this.currFrame = frame;
         this.currFrustum = frustum;
 
-        processRebuildQueues(iterationQueue, obj -> {
-            ChunkRenderContainer<T> render = (ChunkRenderContainer<T>) obj;
-            return render.needsRebuild() && render.canRebuild();
-        }, true, null);
+        processRebuildQueues(iterationQueue);
 
         this.dirty = false;
     }
 
-    public void processDeniedQueue(BlockRenderPass pass) {
-        processRebuildQueues(deniedQueue, (render) -> this.cameraChanged, false, pass);
-    }
-
-    public void clearDeniedQueue() {
-        deniedQueue.clear();
-    }
-
-    private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue, Function<ChunkRenderContainer<T>,
-            Boolean> rebuildTest, boolean useDeniedQueue, BlockRenderPass pass) {
-        boolean isTranslucentPass = pass != null && pass.isTranslucent();
+    private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue) {
+        // TODO: make this configurable, max amount of budget to use on translucent rerendering
+        int translucentBudget = builder.getSchedulingBudget()/4;
         while (!queue.isEmpty()) {
             ChunkRenderContainer<T> render = queue.dequeue();
 
-            render.updateTranslucentBlockState(pass);
-            // During translucent pass, if a render container does not have any translucent blocks, skip rerendering for it
-            if (isTranslucentPass && !useDeniedQueue && !render.hasTranslucentBlocks()) {
-                continue;
+            render.updateTranslucentBlockState();
+            boolean rebuild = render.needsRebuild() && render.canRebuild();
+
+            // TODO: Make translucent rebuilding configurable
+            if (render.hasTranslucentBlocks()) {
+                ChunkRenderBounds bounds = render.getBounds();
+                boolean isInFrustum = currFrustum.fastAabbTest(bounds.x1, bounds.y1, bounds.z1, bounds.x2, bounds.y2, bounds.z2);
+                if (this.cameraChanged && isInFrustum && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget) {
+                    TranslucentPoolUtil.incrementTranslucentRebuilds();
+                    rebuild = true;
+                } else {
+                    rebuild = false;
+                }
             }
 
-            // TODO: Make it an optional setting to re-render if camera has changed
-            if (rebuildTest.apply(render)) {
+            if (rebuild) {
                 if (render.needsImportantRebuild()) {
                     this.importantRebuildQueue.enqueue(render);
                 } else {
                     this.rebuildQueue.enqueue(render);
                 }
-            } else if (useDeniedQueue) {
-                deniedQueue.enqueue(render);
             }
-
-            // We don't need to do the rest if this is for the translucent pass since it was already done during setupTerrain
-            if (isTranslucentPass)
-                continue;
 
             if (!render.isEmpty()) {
                 this.addChunkToRenderLists(render);

@@ -35,6 +35,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegion;
 import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgramComponentBuilder;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.texture.ChunkProgramMultiTexture;
+import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
 import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
@@ -187,8 +188,6 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
 
         GlVertexArray prevVao = null;
 
-
-
         int commandStart = 0;
         for (ChunkRegion<?> region : this.pendingBatches) {
 
@@ -294,6 +293,10 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
             }
 
             uploadQueue.add(result);
+
+            if (render.hasTranslucentBlocks()) {
+                TranslucentPoolUtil.decrementTranslucentRebuilds();
+            }
         }
     }
 

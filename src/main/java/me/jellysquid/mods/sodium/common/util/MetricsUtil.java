@@ -25,6 +25,8 @@ public class MetricsUtil {
 
     public static void endMetric(String name) {
         Triple<Float, Long, Long> t = METRICS.get(name);
+        if (t == null)
+            throw new RuntimeException("Metrics needs to be started first!");
         float f = t.getLeft();
         long m = t.getMiddle();
         long l = t.getRight();

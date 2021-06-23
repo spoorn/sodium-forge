@@ -145,7 +145,7 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         this.tickable = !info.getAnimatedSprites().isEmpty();
     }
 
-    public void updateTranslucentBlockState(BlockRenderPass pass) {
+    public void updateTranslucentBlockState() {
         // If chunk changed, check if there are any translucent blocks again
         hasTranslucentBlocks = false;
         for (BlockRenderPass translucentPass : MultiTextureRenderPipeline.TRANSLUCENT_PASSES) {

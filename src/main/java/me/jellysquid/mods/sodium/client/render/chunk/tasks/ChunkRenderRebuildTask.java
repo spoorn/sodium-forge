@@ -102,6 +102,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                     int index = (x-minX)+((y-minY)*CHUNK_BUILD_SIZE)+((z-minZ)*CHUNK_BUILD_SIZE_2D);
                     blockStates[index] = curr;
                     coordinates[index] = new Coordinate(x, y, z);
+                    // TODO: Only sort the translucent blocks, instead of entire chunk
                     if (!curr.isAir() && curr.getFluidState().isEmpty() && !curr.isOpaqueCube(world, new BlockPos(x, y, z))) {
                         shouldSortBackwards = true;
                     }
