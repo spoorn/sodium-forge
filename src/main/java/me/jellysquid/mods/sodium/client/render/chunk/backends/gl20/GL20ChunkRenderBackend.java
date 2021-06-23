@@ -3,18 +3,9 @@ package me.jellysquid.mods.sodium.client.render.chunk.backends.gl20;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import me.jellysquid.mods.sodium.client.gl.SodiumVertexFormats;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
-import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.util.MemoryTracker;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
-import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkProgramOneshot;
 import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkRenderBackendOneshot;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.impl.SingleTextureRenderPipeline;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgramComponentBuilder;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.texture.ChunkProgramSingleTexture;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -23,54 +14,28 @@ import org.lwjgl.opengl.GL20;
  * A simple chunk rendering backend which mirrors that of vanilla's own pretty closely.
  */
 public class GL20ChunkRenderBackend extends ChunkRenderBackendOneshot<GL20GraphicsState> {
-    private final BlockRenderPassManager renderPassManager = SingleTextureRenderPipeline.create();
 
     public GL20ChunkRenderBackend(GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
         super(format);
     }
 
     @Override
-    protected void modifyProgram(GlProgram.Builder builder, ChunkProgramComponentBuilder components,
-                                 GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
-        components.texture = ChunkProgramSingleTexture::new;
-    }
-
-    @Override
-    protected ChunkProgramOneshot createShaderProgram(ResourceLocation name, int handle, ChunkProgramComponentBuilder components) {
-        return new ChunkProgramOneshot(name, handle, components);
-    }
-
-    @Override
-    protected void addShaderConstants(ShaderConstants.Builder builder) {
-
-    }
-
-    @Override
-    public void beginRender(MatrixStack matrixStack, BlockRenderPass pass, Matrix4f projection) {
-        super.beginRender(matrixStack, pass, projection);
-
+    public void begin(MatrixStack matrixStack, Matrix4f projection) {
+        super.begin(matrixStack, projection);
         this.vertexFormat.enableVertexAttributes();
-
-        boolean mipped = pass.getId() == SingleTextureRenderPipeline.SOLID_MIPPED_PASS;
-        this.activeProgram.texture.setMipmapping(mipped);
     }
 
     @Override
-    public void endRender(MatrixStack matrixStack) {
+    public void end(MatrixStack matrixStack) {
         this.vertexFormat.disableVertexAttributes();
         GL20.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 
-        super.endRender(matrixStack);
+        super.end(matrixStack);
     }
 
     @Override
     public Class<GL20GraphicsState> getGraphicsStateType() {
         return GL20GraphicsState.class;
-    }
-
-    @Override
-    public BlockRenderPassManager getRenderPassManager() {
-        return this.renderPassManager;
     }
 
     @Override

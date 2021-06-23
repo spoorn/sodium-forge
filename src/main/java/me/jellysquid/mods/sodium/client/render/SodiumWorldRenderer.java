@@ -21,7 +21,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.backends.gl33.GL33ChunkRend
 import me.jellysquid.mods.sodium.client.render.chunk.backends.gl43.GL43ChunkRenderBackend;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.WorldRenderPhase;
+import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.client.world.ChunkStatusListener;
 import me.jellysquid.mods.sodium.client.world.ChunkStatusListenerManager;
@@ -66,6 +66,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
     private ClippingHelper frustum;
     private ChunkRenderManager<?> chunkRenderManager;
+    private BlockRenderPassManager renderPassManager;
     private ChunkRenderBackend<?> chunkRenderBackend;
 
     /**
@@ -206,17 +207,12 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     }
 
 
-    public void drawChunkLayers(WorldRenderPhase phase, MatrixStack matrixStack, double x, double y, double z) {
-        for (BlockRenderPass pass : this.chunkRenderBackend.getRenderPassManager().getPassesForPhase(phase)) {
-            this.drawChunkLayer(pass, matrixStack, x, y, z);
-        }
-    }
-
     /**
      * Performs a render pass for the given {@link RenderType} and draws all visible chunks for it.
      */
-    public void drawChunkLayer(BlockRenderPass pass, MatrixStack matrixStack, double x, double y, double z) {
-        pass.beginRender();
+    public void drawChunkLayer(RenderType renderLayer, MatrixStack matrixStack, double x, double y, double z) {
+        BlockRenderPass pass = this.renderPassManager.getRenderPassForLayer(renderLayer);
+        pass.startDrawing();
 
         // We don't have a great way to check if underwater fog is being used, so assume that terrain will only ever
         // use linear fog. This will not disable fog in the Nether.
@@ -224,8 +220,8 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
             RenderSystem.disableFog();
         }
 
-        this.chunkRenderManager.renderChunks(matrixStack, pass, x, y, z);
-        pass.endRender();
+        this.chunkRenderManager.renderLayer(matrixStack, pass, x, y, z);
+        pass.endDrawing();
 
         RenderSystem.clearCurrentColor();
     }
@@ -253,6 +249,8 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         SodiumGameOptions opts = SodiumClientMod.options();
 
+        this.renderPassManager = BlockRenderPassManager.createDefaultMappings();
+
         final GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> vertexFormat;
 
         if (opts.advanced.useCompactVertexFormat) {
@@ -264,7 +262,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         this.chunkRenderBackend = createChunkRenderBackend(opts.advanced.chunkRendererBackend, vertexFormat);
         this.chunkRenderBackend.createShaders();
 
-        this.chunkRenderManager = new ChunkRenderManager<>(this, this.chunkRenderBackend, this.world, this.renderDistance);
+        this.chunkRenderManager = new ChunkRenderManager<>(this, this.chunkRenderBackend, this.renderPassManager, this.world, this.renderDistance);
         this.chunkRenderManager.restoreChunks(this.loadedChunkPositions);
     }
 

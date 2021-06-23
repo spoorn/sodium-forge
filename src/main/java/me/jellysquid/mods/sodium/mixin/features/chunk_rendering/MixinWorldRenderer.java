@@ -3,7 +3,6 @@ package me.jellysquid.mods.sodium.mixin.features.chunk_rendering;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.WorldRenderPhase;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
@@ -78,16 +77,11 @@ public abstract class MixinWorldRenderer {
      * @author JellySquid
      */
     @Overwrite
-    private void renderBlockLayer(RenderType renderLayer, MatrixStack matrixStack, double x, double y, double z) {
-        if (renderLayer == RenderType.getSolid()) {
-            this.renderer.drawChunkLayers(WorldRenderPhase.OPAQUE, matrixStack, x, y, z);
-        } else if (renderLayer == RenderType.getTranslucent()) {
-            // Disabling depth mask makes liquid behind transparent blocks appear better, but causes some entities
-            // in oceans to appear as if they are in front of the transparent block since we aren't using a zbuffer
-            //GL46.glDepthMask(false);
-            this.renderer.drawChunkLayers(WorldRenderPhase.TRANSLUCENT, matrixStack, x, y, z);
-            //GL46.glDepthMask(true);
-        }
+    private void renderBlockLayer(RenderType renderLayer, MatrixStack matrixStack, double d, double e, double f) {
+        // Disabling depth mask makes liquid behind transparent blocks appear better, but causes some entities
+        // in oceans to appear as if they are in front of the transparent block since we aren't using a zbuffer
+        //GL46.glDepthMask(false);
+        this.renderer.drawChunkLayer(renderLayer, matrixStack, d, e, f);
     }
 
     /**

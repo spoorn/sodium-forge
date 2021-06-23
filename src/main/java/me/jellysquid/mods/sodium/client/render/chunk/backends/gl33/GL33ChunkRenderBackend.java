@@ -4,17 +4,9 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import me.jellysquid.mods.sodium.client.gl.SodiumVertexFormats;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.gl.func.GlFunctions;
-import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.util.MemoryTracker;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
-import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkProgramOneshot;
 import me.jellysquid.mods.sodium.client.render.chunk.oneshot.ChunkRenderBackendOneshot;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.impl.MultiTextureRenderPipeline;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgramComponentBuilder;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.texture.ChunkProgramMultiTexture;
-import net.minecraft.util.ResourceLocation;
 
 /**
  * Shader-based render backend for chunks which uses VAOs to avoid the overhead in setting up vertex attribute pointers
@@ -23,33 +15,16 @@ import net.minecraft.util.ResourceLocation;
  * allow the driver to skip validation logic that would otherwise be performed.
  */
 public class GL33ChunkRenderBackend extends ChunkRenderBackendOneshot<GL33GraphicsState> {
-    private final BlockRenderPassManager renderPassManager = MultiTextureRenderPipeline.create();
 
     public GL33ChunkRenderBackend(GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
         super(format);
     }
 
     @Override
-    protected void modifyProgram(GlProgram.Builder builder, ChunkProgramComponentBuilder components,
-                                 GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
-        components.texture = ChunkProgramMultiTexture::new;
-    }
-
-    @Override
-    protected ChunkProgramOneshot createShaderProgram(ResourceLocation name, int handle, ChunkProgramComponentBuilder components) {
-        return new ChunkProgramOneshot(name, handle, components);
-    }
-
-    @Override
-    protected void addShaderConstants(ShaderConstants.Builder builder) {
-        builder.define("USE_MULTITEX");
-    }
-
-    @Override
-    public void endRender(MatrixStack matrixStack) {
+    public void end(MatrixStack matrixStack) {
         GlFunctions.VERTEX_ARRAY.glBindVertexArray(0);
 
-        super.endRender(matrixStack);
+        super.end(matrixStack);
     }
 
     @Override
@@ -58,17 +33,12 @@ public class GL33ChunkRenderBackend extends ChunkRenderBackendOneshot<GL33Graphi
     }
 
     @Override
-    public BlockRenderPassManager getRenderPassManager() {
-        return this.renderPassManager;
-    }
-
-    @Override
     protected GL33GraphicsState createGraphicsState(MemoryTracker memoryTracker, ChunkRenderContainer<GL33GraphicsState> container) {
         return new GL33GraphicsState(memoryTracker, container);
     }
 
     public static boolean isSupported(boolean disableBlacklist) {
-        return GlFunctions.isVertexArraySupported() && GlFunctions.isSamplerSupported();
+        return GlFunctions.isVertexArraySupported();
     }
 
     @Override

@@ -1,7 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.backends.gl43;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import me.jellysquid.mods.sodium.client.gl.SodiumVertexFormats;
@@ -13,8 +12,6 @@ import me.jellysquid.mods.sodium.client.gl.buffer.GlBuffer;
 import me.jellysquid.mods.sodium.client.gl.buffer.GlMutableBuffer;
 import me.jellysquid.mods.sodium.client.gl.buffer.VertexData;
 import me.jellysquid.mods.sodium.client.gl.func.GlFunctions;
-import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.util.BufferSlice;
 import me.jellysquid.mods.sodium.client.gl.util.GlVendorUtil;
 import me.jellysquid.mods.sodium.client.gl.util.MemoryTracker;
@@ -29,12 +26,8 @@ import me.jellysquid.mods.sodium.client.render.chunk.multidraw.ChunkDrawCallBatc
 import me.jellysquid.mods.sodium.client.render.chunk.multidraw.ChunkDrawParamsVector;
 import me.jellysquid.mods.sodium.client.render.chunk.multidraw.ChunkRenderBackendMultiDraw;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.impl.MultiTextureRenderPipeline;
 import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegion;
 import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegionManager;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkProgramComponentBuilder;
-import me.jellysquid.mods.sodium.client.render.chunk.shader.texture.ChunkProgramMultiTexture;
 import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
 import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -83,7 +76,6 @@ import java.util.List;
  * reduced up to a factor of ~32x.
  */
 public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43GraphicsState> {
-    private final BlockRenderPassManager renderPassManager;
     private final ChunkRegionManager<GL43GraphicsState> bufferManager;
 
     private final ObjectArrayList<ChunkRegion<GL43GraphicsState>> pendingBatches = new ObjectArrayList<>();
@@ -100,7 +92,6 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     public GL43ChunkRenderBackend(GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
         super(format);
 
-        this.renderPassManager = MultiTextureRenderPipeline.BLOCK_RENDER_PASS_MANAGER;
         this.bufferManager = new ChunkRegionManager<>(this.memoryTracker);
         this.uploadBuffer = new GlMutableBuffer(GL15.GL_STREAM_DRAW);
         this.uniformBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);
@@ -111,20 +102,7 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     }
 
     @Override
-    protected void modifyProgram(GlProgram.Builder builder, ChunkProgramComponentBuilder components,
-                                 GlVertexFormat<SodiumVertexFormats.ChunkMeshAttribute> format) {
-        components.texture = ChunkProgramMultiTexture::new;
-    }
-
-    @Override
-    protected void addShaderConstants(ShaderConstants.Builder builder) {
-        super.addShaderConstants(builder);
-
-        builder.define("USE_MULTITEX");
-    }
-
-    @Override
-    public void uploadChunks(Iterator<ChunkBuildResult<GL43GraphicsState>> queue) {
+    public void upload(Iterator<ChunkBuildResult<GL43GraphicsState>> queue) {
         this.setupUploadBatches(queue);
 
         GlMutableBuffer uploadBuffer = this.uploadBuffer;
@@ -143,7 +121,7 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
                 ChunkRenderContainer<GL43GraphicsState> render = result.render;
                 ChunkRenderData data = result.data;
 
-                for (BlockRenderPass pass : this.renderPassManager.getSortedPasses()) {
+                for (BlockRenderPass pass : BlockRenderPass.VALUES) {
                     GL43GraphicsState graphics = render.getGraphicsState(pass);
 
                     // De-allocate the existing buffer arena for this render
@@ -154,7 +132,7 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
 
                     ChunkMeshData meshData = data.getMesh(pass);
 
-                    if (meshData != null) {
+                    if (meshData.hasVertexData()) {
                         VertexData upload = meshData.takeVertexData();
                         uploadBuffer.upload(GL15.GL_ARRAY_BUFFER, upload);
 
@@ -178,10 +156,7 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     }
 
     @Override
-    public void renderChunks(MatrixStack matrixStack, BlockRenderPass pass, ChunkRenderListIterator<GL43GraphicsState> renders,
-                             ChunkCameraContext camera, Matrix4f projection) {
-        this.beginRender(matrixStack, pass, projection);
-
+    public void render(ChunkRenderListIterator<GL43GraphicsState> renders, ChunkCameraContext camera, Matrix4f projection) {
         this.bufferManager.cleanup();
         this.setupDrawBatches(renders, camera);
         this.setupCommandBuffers();
@@ -221,9 +196,6 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
 
         this.uniformBuffer.unbind(GL15.GL_ARRAY_BUFFER);
         this.commandBuffer.unbind(GL40.GL_DRAW_INDIRECT_BUFFER);
-
-        this.endRender(matrixStack);
-
     }
 
     private void setupCommandBuffers() {
@@ -369,11 +341,6 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     @Override
     public Class<GL43GraphicsState> getGraphicsStateType() {
         return GL43GraphicsState.class;
-    }
-
-    @Override
-    public BlockRenderPassManager getRenderPassManager() {
-        return this.renderPassManager;
     }
 
     public static boolean isSupported(boolean disableBlacklist) {

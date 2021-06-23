@@ -6,7 +6,6 @@ import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.gl.util.MemoryTracker;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
 import me.jellysquid.mods.sodium.client.render.chunk.lists.ChunkRenderListIterator;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
 import net.minecraft.util.math.vector.Matrix4f;
 
@@ -20,28 +19,27 @@ import java.util.List;
  * @param <T> The type of graphics state to be used in chunk render containers
  */
 public interface ChunkRenderBackend<T extends ChunkGraphicsState> {
-    /**
-     * Creates any shader resources needed by the render backend.
-     */
-    @Deprecated
-    void createShaders();
 
     /**
      * Drains the iterator of items and processes each build task's result serially. After this method returns, all
      * drained results should be processed.
      */
-    void uploadChunks(Iterator<ChunkBuildResult<T>> queue);
+    void upload(Iterator<ChunkBuildResult<T>> queue);
 
     /**
      * Renders the given chunk render list to the active framebuffer.
      *
-     * @param matrixStack The current matrix stack
-     * @param pass The block render pass being rendered
      * @param renders An iterator over the list of chunks to be rendered
      * @param camera The camera context containing chunk offsets for the current render
      * @param projection Projection Matrix precalculated by Vanilla Minecraft
      */
-    void renderChunks(MatrixStack matrixStack, BlockRenderPass pass, ChunkRenderListIterator<T> renders, ChunkCameraContext camera, Matrix4f projection);
+    void render(ChunkRenderListIterator<T> renders, ChunkCameraContext camera, Matrix4f projection);
+
+    void createShaders();
+
+    void begin(MatrixStack matrixStack, Matrix4f projection);
+
+    void end(MatrixStack matrixStack);
 
     /**
      * Deletes this render backend and any resources attached to it.
@@ -57,11 +55,6 @@ public interface ChunkRenderBackend<T extends ChunkGraphicsState> {
      * Returns the type used to store graphics state in {@link ChunkRenderContainer} for this render backend.
      */
     Class<T> getGraphicsStateType();
-
-    /**
-     * Returns the {@link BlockRenderPassManager} which controls how render passes are performed in the world.
-     */
-    BlockRenderPassManager getRenderPassManager();
 
     default MemoryTracker getMemoryTracker() {
         return null;

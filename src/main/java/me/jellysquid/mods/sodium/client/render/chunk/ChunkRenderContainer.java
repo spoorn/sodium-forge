@@ -1,10 +1,10 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
+import lombok.Setter;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderBounds;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.impl.MultiTextureRenderPipeline;
 import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
@@ -39,6 +39,7 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     private final ChunkRenderContainer<T>[] adjacent;
     private boolean tickable;
 
+    @Setter
     private boolean hasTranslucentBlocks;
 
     public ChunkRenderContainer(ChunkRenderBackend<T> backend, SodiumWorldRenderer worldRenderer, int chunkX, int chunkY, int chunkZ) {
@@ -52,7 +53,7 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         this.adjacent = new ChunkRenderContainer[DirectionUtil.DIRECTION_COUNT];
 
         //noinspection unchecked
-        this.graphicsStates = (T[]) Array.newInstance(backend.getGraphicsStateType(), backend.getRenderPassManager().getPassCount());
+        this.graphicsStates = (T[]) Array.newInstance(backend.getGraphicsStateType(), BlockRenderPass.COUNT);
 
         hasTranslucentBlocks = false;
     }
@@ -148,8 +149,8 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     public void updateTranslucentBlockState() {
         // If chunk changed, check if there are any translucent blocks again
         hasTranslucentBlocks = false;
-        for (BlockRenderPass translucentPass : MultiTextureRenderPipeline.TRANSLUCENT_PASSES) {
-            if (data.getMesh(translucentPass) != null) {
+        for (BlockRenderPass pass : BlockRenderPass.VALUES) {
+            if (pass.isTranslucent() && data.getMesh(pass).hasVertexData()) {
                 hasTranslucentBlocks = true;
                 break;
             }

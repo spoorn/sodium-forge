@@ -3,10 +3,12 @@ package me.jellysquid.mods.sodium.client.render.chunk.shader;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import me.jellysquid.mods.sodium.client.gl.SodiumVertexFormats.ChunkMeshAttribute;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
-import me.jellysquid.mods.sodium.client.gl.shader.*;
+import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
+import me.jellysquid.mods.sodium.client.gl.shader.GlShader;
+import me.jellysquid.mods.sodium.client.gl.shader.ShaderLoader;
+import me.jellysquid.mods.sodium.client.gl.shader.ShaderType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderBackend;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 
@@ -35,60 +37,42 @@ public abstract class ChunkRenderShaderBackend<T extends ChunkGraphicsState, P e
         GlShader vertShader = this.createVertexShader(fogMode);
         GlShader fragShader = this.createFragmentShader(fogMode);
 
-        ChunkProgramComponentBuilder components = new ChunkProgramComponentBuilder();
-        components.fog = fogMode.getFactory();
-
         try {
-            GlProgram.Builder builder = GlProgram.builder(new ResourceLocation("sodium", "chunk_shader"));
-            builder.attachShader(vertShader);
-            builder.attachShader(fragShader);
-
-            builder.bindAttribute("a_Pos", format.getAttribute(ChunkMeshAttribute.POSITION));
-            builder.bindAttribute("a_Color", format.getAttribute(ChunkMeshAttribute.COLOR));
-            builder.bindAttribute("a_TexCoord", format.getAttribute(ChunkMeshAttribute.TEXTURE));
-            builder.bindAttribute("a_LightCoord", format.getAttribute(ChunkMeshAttribute.LIGHT));
-
-            this.modifyProgram(builder, components, format);
-
-            return builder.build((program, name) -> this.createShaderProgram(program, name, components));
+            return GlProgram.builder(new ResourceLocation("sodium", "chunk_shader"))
+                    .attachShader(vertShader)
+                    .attachShader(fragShader)
+                    .bindAttribute("a_Pos", format.getAttribute(ChunkMeshAttribute.POSITION))
+                    .bindAttribute("a_Color", format.getAttribute(ChunkMeshAttribute.COLOR))
+                    .bindAttribute("a_TexCoord", format.getAttribute(ChunkMeshAttribute.TEXTURE))
+                    .bindAttribute("a_LightCoord", format.getAttribute(ChunkMeshAttribute.LIGHT))
+                    .build((program, name) -> this.createShaderProgram(program, name, fogMode));
         } finally {
             vertShader.delete();
             fragShader.delete();
         }
     }
 
-    protected abstract void modifyProgram(GlProgram.Builder builder, ChunkProgramComponentBuilder components,
-                                          GlVertexFormat<ChunkMeshAttribute> format);
-
     private GlShader createVertexShader(ChunkFogMode fogMode) {
-        return ShaderLoader.loadShader(ShaderType.VERTEX, new ResourceLocation("sodium", "chunk_glsl110.v.glsl"),
-                this.createShaderConstants(fogMode));
+        return ShaderLoader.loadShader(ShaderType.VERTEX, new ResourceLocation("sodium", "chunk_gl20.v.glsl"),
+               fogMode.getDefines());
     }
 
     private GlShader createFragmentShader(ChunkFogMode fogMode) {
-        return ShaderLoader.loadShader(ShaderType.FRAGMENT, new ResourceLocation("sodium", "chunk_glsl110.f.glsl"),
-                this.createShaderConstants(fogMode));
+        return ShaderLoader.loadShader(ShaderType.FRAGMENT, new ResourceLocation("sodium", "chunk_gl20.f.glsl"),
+                fogMode.getDefines());
     }
 
-    private ShaderConstants createShaderConstants(ChunkFogMode fogMode) {
-        ShaderConstants.Builder builder = ShaderConstants.builder();
-        fogMode.addConstants(builder);
+    protected abstract P createShaderProgram(ResourceLocation name, int handle, ChunkFogMode fogMode);
 
-        this.addShaderConstants(builder);
-
-        return builder.build();
-    }
-
-    protected abstract void addShaderConstants(ShaderConstants.Builder builder);
-
-    protected abstract P createShaderProgram(ResourceLocation name, int handle, ChunkProgramComponentBuilder components);
-
-    protected void beginRender(MatrixStack matrixStack, BlockRenderPass pass, Matrix4f projection) {
+    @Override
+    public void begin(MatrixStack matrixStack, Matrix4f projection) {
         this.activeProgram = this.programs.get(ChunkFogMode.getActiveMode());
-        this.activeProgram.bind(matrixStack, projection);
+        this.activeProgram.bind(matrixStack);
+        this.activeProgram.setup(matrixStack, projection);
     }
 
-    protected void endRender(MatrixStack matrixStack) {
+    @Override
+    public void end(MatrixStack matrixStack) {
         this.activeProgram.unbind();
     }
 

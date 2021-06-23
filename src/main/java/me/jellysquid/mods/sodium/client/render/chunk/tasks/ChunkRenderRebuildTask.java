@@ -1,7 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.tasks;
 
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderBackend;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildBuffers;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
@@ -51,7 +50,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     private static final int CHUNK_BUILD_SIZE_2D = CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE;
     private static final int TOTAL_CHUNK_SIZE = CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE;
 
-    private final ChunkRenderBackend<T> renderBackend;
     private final ChunkRenderContainer<T> render;
     private final ChunkBuilder<T> chunkBuilder;
     private final Vector3d camera;
@@ -59,13 +57,12 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     private final BlockPos offset;
     private final Comparator<Coordinate> coordinateComparator;
 
-    public ChunkRenderRebuildTask(ChunkBuilder<T> chunkBuilder, ChunkRenderBackend<T> renderBackend, ChunkRenderContainer<T> render, WorldSlice slice) {
-        this.renderBackend = renderBackend;
+    public ChunkRenderRebuildTask(ChunkBuilder<T> chunkBuilder, ChunkRenderContainer<T> render, WorldSlice slice, BlockPos offset) {
         this.chunkBuilder = chunkBuilder;
         this.render = render;
         this.camera = chunkBuilder.getCameraPosition();
         this.slice = slice;
-        this.offset = render.getRenderOrigin();
+        this.offset = offset;
         this.coordinateComparator = (Coordinate a, Coordinate b) -> {
             double distA = sqDistanceToCamera(a);
             double distB = sqDistanceToCamera(b);
@@ -94,7 +91,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
         BlockState[] blockStates = new BlockState[TOTAL_CHUNK_SIZE];
         Coordinate[] coordinates = new Coordinate[TOTAL_CHUNK_SIZE];
-        World world = Minecraft.getInstance().world;
         for (int y = minY; y < minY + CHUNK_BUILD_SIZE; y++) {
             for (int z = minZ; z < minZ + CHUNK_BUILD_SIZE; z++) {
                 for (int x = minX; x < minX + CHUNK_BUILD_SIZE; x++) {
@@ -103,7 +99,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                     blockStates[index] = curr;
                     coordinates[index] = new Coordinate(x, y, z);
                     // TODO: Only sort the translucent blocks, instead of entire chunk
-                    if (!curr.isAir() && curr.getFluidState().isEmpty() && !curr.isOpaqueCube(world, new BlockPos(x, y, z))) {
+                    if (!curr.isAir() && curr.getFluidState().isEmpty() && !curr.isOpaqueCube(slice, new BlockPos(x, y, z))) {
                         shouldSortBackwards = true;
                     }
                 }
@@ -134,7 +130,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                     coordinate.x, coordinate.y, coordinate.z, minX, minY, minZ);
         }
 
-        for (BlockRenderPass pass : this.renderBackend.getRenderPassManager().getSortedPasses()) {
+        for (BlockRenderPass pass : BlockRenderPass.VALUES) {
             ChunkMeshData mesh = buffers.createMesh(pass);
 
             if (mesh != null) {

@@ -6,21 +6,22 @@ import me.jellysquid.mods.sodium.client.gl.util.GlFogHelper;
 import org.lwjgl.opengl.GL11;
 
 import java.util.List;
+import java.util.function.Function;
 
 public enum ChunkFogMode {
     NONE(ChunkShaderFogComponent.None::new, ImmutableList.of()),
     LINEAR(ChunkShaderFogComponent.Linear::new, ImmutableList.of("USE_FOG", "USE_FOG_LINEAR")),
     EXP2(ChunkShaderFogComponent.Exp2::new, ImmutableList.of("USE_FOG", "USE_FOG_EXP2"));
 
-    private final ShaderComponent.Factory<ChunkShaderFogComponent, ChunkProgram> factory;
+    private final Function<ChunkProgram, ChunkShaderFogComponent> factory;
     private final List<String> defines;
 
-    ChunkFogMode(ShaderComponent.Factory<ChunkShaderFogComponent, ChunkProgram> factory, List<String> defines) {
+    ChunkFogMode(Function<ChunkProgram, ChunkShaderFogComponent> factory, List<String> defines) {
         this.factory = factory;
         this.defines = defines;
     }
 
-    public ShaderComponent.Factory<ChunkShaderFogComponent, ChunkProgram> getFactory() {
+    public Function<ChunkProgram, ChunkShaderFogComponent> getFactory() {
         return this.factory;
     }
 
