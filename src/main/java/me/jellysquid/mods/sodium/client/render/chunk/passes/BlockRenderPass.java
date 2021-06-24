@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.passes;
 
+import lombok.Getter;
 import net.minecraft.client.renderer.RenderType;
 
 // TODO: Move away from using an enum, make this extensible
@@ -14,6 +15,7 @@ public enum BlockRenderPass {
     public static final BlockRenderPass[] VALUES = BlockRenderPass.values();
     public static final int COUNT = VALUES.length;
 
+    @Getter
     private final RenderType layer;
     private final boolean translucent;
 

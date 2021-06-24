@@ -12,6 +12,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.pipeline.context.ChunkRenderContext;
 import me.jellysquid.mods.sodium.client.util.task.CancellationSource;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
+import me.jellysquid.mods.sodium.common.util.RenderTypeLookupUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -25,7 +26,6 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.ModelDataManager;
@@ -99,8 +99,10 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                     blockStates[index] = curr;
                     coordinates[index] = new Coordinate(x, y, z);
                     // TODO: Only sort the translucent blocks, instead of entire chunk
-                    if (!curr.isAir() && curr.getFluidState().isEmpty() && !curr.isOpaqueCube(slice, new BlockPos(x, y, z))) {
-                        shouldSortBackwards = true;
+                    for (BlockRenderPass pass : BlockRenderPass.VALUES) {
+                        if (pass.isTranslucent() && RenderTypeLookupUtil.canRenderInLayer(curr, pass.getLayer())) {
+                            shouldSortBackwards = true;
+                        }
                     }
                 }
             }
