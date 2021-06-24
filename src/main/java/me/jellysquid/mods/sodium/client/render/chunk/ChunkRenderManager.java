@@ -135,19 +135,20 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         while (!queue.isEmpty()) {
             ChunkRenderContainer<T> render = queue.dequeue();
 
-            render.updateTranslucentBlockState();
             boolean rebuild = render.needsRebuild() && render.canRebuild();
 
             // TODO: Make translucent rebuilding configurable
-            if (render.hasTranslucentBlocks()) {
+            if (render.hasTranslucentBlocks() && this.cameraChanged && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget) {
                 ChunkRenderBounds bounds = render.getBounds();
-                boolean isInFrustum = currFrustum.fastAabbTest(bounds.x1, bounds.y1, bounds.z1, bounds.x2, bounds.y2, bounds.z2);
-                render.setHasTranslucentBlocks(false);
-                if (this.cameraChanged && isInFrustum && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget) {
-                    TranslucentPoolUtil.incrementTranslucentRebuilds();
-                    rebuild = true;
-                } else {
-                    rebuild = false;
+                if (bounds != null) {
+                    // TODO: This should actually check if any part of the chunk is in the frustum
+                    boolean isInFrustum = currFrustum.fastAabbTest(bounds.x1, bounds.y1, bounds.z1, bounds.x2, bounds.y2, bounds.z2);
+                    if (isInFrustum) {
+                        TranslucentPoolUtil.incrementTranslucentRebuilds();
+                        rebuild = true;
+                    } else {
+                        rebuild = false;
+                    }
                 }
             }
 

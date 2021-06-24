@@ -120,6 +120,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         // and be in front of the glass block.  May be because again, we aren't working with individual vertices.
         if (shouldSortBackwards) {
             Arrays.sort(coordinates, coordinateComparator);
+            render.setHasTranslucentBlocks(true);
+        } else {
+            render.setHasTranslucentBlocks(false);
         }
 
         for (Coordinate coordinate : coordinates) {
