@@ -12,7 +12,7 @@ public class SodiumVertexFormats {
      * Simple vertex format which uses single-precision floating point numbers to represent position and texture
      * coordinates.
      */
-    public static final GlVertexFormat<ChunkMeshAttribute> CHUNK_MESH_FULL = GlVertexAttribute.builder(ChunkMeshAttribute.class, 32)
+    public static final GlVertexFormat<ChunkMeshAttribute> CHUNK_MESH_FULL = GlVertexAttribute.builder(ChunkMeshAttribute.class, 28)
             .addElement(ChunkMeshAttribute.POSITION, 0, GlVertexAttributeFormat.FLOAT, 3, false)
             .addElement(ChunkMeshAttribute.COLOR, 12, GlVertexAttributeFormat.UNSIGNED_BYTE, 4, true)
             .addElement(ChunkMeshAttribute.TEXTURE, 16, GlVertexAttributeFormat.FLOAT, 2, false)
@@ -44,7 +44,7 @@ public class SodiumVertexFormats {
                 buffer.putFloat(position + 20, quad.getTexV(i));
                 buffer.putInt(position + 24, encodeLightMapTexCoord(quad.getLight(i)));
 
-                position += 32;
+                position += 28;
             }
         });
 
