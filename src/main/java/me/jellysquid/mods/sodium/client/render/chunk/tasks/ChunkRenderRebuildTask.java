@@ -18,7 +18,6 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.chunk.VisGraph;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
@@ -166,38 +165,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
         pos.setPos(x, y, z);
 
-        if (block.getRenderType(blockState) == BlockRenderType.MODEL) {
-            for (RenderType layer : RenderType.getBlockRenderTypes()) {
-                if (!RenderTypeLookup.canRenderInLayer(blockState, layer)) {
-                    continue;
-                }
-
-                ForgeHooksClient.setRenderLayer(layer);
-                ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
-                builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
-
-                IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
-                if (modelData == null) {
-                    modelData = EmptyModelData.INSTANCE;
-                }
-                if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
-                    bounds.addBlock(x, y, z);
-                }
-                ForgeHooksClient.setRenderLayer(null);
-            }
-        }
-
-        FluidState fluidState = block.getFluidState(blockState);
-
-        if (!fluidState.isEmpty()) {
-            RenderType layer = RenderTypeLookup.getRenderType(fluidState);
-
-            ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
-            builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
-
-            if (pipeline.renderFluid(this.slice, fluidState, pos, builder)) {
-                bounds.addBlock(x, y, z);
-            }
+        if (blockState.isOpaqueCube(this.slice, pos)) {
+            occluder.setOpaqueCube(pos);
         }
 
         if (blockState.hasTileEntity()) {
@@ -214,9 +183,37 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             }
         }
 
-        if (blockState.isOpaqueCube(this.slice, pos)) {
-            occluder.setOpaqueCube(pos);
+        for (RenderType layer : RenderType.getBlockRenderTypes()) {
+            ForgeHooksClient.setRenderLayer(layer);
+            // Fluids
+            FluidState fluidState = block.getFluidState(blockState);
+
+            if (!fluidState.isEmpty() && RenderTypeLookupUtil.canRenderInLayer(fluidState, layer)) {
+                ChunkBuildBuffers.ChunkBuildBufferDelegate builder2 = buffers.get(layer);
+                builder2.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
+
+                if (pipeline.renderFluid(this.slice, fluidState, pos, builder2)) {
+                    bounds.addBlock(x, y, z);
+                }
+            }
+
+            if (blockState.getRenderType() != BlockRenderType.MODEL || !RenderTypeLookupUtil.canRenderInLayer(blockState, layer)) {
+                continue;
+            }
+
+            // Solid blocks
+            ChunkBuildBuffers.ChunkBuildBufferDelegate builder = buffers.get(layer);
+            builder.setOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
+
+            IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
+            if (modelData == null) {
+                modelData = EmptyModelData.INSTANCE;
+            }
+            if (pipeline.renderBlock(this.slice, blockState, pos, builder, true, modelData)) {
+                bounds.addBlock(x, y, z);
+            }
         }
+        ForgeHooksClient.setRenderLayer(null);
     }
 
     private double sqDistanceToCamera(Coordinate c) {

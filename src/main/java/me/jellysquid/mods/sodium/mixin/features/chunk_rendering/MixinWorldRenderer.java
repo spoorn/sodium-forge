@@ -10,6 +10,8 @@ import net.minecraft.client.renderer.culling.ClippingHelper;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Matrix4f;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL46;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -81,7 +83,26 @@ public abstract class MixinWorldRenderer {
         // Disabling depth mask makes liquid behind transparent blocks appear better, but causes some entities
         // in oceans to appear as if they are in front of the transparent block since we aren't using a zbuffer.
         // TODO: figure out how to render translucent blocks better
+        if (renderLayer == RenderType.getTranslucent() || renderLayer == RenderType.getTripwire()) {
+            //GL46.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            //GL46.glDisable(GL11.GL_CULL_FACE);
+            //GL46.glDisable(GL11.GL_BLEND);
+            //GL46.glDepthFunc(GL11.GL_ALWAYS);
+            //GL46.glDepthMask(false);
+            GL46.glDisable(GL11.GL_DEPTH_TEST);
+            GL46.glEnable(GL11.GL_BLEND);
+            GL46.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        }
         this.renderer.drawChunkLayer(renderLayer, matrixStack, d, e, f);
+        if (renderLayer == RenderType.getTranslucent() || renderLayer == RenderType.getTripwire()) {
+            //GL46.glDisable(GL11.GL_CULL_FACE);
+            //GL46.glDisable(GL11.GL_BLEND);
+            //GL46.glDepthFunc(GL11.GL_LESS);
+            GL46.glEnable(GL11.GL_DEPTH_TEST);
+            //GL46.glDepthMask(true);
+            GL46.glDisable(GL11.GL_BLEND);
+            GL46.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        }
     }
 
     /**

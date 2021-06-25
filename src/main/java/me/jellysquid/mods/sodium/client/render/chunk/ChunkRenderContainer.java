@@ -146,6 +146,7 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         this.tickable = !info.getAnimatedSprites().isEmpty();
     }
 
+    // Note: this doesn't seem to work anymore since the mesh data gets removed during rendering
     public void updateTranslucentBlockState() {
         // If chunk changed, check if there are any translucent blocks again
         hasTranslucentBlocks = false;
