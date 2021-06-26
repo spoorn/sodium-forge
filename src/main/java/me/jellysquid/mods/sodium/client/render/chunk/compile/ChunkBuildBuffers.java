@@ -11,8 +11,6 @@ import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.vector.Vector3d;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -67,7 +65,7 @@ public class ChunkBuildBuffers {
      * Creates immutable baked chunk meshes from all non-empty scratch buffers and resets the state of all mesh
      * builders. This is used after all blocks have been rendered to pass the finished meshes over to the graphics card.
      */
-    public ChunkMeshData createMesh(BlockRenderPass pass) {
+    public ChunkMeshData createMesh(BlockRenderPass pass, float x, float y, float z) {
         ChunkMeshBuilder[] builders = this.buildersByLayer[pass.ordinal()];
         ChunkMeshData meshData = new ChunkMeshData();
         int bufferLen = 0;
@@ -102,6 +100,11 @@ public class ChunkBuildBuffers {
             buffer.position(slice.start);
 
             ChunkMeshBuilder builder = this.buildersByLayer[pass.ordinal()][entry.getKey().ordinal()];
+
+            if (pass.isTranslucent()) {
+                builder.sortQuads(x, y, z);
+            }
+
             builder.copyInto(buffer);
         }
 

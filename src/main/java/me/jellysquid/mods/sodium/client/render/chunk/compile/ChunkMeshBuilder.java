@@ -1,5 +1,7 @@
 package me.jellysquid.mods.sodium.client.render.chunk.compile;
 
+import com.google.common.primitives.Floats;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 import me.jellysquid.mods.sodium.client.gl.SodiumVertexFormats;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadEncoder;
@@ -8,8 +10,11 @@ import me.jellysquid.mods.sodium.client.model.quad.sink.ModelQuadSink;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.util.BitSet;
 
 /**
  * An optimized resizeable buffer for writing rendered quad data that will be later used for chunk mesh rendering. Since
@@ -56,6 +61,8 @@ public class ChunkMeshBuilder implements ModelQuadSink {
      */
     private final float scale;
 
+    private int numQuads;
+
     public ChunkMeshBuilder(GlVertexFormat<?> format, int initialSize) {
         this.scale = 1.0f / 32.0f;
         this.stride = format.getStride() * 4;
@@ -63,6 +70,7 @@ public class ChunkMeshBuilder implements ModelQuadSink {
 
         this.buffer = GLAllocation.createDirectByteBuffer(initialSize);
         this.capacity = initialSize;
+        this.numQuads = 0;
     }
 
     public void begin(ChunkRenderData.Builder renderData) {
@@ -88,7 +96,7 @@ public class ChunkMeshBuilder implements ModelQuadSink {
         // Advance the write pointer by the number of bytes we're about to write
         this.position += len;
 
-        // If the write pointer is now outside the capacity of the backing buffer, grow it to accomodate the incoming data
+        // If the write pointer is now outside the capacity of the backing buffer, grow it to accommodate the incoming data
         if (this.position >= this.capacity) {
             this.grow(len);
         }
@@ -100,6 +108,7 @@ public class ChunkMeshBuilder implements ModelQuadSink {
             quad.setZ(i, (quad.getZ(i) * this.scale) + this.z);
         }
 
+        numQuads++;
         // Write the quad to the backing buffer using the marked position from earlier
         this.encoder.write(quad, this.buffer, position);
 
@@ -131,8 +140,112 @@ public class ChunkMeshBuilder implements ModelQuadSink {
         return this.position <= 0;
     }
 
+    // TODO: For some reason, this still causes certain angles to not render correctly
     public void sortQuads(float x, float y, float z) {
-        // TODO
+        x = x * this.scale;
+        y = y * this.scale;
+        z = z * this.scale;
+
+        FloatBuffer floatBuffer = this.buffer.asFloatBuffer();
+
+        int quadStride = this.stride/4;
+
+        int quadStart = 0;
+        int quadCount = this.numQuads;
+        int vertexSizeInteger = quadStride / 4;
+
+        float[] distanceArray = new float[quadCount];
+        int[] indicesArray = new int[quadCount];
+
+        for (int quadIdx = 0; quadIdx < quadCount; ++quadIdx) {
+            distanceArray[quadIdx] = getDistanceSq(floatBuffer, x, y, z, vertexSizeInteger, quadStart + (quadIdx * quadStride));
+            indicesArray[quadIdx] = quadIdx;
+        }
+
+        IntArrays.mergeSort(indicesArray, (a, b) -> Floats.compare(distanceArray[b], distanceArray[a]));
+
+        BitSet bits = new BitSet();
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer tmp = stack.mallocFloat(quadStride);
+
+            for (int l = bits.nextClearBit(0); l < indicesArray.length; l = bits.nextClearBit(l + 1)) {
+                int m = indicesArray[l];
+
+                if (m != l) {
+                    sliceQuad(floatBuffer, m, quadStride, quadStart);
+                    tmp.clear();
+                    tmp.put(floatBuffer);
+
+                    int n = m;
+
+                    for (int o = indicesArray[m]; n != l; o = indicesArray[o]) {
+                        sliceQuad(floatBuffer, o, quadStride, quadStart);
+                        FloatBuffer floatBuffer3 = floatBuffer.slice();
+
+                        sliceQuad(floatBuffer, n, quadStride, quadStart);
+                        floatBuffer.put(floatBuffer3);
+
+                        bits.set(n);
+                        n = o;
+                    }
+
+                    sliceQuad(floatBuffer, l, quadStride, quadStart);
+                    tmp.flip();
+
+                    floatBuffer.put(tmp);
+                }
+
+                bits.set(l);
+            }
+        }
+
+    }
+
+    private static void sliceQuad(FloatBuffer floatBuffer, int quadIdx, int quadStride, int quadStart) {
+        int base = quadStart + (quadIdx * quadStride);
+
+        floatBuffer.limit(base + quadStride);
+        floatBuffer.position(base);
+    }
+
+    private float getDistanceSq(FloatBuffer buffer, float xCenter, float yCenter, float zCenter, int stride, int start) {
+        int vertexBase = start;
+        float x1 = buffer.get(vertexBase);
+        float y1 = buffer.get(vertexBase + 1);
+        float z1 = buffer.get(vertexBase + 2);
+
+        //x1 = ((x1 - this.x) / this.scale);
+        /*x1 = x1 + offset.getX();
+        y1 = y1 + offset.getY();
+        z1 = z1 + offset.getZ();*/
+       /* System.out.println("camera: " + xCenter + "," + yCenter + "," + zCenter);
+        System.out.println("offset: " + offset.getX() + "," +  offset.getY() + "," + offset.getZ());
+        System.out.println("buffer1: " + x1 + "," + y1 + "," + z1);*/
+
+        vertexBase += stride;
+        float x2 = buffer.get(vertexBase);
+        float y2 = buffer.get(vertexBase + 1);
+        float z2 = buffer.get(vertexBase + 2);
+        //System.out.println("buffer2: " + x2 + "," + y2 + "," + z2);
+
+        vertexBase += stride;
+        float x3 = buffer.get(vertexBase);
+        float y3 = buffer.get(vertexBase + 1);
+        float z3 = buffer.get(vertexBase + 2);
+        //System.out.println("buffer3: " + x3 + "," + y3 + "," + z3);
+
+        vertexBase += stride;
+        float x4 = buffer.get(vertexBase);
+        float y4 = buffer.get(vertexBase + 1);
+        float z4 = buffer.get(vertexBase + 2);
+        //System.out.println("buffer4: " + x4 + "," + y4 + "," + z4);
+
+        float xDist = ((x1 + x2 + x3 + x4) * 0.25F) - xCenter;
+        float yDist = ((y1 + y2 + y3 + y4) * 0.25F) - yCenter;
+        float zDist = ((z1 + z2 + z3 + z4) * 0.25F) - zCenter;
+
+        return (xDist * xDist) + (yDist * yDist) + (zDist * zDist);
     }
 
     /**
@@ -155,6 +268,7 @@ public class ChunkMeshBuilder implements ModelQuadSink {
         // Reset the position and limit set earlier of the backing scratch buffer
         this.buffer.clear();
         this.position = 0;
+        this.numQuads = 0;
     }
 
     public int getSize() {

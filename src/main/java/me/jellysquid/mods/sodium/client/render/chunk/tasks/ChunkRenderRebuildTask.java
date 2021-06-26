@@ -31,8 +31,6 @@ import net.minecraftforge.client.model.ModelDataManager;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.client.model.data.IModelData;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Objects;
 
 /**
@@ -54,7 +52,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     private final Vector3d camera;
     private final WorldSlice slice;
     private final BlockPos offset;
-    private final Comparator<Coordinate> coordinateComparator;
 
     public ChunkRenderRebuildTask(ChunkBuilder<T> chunkBuilder, ChunkRenderContainer<T> render, WorldSlice slice, BlockPos offset) {
         this.chunkBuilder = chunkBuilder;
@@ -62,12 +59,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         this.camera = chunkBuilder.getCameraPosition();
         this.slice = slice;
         this.offset = offset;
-        this.coordinateComparator = (Coordinate a, Coordinate b) -> {
-            double distA = sqDistanceToCamera(a);
-            double distB = sqDistanceToCamera(b);
-            // Reverse so further coordinates are rendered first
-            return Double.compare(distB, distA);
-        };
     }
 
     @Override
@@ -88,6 +79,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
         boolean shouldSortBackwards = false;
 
+        // TODO: Since we're not sorting here anymore, no need to loop through coordinates twice
         BlockState[] blockStates = new BlockState[TOTAL_CHUNK_SIZE];
         Coordinate[] coordinates = new Coordinate[TOTAL_CHUNK_SIZE];
         for (int y = minY; y < minY + CHUNK_BUILD_SIZE; y++) {
@@ -97,9 +89,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                     int index = (x-minX)+((y-minY)*CHUNK_BUILD_SIZE)+((z-minZ)*CHUNK_BUILD_SIZE_2D);
                     blockStates[index] = curr;
                     coordinates[index] = new Coordinate(x, y, z);
-                    // TODO: Only sort the translucent blocks, instead of entire chunk
                     for (BlockRenderPass pass : BlockRenderPass.VALUES) {
-                        if (pass.isTranslucent() && RenderTypeLookupUtil.canRenderInLayer(curr, pass.getLayer())) {
+                        if (!shouldSortBackwards && pass.isTranslucent()
+                                && RenderTypeLookupUtil.canRenderInLayer(curr, pass.getLayer())) {
                             shouldSortBackwards = true;
                         }
                     }
@@ -112,15 +104,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             return null;
         }
 
-        // Sort coordinates so we render further coordinates before closer ones.  Ideally this should be done only for
-        // translucent quads themselves, but for now we make do with the whole block coordinate.
-        // Sorting here isn't perfect as it's not actually sorting the individual vertices, but just the
-        // (central?) coordinate of the quad.  But at least it looks better than before.
-        // This mostly fixes things like translucent stained blocks behind each other, but fluids within stained glass
-        // still looks a bit odd.  Seems like we run into the problem where the fluid behind a glass block can overlap
-        // and be in front of the glass block.  May be because again, we aren't working with individual vertices.
         if (shouldSortBackwards) {
-            Arrays.sort(coordinates, coordinateComparator);
             render.setHasTranslucentBlocks(true);
         } else {
             render.setHasTranslucentBlocks(false);
@@ -135,7 +119,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         }
 
         for (BlockRenderPass pass : BlockRenderPass.VALUES) {
-            ChunkMeshData mesh = buffers.createMesh(pass);
+            ChunkMeshData mesh = buffers.createMesh(pass, (float)camera.x - offset.getX(),
+                    (float)camera.y - offset.getY(),
+                    (float)camera.z - offset.getZ());
 
             if (mesh != null) {
                 renderData.setMesh(pass, mesh);
@@ -214,10 +200,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             }
         }
         ForgeHooksClient.setRenderLayer(null);
-    }
-
-    private double sqDistanceToCamera(Coordinate c) {
-        return (camera.x - c.x) * (camera.x - c.x) + (camera.y - c.y) * (camera.y - c.y) + (camera.z - c.z) * (camera.z - c.z);
     }
 
     public static class Coordinate {

@@ -86,19 +86,17 @@ public abstract class MixinWorldRenderer {
         if (renderLayer == RenderType.getTranslucent() || renderLayer == RenderType.getTripwire()) {
             //GL46.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
             //GL46.glDisable(GL11.GL_CULL_FACE);
-            //GL46.glDisable(GL11.GL_BLEND);
             //GL46.glDepthFunc(GL11.GL_ALWAYS);
             //GL46.glDepthMask(false);
-            GL46.glDisable(GL11.GL_DEPTH_TEST);
+            //GL46.glDisable(GL11.GL_DEPTH_TEST);
             GL46.glEnable(GL11.GL_BLEND);
             GL46.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }
         this.renderer.drawChunkLayer(renderLayer, matrixStack, d, e, f);
         if (renderLayer == RenderType.getTranslucent() || renderLayer == RenderType.getTripwire()) {
             //GL46.glDisable(GL11.GL_CULL_FACE);
-            //GL46.glDisable(GL11.GL_BLEND);
             //GL46.glDepthFunc(GL11.GL_LESS);
-            GL46.glEnable(GL11.GL_DEPTH_TEST);
+            //GL46.glEnable(GL11.GL_DEPTH_TEST);
             //GL46.glDepthMask(true);
             GL46.glDisable(GL11.GL_BLEND);
             GL46.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
