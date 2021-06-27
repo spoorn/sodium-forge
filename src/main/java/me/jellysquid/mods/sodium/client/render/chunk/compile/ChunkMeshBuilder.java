@@ -146,6 +146,12 @@ public class ChunkMeshBuilder implements ModelQuadSink {
         y = y * this.scale;
         z = z * this.scale;
 
+        sortStandardFormat(x, y, z);
+        // TODO: sort in compact format
+        //sortCompactFormat(x, y, z);
+    }
+
+    private void sortStandardFormat(float x, float y, float z) {
         FloatBuffer floatBuffer = this.buffer.asFloatBuffer();
 
         int quadStride = this.stride/4;
@@ -199,10 +205,9 @@ public class ChunkMeshBuilder implements ModelQuadSink {
                 bits.set(l);
             }
         }
-
     }
 
-    private static void sliceQuad(FloatBuffer floatBuffer, int quadIdx, int quadStride, int quadStart) {
+    private void sliceQuad(FloatBuffer floatBuffer, int quadIdx, int quadStride, int quadStart) {
         int base = quadStart + (quadIdx * quadStride);
 
         floatBuffer.limit(base + quadStride);
@@ -220,7 +225,6 @@ public class ChunkMeshBuilder implements ModelQuadSink {
         y1 = y1 + offset.getY();
         z1 = z1 + offset.getZ();*/
        /* System.out.println("camera: " + xCenter + "," + yCenter + "," + zCenter);
-        System.out.println("offset: " + offset.getX() + "," +  offset.getY() + "," + offset.getZ());
         System.out.println("buffer1: " + x1 + "," + y1 + "," + z1);*/
 
         vertexBase += stride;

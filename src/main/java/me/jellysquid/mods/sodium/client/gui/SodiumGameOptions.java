@@ -35,7 +35,7 @@ public class SodiumGameOptions {
         public boolean useAdvancedEntityCulling = true;
         public boolean useParticleCulling = true;
         public boolean useFogOcclusion = true;
-        public boolean useCompactVertexFormat = true;
+        public boolean useCompactVertexFormat = false;
         public boolean useChunkFaceCulling = true;
         public boolean useMemoryIntrinsics = true;
         public boolean disableDriverBlacklist = false;
