@@ -245,7 +245,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
         if (this.useAggressiveCulling) {
             // Always render groups of vertices not belonging to any given face
-            visibleFaces = 1 << ModelQuadFacing.NONE.ordinal();
+            visibleFaces = 1 << ModelQuadFacing.UNASSIGNED.ordinal();
 
             ChunkRenderBounds bounds = render.getBounds();
 
