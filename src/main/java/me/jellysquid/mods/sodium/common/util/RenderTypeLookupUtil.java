@@ -8,6 +8,7 @@ import net.minecraft.fluid.FluidState;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Vanilla {@link net.minecraft.client.renderer.RenderTypeLookup} has a synchronized block around predicate function.
@@ -15,10 +16,10 @@ import java.util.Map;
  */
 public class RenderTypeLookupUtil {
 
-    private static final Map<BlockStateKey, Boolean> blockStateLookup = new HashMap<>();
-    private static final Map<FluidStateKey, Boolean> fluidStateLookup = new HashMap<>();
+    private static final Map<BlockStateKey, Boolean> blockStateLookup = new ConcurrentHashMap<>();
+    private static final Map<FluidStateKey, Boolean> fluidStateLookup = new ConcurrentHashMap<>();
 
-    public static boolean canRenderInLayer(BlockState state, RenderType layer) {
+    public synchronized static boolean canRenderInLayer(BlockState state, RenderType layer) {
         BlockStateKey key = new BlockStateKey(state, layer);
         if (blockStateLookup.containsKey(key) && !(state.getBlock() instanceof LeavesBlock)) {
             return blockStateLookup.get(key);
@@ -29,7 +30,7 @@ public class RenderTypeLookupUtil {
         }
     }
 
-    public static boolean canRenderInLayer(FluidState state, RenderType layer) {
+    public synchronized static boolean canRenderInLayer(FluidState state, RenderType layer) {
         FluidStateKey key = new FluidStateKey(state, layer);
         if (fluidStateLookup.containsKey(key)) {
             return fluidStateLookup.get(key);
