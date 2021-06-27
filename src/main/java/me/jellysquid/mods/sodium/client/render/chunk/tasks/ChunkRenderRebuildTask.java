@@ -85,7 +85,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         for (int y = baseY; y < baseY + CHUNK_BUILD_SIZE; y++) {
             for (int z = baseZ; z < baseZ + CHUNK_BUILD_SIZE; z++) {
                 for (int x = baseX; x < baseX + CHUNK_BUILD_SIZE; x++) {
-                    BlockState curr = this.slice.getOriginBlockState(x, y, z);
+                    BlockState curr = this.slice.getOriginBlockState(x-baseX, y-baseY, z-baseZ);
                     int index = (x-baseX)+((y-baseY)*CHUNK_BUILD_SIZE)+((z-baseZ)*CHUNK_BUILD_SIZE_2D);
                     blockStates[index] = curr;
                     coordinates[index] = new Coordinate(x, y, z);

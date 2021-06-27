@@ -398,15 +398,15 @@ public abstract class MixinBufferBuilder extends DefaultColorVertexBuilder
         float y2 = matrixExt.transformVecY(x, y, z);
         float z2 = matrixExt.transformVecZ(x, y, z);
 
-        if (this.format != VertexFormats.POSITION_COLOR) {
+        if (this.vertexFormat != DefaultVertexFormats.POSITION_COLOR) {
             this.vertexLineFallback(x2, y2, z2, color);
 
             return;
         }
 
-        int size = this.format.getVertexSize();
+        int size = this.vertexFormat.getSize();
 
-        this.grow(size);
+        this.growBuffer(size);
 
         if (UnsafeUtil.isAvailable()) {
             this.vertexLineUnsafe(x2, y2, z2, color);
@@ -414,21 +414,21 @@ public abstract class MixinBufferBuilder extends DefaultColorVertexBuilder
             this.vertexLineSafe(x2, y2, z2, color);
         }
 
-        this.elementOffset += size;
+        this.nextElementBytes += size;
         this.vertexCount++;
     }
 
     private void vertexLineFallback(float x, float y, float z, int color) {
-        this.vertex(x, y, z);
+        this.pos(x, y, z);
         this.color(ColorABGR.unpackRed(color), ColorABGR.unpackGreen(color), ColorABGR.unpackBlue(color),
                 ColorABGR.unpackAlpha(color));
-        this.next();
+        this.endVertex();
     }
 
     private void vertexLineSafe(float x, float y, float z, int color) {
-        int i = this.elementOffset;
+        int i = this.nextElementBytes;
 
-        ByteBuffer buffer = this.buffer;
+        ByteBuffer buffer = this.byteBuffer;
         buffer.putFloat(i, x);
         i += 4;
 
@@ -443,7 +443,7 @@ public abstract class MixinBufferBuilder extends DefaultColorVertexBuilder
     }
 
     private void vertexLineUnsafe(float x, float y, float z, int color) {
-        long i = MemoryUtil.memAddress(this.buffer, this.elementOffset);
+        long i = MemoryUtil.memAddress(this.byteBuffer, this.nextElementBytes);
 
         Unsafe unsafe = UnsafeUtil.instance();
         unsafe.putFloat(i, x);

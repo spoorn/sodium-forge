@@ -28,8 +28,8 @@ import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegion;
 import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegionManager;
 import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
-import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.Util;
+import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -371,7 +371,7 @@ public class GL43ChunkRenderBackend extends ChunkRenderBackendMultiDraw<GL43Grap
     private static boolean isOldIntelGpu() {
         // We only care about Windows where there is still a significant number of users with unsupported drivers
         // The open-source drivers on Linux are still supported and are not known to have driver bugs with multi-draw
-        if (Util.getOperatingSystem() != Util.OperatingSystem.WINDOWS) {
+        if (Util.getOSType() != Util.OS.WINDOWS) {
             return false;
         }
 

@@ -66,8 +66,8 @@ public interface MixinVertexConsumer
 
     @Override
     default void vertexLine(Matrix4f matrix, float x, float y, float z, int color) {
-        this.vertex(x, y, z);
+        this.pos(x, y, z);
         this.color(ColorABGR.unpackRed(color), ColorABGR.unpackGreen(color), ColorABGR.unpackBlue(color), ColorABGR.unpackAlpha(color));
-        this.next();
+        this.endVertex();
     }
 }

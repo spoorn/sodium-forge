@@ -1,8 +1,8 @@
 package me.jellysquid.mods.sodium.mixin.features.render_layer;
 
-import net.minecraft.client.render.TexturedRenderLayers;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.util.SignType;
+import net.minecraft.block.WoodType;
+import net.minecraft.client.renderer.Atlases;
+import net.minecraft.client.renderer.model.RenderMaterial;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -12,22 +12,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Map;
 
-@Mixin(TexturedRenderLayers.class)
+@Mixin(Atlases.class)
 public class MixinTexturedRenderLayers {
     @Shadow
     @Final
-    public static Map<SignType, SpriteIdentifier> WOOD_TYPE_TEXTURES;
+    public static Map<WoodType, RenderMaterial> SIGN_MATERIALS;
 
     // Instantiating a SpriteIdentifier every time a sign tries to grab a texture identifier causes a significant
     // performance impact as no RenderLayer will ever be cached for the sprite. Minecraft already maintains a
     // SignType -> SpriteIdentifier cache but for some reason doesn't use it.
-    @Inject(method = "getSignTextureId", at = @At("HEAD"), cancellable = true)
-    private static void preGetSignTextureId(SignType type, CallbackInfoReturnable<SpriteIdentifier> ci) {
-        if (WOOD_TYPE_TEXTURES != null) {
-            SpriteIdentifier sprite = WOOD_TYPE_TEXTURES.get(type);
+    @Inject(method = "getSignMaterial", at = @At("HEAD"), cancellable = true)
+    private static void preGetSignTextureId(WoodType woodType, CallbackInfoReturnable<RenderMaterial> cir) {
+        if (SIGN_MATERIALS != null) {
+            RenderMaterial sprite = SIGN_MATERIALS.get(woodType);
 
-            if (type != null) {
-                ci.setReturnValue(sprite);
+            if (sprite != null) {
+                cir.setReturnValue(sprite);
             }
         }
     }

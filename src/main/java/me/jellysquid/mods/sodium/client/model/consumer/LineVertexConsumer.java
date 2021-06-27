@@ -1,7 +1,7 @@
 package me.jellysquid.mods.sodium.client.model.consumer;
 
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
-import net.minecraft.util.math.Matrix4f;
+import net.minecraft.util.math.vector.Matrix4f;
 
 public interface LineVertexConsumer {
     void vertexLine(Matrix4f matrix, float x, float y, float z, int color);
