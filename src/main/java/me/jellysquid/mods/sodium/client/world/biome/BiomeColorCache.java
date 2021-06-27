@@ -4,7 +4,6 @@ import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.SectionPos;
 import net.minecraft.world.level.ColorResolver;
 
 import java.util.Arrays;
@@ -17,7 +16,7 @@ public class BiomeColorCache {
     private final int[] cache;
 
     private final int radius;
-    private final int dim;
+    private final int length;
     private final int minX, minZ;
 
     public BiomeColorCache(ColorResolver resolver, WorldSlice slice) {
@@ -25,25 +24,20 @@ public class BiomeColorCache {
         this.slice = slice;
         this.radius = Minecraft.getInstance().gameSettings.biomeBlendRadius;
 
-        SectionPos origin = this.slice.getOrigin();
+        this.minX = slice.getBlockOffsetX() - this.radius - 2;
+        this.minZ = slice.getBlockOffsetZ() - this.radius - 2;
 
-        this.minX = origin.getWorldStartX() - (this.radius + 2);
-        this.minZ = origin.getWorldStartZ() - (this.radius + 2);
+        this.length = WorldSlice.BLOCK_LENGTH + ((this.radius + 2) * 2);
 
-        this.dim = 16 + ((this.radius + 2) * 2);
-
-        this.cache = new int[this.dim * this.dim];
-        this.blendedColors = new int[this.dim * this.dim];
+        this.cache = new int[this.length * this.length];
+        this.blendedColors = new int[this.length * this.length];
 
         Arrays.fill(this.cache, -1);
         Arrays.fill(this.blendedColors, -1);
     }
 
     public int getBlendedColor(BlockPos pos) {
-        int x2 = pos.getX() - this.minX;
-        int z2 = pos.getZ() - this.minZ;
-
-        int index = (x2 * this.dim) + z2;
+        int index = ((pos.getX() - this.minX) * this.length) + (pos.getZ() - this.minZ);
         int color = this.blendedColors[index];
 
         if (color == -1) {
@@ -85,7 +79,7 @@ public class BiomeColorCache {
     }
 
     private int getColor(int x, int z) {
-        int index = ((x - this.minX) * this.dim) + (z - this.minZ);
+        int index = ((x - this.minX) * this.length) + (z - this.minZ);
         int color = this.cache[index];
 
         if (color == -1) {
