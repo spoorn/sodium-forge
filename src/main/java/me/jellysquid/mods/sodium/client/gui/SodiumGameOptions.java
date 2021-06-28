@@ -31,6 +31,7 @@ public class SodiumGameOptions {
 
     public static class AdvancedSettings {
         public ChunkRendererBackendOption chunkRendererBackend = ChunkRendererBackendOption.BEST;
+        public boolean translucencySorting = true;
         public boolean animateOnlyVisibleTextures = true;
         public boolean useAdvancedEntityCulling = true;
         public boolean useParticleCulling = true;

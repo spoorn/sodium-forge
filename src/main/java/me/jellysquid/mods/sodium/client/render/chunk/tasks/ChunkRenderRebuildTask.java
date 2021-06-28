@@ -44,8 +44,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
     // 16x16x16
     private static final int CHUNK_BUILD_SIZE = 16;
-    private static final int CHUNK_BUILD_SIZE_2D = CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE;
-    private static final int TOTAL_CHUNK_SIZE = CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE * CHUNK_BUILD_SIZE;
 
     private final ChunkRenderContainer<T> render;
     private final ChunkBuilder<T> chunkBuilder;
@@ -189,19 +187,5 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             }
         }
         ForgeHooksClient.setRenderLayer(null);
-    }
-
-    private double squaredDistToCam(Coordinate c) {
-        return (camera.x - c.x) * (camera.x - c.x) + (camera.y - c.y) * (camera.y - c.y) + (camera.z - c.z) * (camera.z - c.z);
-    }
-
-    public static class Coordinate {
-        public int x, y, z;
-
-        public Coordinate(int x, int y, int z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
     }
 }

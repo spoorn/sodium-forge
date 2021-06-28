@@ -89,6 +89,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     private double cameraX, cameraY, cameraZ;
     private boolean useAggressiveCulling;
+    private boolean translucencySorting;
 
     private int visibleChunkCount;
 
@@ -130,15 +131,14 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue) {
-        // TODO: make this configurable, max amount of budget to use on translucent rerendering
         int translucentBudget = Math.max(1, builder.getSchedulingBudget()/4);
         while (!queue.isEmpty()) {
             ChunkRenderContainer<T> render = queue.dequeue();
 
             boolean rebuild = render.needsRebuild() && render.canRebuild();
 
-            // TODO: Make translucent rebuilding configurable
-            if (render.hasTranslucentBlocks() && this.cameraChanged && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget) {
+            if (this.translucencySorting && render.hasTranslucentBlocks() && this.cameraChanged
+                    && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget) {
                 ChunkRenderBounds bounds = render.getBounds();
                 if (bounds != null) {
                     // TODO: This should actually check if any part of the chunk is in the frustum
@@ -289,6 +289,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.lastFrameUpdated = frame;
         this.useOcclusionCulling = Minecraft.getInstance().renderChunksMany;
         this.useAggressiveCulling = SodiumClientMod.options().advanced.useChunkFaceCulling;
+        this.translucencySorting = SodiumClientMod.options().advanced.translucencySorting;
 
         this.resetGraph();
 
