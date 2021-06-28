@@ -9,13 +9,10 @@ import me.jellysquid.mods.sodium.common.util.pool.ReusableObject;
 import net.minecraft.block.BlockState;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.BitArray;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.SectionPos;
-import net.minecraft.util.palette.IPalette;
-import net.minecraft.util.palette.PalettedContainer;
 import net.minecraft.world.IBlockDisplayReader;
 import net.minecraft.world.LightType;
 import net.minecraft.world.World;
@@ -49,9 +46,6 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
     // The number of blocks on each axis in a section.
     private static final int SECTION_BLOCK_LENGTH = 16;
 
-    // The number of blocks in a section.
-    private static final int SECTION_BLOCK_COUNT = SECTION_BLOCK_LENGTH * SECTION_BLOCK_LENGTH * SECTION_BLOCK_LENGTH;
-
     // The number of outward blocks from the origin chunk to slice
     public static final int NEIGHBOR_BLOCK_RADIUS = 2;
 
@@ -80,15 +74,9 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
     // The array size for the section lookup table.
     private static final int SECTION_TABLE_ARRAY_SIZE = TABLE_LENGTH * TABLE_LENGTH * TABLE_LENGTH;
 
-    // Local Section->BlockState table. Read-only.
-    private final BlockState[][] blockStatesArrays;
-
     // The data arrays for this slice
     // These are allocated once and then re-used when the slice is released back to an object pool
     private final BlockState[] blockStates;
-
-    // A pointer to the BlockState array for the origin section.
-    private final BlockState[] originBlockStates;
 
     // Local Section->Light table. Read-only.
     private final NibbleArray[] blockLightArrays;
@@ -156,23 +144,11 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
     }
 
     public WorldSlice() {
-        this.blockStatesArrays = new BlockState[SECTION_TABLE_ARRAY_SIZE][];
-
-        for (int x = 0; x < SECTION_LENGTH; x++) {
-            for (int y = 0; y < SECTION_LENGTH; y++) {
-                for (int z = 0; z < SECTION_LENGTH; z++) {
-                    this.blockStatesArrays[getLocalSectionIndex(x, y, z)] = new BlockState[SECTION_BLOCK_COUNT];
-                }
-            }
-        }
-
         this.blockLightArrays = new NibbleArray[SECTION_TABLE_ARRAY_SIZE];
         this.skyLightArrays = new NibbleArray[SECTION_TABLE_ARRAY_SIZE];
         this.biomeCaches = new BiomeCache[CHUNK_TABLE_ARRAY_SIZE];
         this.biomeArrays = new BiomeContainer[CHUNK_TABLE_ARRAY_SIZE];
         this.blockStates = new BlockState[BLOCK_COUNT];
-
-        this.originBlockStates = this.blockStatesArrays[getLocalSectionIndex((SECTION_LENGTH / 2), (SECTION_LENGTH / 2), (SECTION_LENGTH / 2))];
     }
 
     public void init(ChunkBuilder<?> builder, World world, SectionPos origin, Chunk[] chunks) {
@@ -216,44 +192,10 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
                     int sectionIdx = getLocalSectionIndex(chunkX - minChunkX, chunkY - minChunkY, chunkZ - minChunkZ);
 
                     this.populateLightArrays(sectionIdx, pos);
-                    this.populateBlockArrays(sectionIdx, pos, chunk);
+                    this.populateBlockArrays(pos, chunk);
                 }
 
                 this.biomeArrays[chunkIdx] = chunk.getBiomes();
-
-                // OLD STUFF BELOW
-
-                int minBlockX = Math.max(minX, chunkX << 4);
-                int maxBlockX = Math.min(maxX, (chunkX + 1) << 4);
-
-                int minBlockZ = Math.max(minZ, chunkZ << 4);
-                int maxBlockZ = Math.min(maxZ, (chunkZ + 1) << 4);
-
-                for (int chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-                    ChunkSection section = null;
-
-                    // Fetch the chunk section for this position if it's within bounds
-                    if (chunkY >= 0 && chunkY < 16) {
-                        section = chunk.getSections()[chunkY];
-                    }
-
-                    // If no chunk section has been fetched, use an empty one which will return air blocks in the copy below
-                    if (section == null) {
-                        section = EMPTY_SECTION;
-                    }
-
-                    int minBlockY = Math.max(minY, chunkY << 4);
-                    int maxBlockY = Math.min(maxY, (chunkY + 1) << 4);
-
-                    // Iterate over all block states in the overlapping section between this world slice and chunk section
-                    for (int y = minBlockY; y < maxBlockY; y++) {
-                        for (int z = minBlockZ; z < maxBlockZ; z++) {
-                            for (int x = minBlockX; x < maxBlockX; x++) {
-                                this.blockStates[this.getBlockIndex(x, y, z)] = section.getBlockState(x & 15, y & 15, z & 15);
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -284,50 +226,32 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
         this.skyLightArrays[sectionIdx] = skyLightProvider.getData(pos);
     }
 
-    private void populateBlockArrays(int sectionIdx, SectionPos pos, Chunk chunk) {
+    private void populateBlockArrays(SectionPos pos, Chunk chunk) {
         ChunkSection section = getChunkSection(chunk, pos);
 
         if (section == null || section.isEmpty()) {
             section = EMPTY_SECTION;
         }
 
-        PalettedContainer<BlockState> container = section.getData();
-
-        BitArray intArray = container.storage;
-        IPalette<BlockState> palette = container.palette;
-
-        BlockState[] dst = this.blockStatesArrays[sectionIdx];
-
         int minBlockX = Math.max(this.minX, pos.getWorldStartX());
-        int maxBlockX = Math.min(this.maxX, pos.getWorldEndX());
+        int maxBlockX = Math.min(this.maxX, (pos.getSectionX() + 1) << 4);
 
         int minBlockY = Math.max(this.minY, pos.getWorldStartY());
-        int maxBlockY = Math.min(this.maxY, pos.getWorldEndY());
+        int maxBlockY = Math.min(this.maxY, (pos.getSectionY() + 1) << 4);
 
         int minBlockZ = Math.max(this.minZ, pos.getWorldStartZ());
-        int maxBlockZ = Math.min(this.maxZ, pos.getWorldEndZ());
+        int maxBlockZ = Math.min(this.maxZ, (pos.getSectionZ() + 1) << 4);
 
-        int prevPaletteId = -1;
-        BlockState prevPaletteState = null;
+        // NOTE: This differs from the parent repo as when I was trying to pull
+        // https://github.com/CaffeineMC/sodium-fabric/commit/eb664ec9bf22428678691f761fa0a6a73c916410
+        // I ran into some NPE, likely due to a compatibility issue with another mod.  Thus, this will just use the
+        // official getBlockState() instead of doing fancy optimization by fetching actual object references from the
+        // ChunkSection.
 
         for (int y = minBlockY; y <= maxBlockY; y++) {
             for (int z = minBlockZ; z <= maxBlockZ; z++) {
                 for (int x = minBlockX; x <= maxBlockX; x++) {
-                    int blockIdx = getLocalBlockIndex(x & 15, y & 15, z & 15);
-                    int paletteId = intArray.getAt(blockIdx);
-
-                    BlockState state;
-
-                    if (prevPaletteId == paletteId) {
-                        state = prevPaletteState;
-                    } else {
-                        state = palette.get(paletteId);
-
-                        prevPaletteState = state;
-                        prevPaletteId = paletteId;
-                    }
-
-                    dst[blockIdx] = state;
+                    this.blockStates[this.getBlockIndex(x, y, z)] = section.getBlockState(x & 15, y & 15, z & 15);
                 }
             }
         }
@@ -339,17 +263,15 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
     }
 
     public BlockState getBlockState(int x, int y, int z) {
-        /*int relX = x - this.baseX;
+        /*  See comment above for why this is commented out
+
+        int relX = x - this.baseX;
         int relY = y - this.baseY;
         int relZ = z - this.baseZ;
 
         return this.blockStatesArrays[getLocalSectionIndex(relX >> 4, relY >> 4, relZ >> 4)]
                 [getLocalBlockIndex(relX & 15, relY & 15, relZ & 15)];*/
         return this.blockStates[this.getBlockIndex(x, y, z)];
-    }
-
-    public BlockState getOriginBlockState(int x, int y, int z) {
-        return this.originBlockStates[getLocalBlockIndex(x, y, z)];
     }
 
     @Override
@@ -493,11 +415,6 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
         this.colorResolvers.clear();
         this.prevColorCache = null;
         this.prevColorResolver = null;
-    }
-
-    // [VanillaCopy] PalettedContainer#toIndex
-    public static int getLocalBlockIndex(int x, int y, int z) {
-        return y << 8 | z << 4 | x;
     }
 
     public static int getLocalSectionIndex(int x, int y, int z) {
