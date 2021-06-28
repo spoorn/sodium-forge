@@ -77,51 +77,41 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         BlockPos.Mutable pos = new BlockPos.Mutable();
         BlockPos offset = this.offset;
 
-        boolean shouldSortBackwards = false;
-
-        // TODO: Since we're not sorting here anymore, no need to loop through coordinates twice
-        BlockState[] blockStates = new BlockState[TOTAL_CHUNK_SIZE];
-        Coordinate[] coordinates = new Coordinate[TOTAL_CHUNK_SIZE];
-        for (int y = baseY; y < baseY + CHUNK_BUILD_SIZE; y++) {
-            for (int z = baseZ; z < baseZ + CHUNK_BUILD_SIZE; z++) {
-                for (int x = baseX; x < baseX + CHUNK_BUILD_SIZE; x++) {
-                    BlockState curr = this.slice.getBlockState(x, y, z);
-                    int index = (x-baseX)+((y-baseY)*CHUNK_BUILD_SIZE)+((z-baseZ)*CHUNK_BUILD_SIZE_2D);
-                    blockStates[index] = curr;
-                    coordinates[index] = new Coordinate(x, y, z);
-                    for (BlockRenderPass pass : BlockRenderPass.VALUES) {
-                        if (!shouldSortBackwards && pass.isTranslucent()
-                                && RenderTypeLookupUtil.canRenderInLayer(curr, pass.getLayer())) {
-                            shouldSortBackwards = true;
-                        }
-                    }
-                }
-            }
-        }
-
         // If cancelled, stop before doing more calculations
         if (cancellationSource.isCancelled()) {
             return null;
         }
 
-        if (shouldSortBackwards) {
-            render.setHasTranslucentBlocks(true);
-        } else {
-            render.setHasTranslucentBlocks(false);
-        }
+        boolean shouldSortBackwards = false;
 
-        for (Coordinate coordinate : coordinates) {
+        for (int y = baseY; y < baseY + CHUNK_BUILD_SIZE; y++) {
             if (cancellationSource.isCancelled()) {
                 return null;
             }
-            setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, blockStates,
-                    coordinate.x, coordinate.y, coordinate.z, baseX, baseY, baseZ);
+            for (int z = baseZ; z < baseZ + CHUNK_BUILD_SIZE; z++) {
+                for (int x = baseX; x < baseX + CHUNK_BUILD_SIZE; x++) {
+                    BlockState state = this.slice.getBlockState(x, y, z);
+
+                    if (!shouldSortBackwards) {
+                        for (BlockRenderPass pass : BlockRenderPass.TRANSLUCENTS) {
+                            if (RenderTypeLookupUtil.canRenderInLayer(state, pass.getLayer())) {
+                                shouldSortBackwards = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    setupBlockRender(pipeline, buffers, renderData, occluder, bounds, pos, offset, state, x, y, z);
+                }
+            }
         }
+
+        render.setHasTranslucentBlocks(shouldSortBackwards);
 
         for (BlockRenderPass pass : BlockRenderPass.VALUES) {
             ChunkMeshData mesh = buffers.createMesh(pass, (float)camera.x - offset.getX(),
                     (float)camera.y - offset.getY(),
-                    (float)camera.z - offset.getZ());
+                    (float)camera.z - offset.getZ(), shouldSortBackwards);
 
             if (mesh != null) {
                 renderData.setMesh(pass, mesh);
@@ -140,9 +130,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     }
 
     private void setupBlockRender(ChunkRenderContext pipeline, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData,
-        VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState[] blockStates,
-        int x, int y, int z, int minX, int minY, int minZ) {
-        BlockState blockState = blockStates[(x-minX)+((y-minY)*CHUNK_BUILD_SIZE)+((z-minZ)*CHUNK_BUILD_SIZE_2D)];
+        VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState blockState,
+        int x, int y, int z) {
         Block block = blockState.getBlock();
 
         if (blockState.isAir()) {

@@ -11,9 +11,14 @@ public enum BlockRenderPass {
     TRANSLUCENT(RenderType.getTranslucent(), true),
     TRIPWIRE(RenderType.getTripwire(), true);
 
-    // TODO: Array just for translucent values
     public static final BlockRenderPass[] VALUES = BlockRenderPass.values();
+    public static final BlockRenderPass[] TRANSLUCENTS = new BlockRenderPass[2];
     public static final int COUNT = VALUES.length;
+
+    static {
+        TRANSLUCENTS[0] = TRANSLUCENT;
+        TRANSLUCENTS[1] = TRIPWIRE;
+    }
 
     @Getter
     private final RenderType layer;

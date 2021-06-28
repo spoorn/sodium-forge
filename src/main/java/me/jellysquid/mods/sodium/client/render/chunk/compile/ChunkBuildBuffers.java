@@ -65,7 +65,7 @@ public class ChunkBuildBuffers {
      * Creates immutable baked chunk meshes from all non-empty scratch buffers and resets the state of all mesh
      * builders. This is used after all blocks have been rendered to pass the finished meshes over to the graphics card.
      */
-    public ChunkMeshData createMesh(BlockRenderPass pass, float x, float y, float z) {
+    public ChunkMeshData createMesh(BlockRenderPass pass, float x, float y, float z, boolean shouldSortBackwards) {
         ChunkMeshBuilder[] builders = this.buildersByLayer[pass.ordinal()];
         ChunkMeshData meshData = new ChunkMeshData();
         int bufferLen = 0;
@@ -101,7 +101,7 @@ public class ChunkBuildBuffers {
 
             ChunkMeshBuilder builder = this.buildersByLayer[pass.ordinal()][entry.getKey().ordinal()];
 
-            if (pass.isTranslucent()) {
+            if (pass.isTranslucent() && shouldSortBackwards) {
                 builder.sortQuads(x, y, z);
             }
 
