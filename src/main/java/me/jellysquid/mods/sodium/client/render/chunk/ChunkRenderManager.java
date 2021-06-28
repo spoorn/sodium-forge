@@ -131,7 +131,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     private void processRebuildQueues(ObjectArrayFIFOQueue<ChunkRenderContainer<T>> queue) {
         // TODO: make this configurable, max amount of budget to use on translucent rerendering
-        int translucentBudget = builder.getSchedulingBudget()/4;
+        int translucentBudget = Math.max(1, builder.getSchedulingBudget()/4);
         while (!queue.isEmpty()) {
             ChunkRenderContainer<T> render = queue.dequeue();
 

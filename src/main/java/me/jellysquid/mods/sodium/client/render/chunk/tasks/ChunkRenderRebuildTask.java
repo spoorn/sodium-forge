@@ -202,6 +202,10 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         ForgeHooksClient.setRenderLayer(null);
     }
 
+    private double squaredDistToCam(Coordinate c) {
+        return (camera.x - c.x) * (camera.x - c.x) + (camera.y - c.y) * (camera.y - c.y) + (camera.z - c.z) * (camera.z - c.z);
+    }
+
     public static class Coordinate {
         public int x, y, z;
 

@@ -7,20 +7,20 @@ public class TranslucentPoolUtil {
 
     private static int translucentRebuilds = 0;
 
-    public static int getTranslucentRebuilds() {
+    public synchronized static int getTranslucentRebuilds() {
         return translucentRebuilds;
     }
 
-    public static void incrementTranslucentRebuilds() {
+    public synchronized static void incrementTranslucentRebuilds() {
         translucentRebuilds++;
     }
 
-    public static void decrementTranslucentRebuilds() {
+    public synchronized static void decrementTranslucentRebuilds() {
         if (translucentRebuilds > 0)
             translucentRebuilds--;
     }
 
-    public static void resetTranslucentRebuilds() {
+    public synchronized static void resetTranslucentRebuilds() {
         translucentRebuilds = 0;
     }
 }

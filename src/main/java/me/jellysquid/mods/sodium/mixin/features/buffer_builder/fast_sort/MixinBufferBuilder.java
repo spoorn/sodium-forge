@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
@@ -33,7 +34,7 @@ public class MixinBufferBuilder {
      */
     @Overwrite
     public void sortVertexData(float cameraX, float cameraY, float cameraZ) {
-        this.byteBuffer.clear();
+        ((Buffer)this.byteBuffer).clear();
         FloatBuffer floatBuffer = this.byteBuffer.asFloatBuffer();
 
         int vertexStride = this.vertexFormat.getSize();
