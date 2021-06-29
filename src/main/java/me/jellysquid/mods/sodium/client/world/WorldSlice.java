@@ -21,6 +21,7 @@ import net.minecraft.world.biome.BiomeContainer;
 import net.minecraft.world.biome.BiomeManager;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.IChunk;
 import net.minecraft.world.chunk.NibbleArray;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.lighting.IWorldLightListener;
@@ -183,7 +184,7 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
                 // The local index for this chunk in the slice's data arrays
                 int chunkIdx = getLocalChunkIndex(chunkX - minChunkX, chunkZ - minChunkZ);
 
-                Chunk chunk = chunks[chunkIdx];
+                IChunk chunk = chunks[chunkIdx];
 
                 for (int chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
                     SectionPos pos = SectionPos.of(chunkX, chunkY, chunkZ);
@@ -226,7 +227,7 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
         this.skyLightArrays[sectionIdx] = skyLightProvider.getData(pos);
     }
 
-    private void populateBlockArrays(SectionPos pos, Chunk chunk) {
+    private void populateBlockArrays(SectionPos pos, IChunk chunk) {
         ChunkSection section = getChunkSection(chunk, pos);
 
         if (section == null || section.isEmpty()) {
@@ -425,7 +426,7 @@ public class WorldSlice extends ReusableObject implements IBlockDisplayReader, B
         return z << TABLE_BITS | x;
     }
 
-    private static ChunkSection getChunkSection(Chunk chunk, SectionPos pos) {
+    private static ChunkSection getChunkSection(IChunk chunk, SectionPos pos) {
         ChunkSection section = null;
 
         if (!World.isYOutOfBounds(SectionPos.toWorld(pos.getY()))) {
