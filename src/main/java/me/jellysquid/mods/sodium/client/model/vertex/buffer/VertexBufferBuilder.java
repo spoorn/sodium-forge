@@ -82,11 +82,6 @@ public class VertexBufferBuilder implements VertexBufferView {
     // TODO: For some reason, this still causes certain angles to not render correctly.  It may be due to there being
     // a VertexBufferBuilder for each ModelQuadFacing
     public void sortQuads(float x, float y, float z) {
-        // Scale camera to same space as quads
-        x = x * ChunkModelVertexTransformer.SCALE_NORM;
-        y = y * ChunkModelVertexTransformer.SCALE_NORM;
-        z = z * ChunkModelVertexTransformer.SCALE_NORM;
-
         sortStandardFormat(x, y, z);
         // TODO: sort in compact format
         //sortCompactFormat(x, y, z);
