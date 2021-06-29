@@ -151,7 +151,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         for (RenderType layer : RenderType.getBlockRenderTypes()) {
             ForgeHooksClient.setRenderLayer(layer);
             // Fluids
-            FluidState fluidState = block.getFluidState(blockState);
+            FluidState fluidState = blockState.getFluidState();
 
             if (!fluidState.isEmpty() && RenderTypeLookupUtil.canRenderInLayer(fluidState, layer)) {
                 buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
