@@ -304,6 +304,7 @@ public class SodiumGameOptionPages {
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.translucencySorting = value, opts -> opts.advanced.translucencySorting)
                         .setImpact(OptionImpact.MEDIUM)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
                 .build());
