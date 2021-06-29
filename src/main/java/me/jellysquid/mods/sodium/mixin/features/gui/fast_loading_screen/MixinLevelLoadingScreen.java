@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.mixin.features.gui.fast_loading_screen;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -8,14 +9,13 @@ import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.screen_quad.BasicScreenQuadVertexSink;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
-import net.minecraft.client.gui.WorldGenerationProgressTracker;
-import net.minecraft.client.gui.screen.LevelLoadingScreen;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Matrix4f;
+import net.minecraft.client.gui.screen.WorldLoadProgressScreen;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.listener.TrackingChunkStatusListener;
 import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.*;
 
@@ -23,12 +23,12 @@ import org.spongepowered.asm.mixin.*;
  * Re-implements the loading screen with considerations to reduce draw calls and other sources of overhead. This can
  * improve world load times on slower processors with very few cores.
  */
-@Mixin(LevelLoadingScreen.class)
+@Mixin(WorldLoadProgressScreen.class)
 public class MixinLevelLoadingScreen {
     @Mutable
     @Shadow
     @Final
-    private static Object2IntMap<ChunkStatus> STATUS_TO_COLOR;
+    private static Object2IntMap<ChunkStatus> COLORS;
 
     private static Reference2IntOpenHashMap<ChunkStatus> STATUS_TO_COLOR_FAST;
 
@@ -45,15 +45,15 @@ public class MixinLevelLoadingScreen {
      * @author JellySquid
      */
     @Overwrite
-    public static void drawChunkMap(MatrixStack matrixStack, WorldGenerationProgressTracker tracker, int mapX, int mapY, int mapScale, int mapPadding) {
+    public static void func_238625_a_(MatrixStack matrixStack, TrackingChunkStatusListener tracker, int mapX, int mapY, int mapScale, int mapPadding) {
         if (STATUS_TO_COLOR_FAST == null) {
-            STATUS_TO_COLOR_FAST = new Reference2IntOpenHashMap<>(STATUS_TO_COLOR.size());
+            STATUS_TO_COLOR_FAST = new Reference2IntOpenHashMap<>(COLORS.size());
             STATUS_TO_COLOR_FAST.put(null, NULL_STATUS_COLOR);
-            STATUS_TO_COLOR.object2IntEntrySet()
+            COLORS.object2IntEntrySet()
                     .forEach(entry -> STATUS_TO_COLOR_FAST.put(entry.getKey(), ColorARGB.toABGR(entry.getIntValue(), 0xFF)));
         }
 
-        Matrix4f matrix = matrixStack.peek().getModel();
+        Matrix4f matrix = matrixStack.getLast().getMatrix();
 
         Tessellator tessellator = Tessellator.getInstance();
 
@@ -62,12 +62,12 @@ public class MixinLevelLoadingScreen {
         RenderSystem.defaultBlendFunc();
         
         BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_QUADS, VertexFormats.POSITION_COLOR);
+        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
         BasicScreenQuadVertexSink sink = VertexDrain.of(buffer).createSink(VanillaVertexTypes.BASIC_SCREEN_QUADS);
 
-        int centerSize = tracker.getCenterSize();
-        int size = tracker.getSize();
+        int centerSize = tracker.getDiameter();
+        int size = tracker.func_219523_d();
 
         int tileSize = mapScale + mapPadding;
 
@@ -96,7 +96,7 @@ public class MixinLevelLoadingScreen {
             for (int z = 0; z < size; ++z) {
                 int tileY = mapStartY + z * tileSize;
 
-                ChunkStatus status = tracker.getChunkStatus(x, z);
+                ChunkStatus status = tracker.getStatus(x, z);
                 int color;
 
                 if (prevStatus == status) {

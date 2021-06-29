@@ -1,17 +1,17 @@
 package me.jellysquid.mods.sodium.client.model.vertex.formats.screen_quad;
 
+import com.mojang.blaze3d.vertex.IVertexBuilder;
 import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.screen_quad.writer.BasicScreenQuadVertexBufferWriterNio;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.screen_quad.writer.BasicScreenQuadVertexBufferWriterUnsafe;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.screen_quad.writer.BasicScreenQuadVertexWriterFallback;
 import me.jellysquid.mods.sodium.client.model.vertex.type.BlittableVertexType;
 import me.jellysquid.mods.sodium.client.model.vertex.type.VanillaVertexType;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.renderer.vertex.VertexFormat;
 
 public class BasicScreenQuadVertexType implements VanillaVertexType<BasicScreenQuadVertexSink>, BlittableVertexType<BasicScreenQuadVertexSink> {
     @Override
-    public BasicScreenQuadVertexSink createFallbackWriter(VertexConsumer consumer) {
+    public BasicScreenQuadVertexSink createFallbackWriter(IVertexBuilder consumer) {
         return new BasicScreenQuadVertexWriterFallback(consumer);
     }
 
