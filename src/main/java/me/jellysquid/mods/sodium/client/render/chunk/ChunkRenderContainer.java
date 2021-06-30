@@ -6,24 +6,23 @@ import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderBounds;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
-import me.jellysquid.mods.sodium.common.util.collections.TrackedArrayItem;
+import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.SectionPos;
 
+import java.lang.reflect.Array;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * The render state object for a chunk section. This contains all the graphics state for each render pass along with
  * data about the render in the chunk visibility graph.
  */
-public class ChunkRenderContainer implements TrackedArrayItem {
+public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     private final SodiumWorldRenderer worldRenderer;
     private final int chunkX, chunkY, chunkZ;
-    private final int id;
 
-    private final ChunkRenderBackend backend;
-    private final ChunkGraphicsStateArray graphicsStates;
-    private final ChunkRenderColumn column;
+    private final T[] graphicsStates;
+    private final ChunkRenderColumn<T> column;
 
     private ChunkRenderData data = ChunkRenderData.ABSENT;
     private CompletableFuture<Void> rebuildTask = null;
@@ -32,23 +31,23 @@ public class ChunkRenderContainer implements TrackedArrayItem {
     private boolean needsImportantRebuild;
 
     private boolean tickable;
+    private int id;
 
     @Setter
     private boolean hasTranslucentBlocks;
 
-    public ChunkRenderContainer(ChunkRenderBackend backend, SodiumWorldRenderer worldRenderer, int chunkX, int chunkY, int chunkZ, ChunkRenderColumn column, int id) {
-        this.backend = backend;
+    public ChunkRenderContainer(ChunkRenderBackend<T> backend, SodiumWorldRenderer worldRenderer, int chunkX, int chunkY, int chunkZ, ChunkRenderColumn<T> column) {
         this.worldRenderer = worldRenderer;
 
         this.chunkX = chunkX;
         this.chunkY = chunkY;
         this.chunkZ = chunkZ;
 
-        hasTranslucentBlocks = false;
-        this.graphicsStates = new ChunkGraphicsStateArray(BlockRenderPass.COUNT);
-        this.column = column;
+        //noinspection unchecked
+        this.graphicsStates = (T[]) Array.newInstance(backend.getGraphicsStateType(), BlockRenderPass.COUNT);
 
-        this.id = id;
+        hasTranslucentBlocks = false;
+        this.column = column;
     }
 
     /**
@@ -95,11 +94,16 @@ public class ChunkRenderContainer implements TrackedArrayItem {
     }
 
     private void deleteGraphicsState() {
-        for (int i = 0; i < this.graphicsStates.getSize(); i++) {
-            this.backend.deleteGraphicsState(this.graphicsStates.getValue(i));
-        }
+        T[] states = this.graphicsStates;
 
-        this.graphicsStates.clear();
+        for (int i = 0; i < states.length; i++) {
+            T state = states[i];
+
+            if (state != null) {
+                state.delete();
+                states[i] = null;
+            }
+        }
     }
 
     public boolean hasTranslucentBlocks() {
@@ -157,6 +161,19 @@ public class ChunkRenderContainer implements TrackedArrayItem {
     }
 
     /**
+     * Tests if the given chunk render is visible within the provided frustum.
+     * @param frustum The frustum to test against
+     * @return True if visible, otherwise false
+     */
+    public boolean isOutsideFrustum(FrustumExtended frustum) {
+        float x = this.getOriginX();
+        float y = this.getOriginY();
+        float z = this.getOriginZ();
+
+        return !frustum.fastAabbTest(x, y, z, x + 16.0f, y + 16.0f, z + 16.0f);
+    }
+
+    /**
      * Ensures that all resources attached to the given chunk render are "ticked" forward. This should be called every
      * time before this render is drawn if {@link ChunkRenderContainer#isTickable()} is true.
      */
@@ -202,10 +219,10 @@ public class ChunkRenderContainer implements TrackedArrayItem {
     /**
      * @return The squared distance from the center of this chunk in the world to the given position
      */
-    public double getSquaredDistance(float x, float y, float z) {
-        float xDist = x - this.getCenterX();
-        float yDist = y - this.getCenterY();
-        float zDist = z - this.getCenterZ();
+    public double getSquaredDistance(double x, double y, double z) {
+        double xDist = x - this.getCenterX();
+        double yDist = y - this.getCenterY();
+        double zDist = z - this.getCenterZ();
 
         return (xDist * xDist) + (yDist * yDist) + (zDist * zDist);
     }
@@ -213,38 +230,42 @@ public class ChunkRenderContainer implements TrackedArrayItem {
     /**
      * @return The x-coordinate of the center position of this chunk render
      */
-    private float getCenterX() {
-        return this.getOriginX() + 8.0F;
+    private double getCenterX() {
+        return this.getOriginX() + 8.0D;
     }
 
     /**
      * @return The y-coordinate of the center position of this chunk render
      */
-    private float getCenterY() {
-        return this.getOriginY() + 8.0F;
+    private double getCenterY() {
+        return this.getOriginY() + 8.0D;
     }
 
     /**
      * @return The z-coordinate of the center position of this chunk render
      */
-    private float getCenterZ() {
-        return this.getOriginZ() + 8.0F;
+    private double getCenterZ() {
+        return this.getOriginZ() + 8.0D;
     }
 
     public BlockPos getRenderOrigin() {
         return new BlockPos(this.getRenderX(), this.getRenderY(), this.getRenderZ());
     }
 
-    public ChunkGraphicsStateArray getGraphicsStates() {
+    public T[] getGraphicsStates() {
         return this.graphicsStates;
+    }
+
+    public void setGraphicsState(BlockRenderPass pass, T state) {
+        this.graphicsStates[pass.ordinal()] = state;
     }
 
     /**
      * @return The squared distance from the center of this chunk in the world to the given position
      */
-    public double getSquaredDistanceXZ(float x, float z) {
-        float xDist = x - this.getCenterX();
-        float zDist = z - this.getCenterZ();
+    public double getSquaredDistanceXZ(double x, double z) {
+        double xDist = x - this.getCenterX();
+        double zDist = z - this.getCenterZ();
 
         return (xDist * xDist) + (zDist * zDist);
     }
@@ -265,6 +286,10 @@ public class ChunkRenderContainer implements TrackedArrayItem {
         return this.data.getBounds();
     }
 
+    public T getGraphicsState(BlockRenderPass pass) {
+        return this.graphicsStates[pass.ordinal()];
+    }
+
     public boolean isTickable() {
         return this.tickable;
     }
@@ -277,7 +302,10 @@ public class ChunkRenderContainer implements TrackedArrayItem {
         return this.column.areNeighborsPresent();
     }
 
-    @Override
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public int getId() {
         return this.id;
     }

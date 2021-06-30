@@ -15,8 +15,8 @@ public class GL33GraphicsState extends ChunkOneshotGraphicsState {
     private final GlVertexArray vertexArray;
     private final GlBuffer vertexBuffer;
 
-    public GL33GraphicsState(MemoryTracker memoryTracker, ChunkRenderContainer container, int id) {
-        super(memoryTracker, container, id);
+    public GL33GraphicsState(MemoryTracker memoryTracker, ChunkRenderContainer<?> container) {
+        super(memoryTracker, container);
 
         this.vertexBuffer = new GlMutableBuffer(GL15.GL_STATIC_DRAW);
         this.vertexArray = new GlVertexArray();
