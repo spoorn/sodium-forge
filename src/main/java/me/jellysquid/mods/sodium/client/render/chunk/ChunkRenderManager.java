@@ -163,8 +163,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         if (this.translucencySorting && render.hasTranslucentBlocks() && this.cameraChanged
                 && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget
                 && !render.isOutsideFrustum(this.currFrustum)
-                && render.getSquaredDistance(cameraX, cameraY, cameraZ) < translucencyBlockRenderDistance
-                && this.culler.isInDirectView(render, cameraX, cameraY, cameraZ)) {
+                && render.getSquaredDistance(cameraX, cameraY, cameraZ) < translucencyBlockRenderDistance) {
             TranslucentPoolUtil.incrementTranslucentRebuilds();
             rebuild = true;
         }

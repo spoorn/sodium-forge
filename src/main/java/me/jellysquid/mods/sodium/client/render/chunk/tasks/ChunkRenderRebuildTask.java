@@ -13,7 +13,6 @@ import me.jellysquid.mods.sodium.client.render.pipeline.context.ChunkRenderConte
 import me.jellysquid.mods.sodium.client.util.task.CancellationSource;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import me.jellysquid.mods.sodium.common.util.RenderTypeLookupUtil;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.renderer.RenderType;
@@ -97,9 +96,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         render.setHasTranslucentBlocks(shouldSortBackwards);
 
         for (BlockRenderPass pass : BlockRenderPass.VALUES) {
-            ChunkMeshData mesh = buffers.createMesh(pass, (float)camera.x - offset.getX(),
-                    (float)camera.y - offset.getY(),
-                    (float)camera.z - offset.getZ(), shouldSortBackwards);
+            ChunkMeshData mesh = buffers.createMesh(pass, (float) camera.x - offset.getX(),
+                    (float) camera.y - offset.getY(),
+                    (float) camera.z - offset.getZ(), shouldSortBackwards);
 
             if (mesh != null) {
                 renderData.setMesh(pass, mesh);
@@ -118,8 +117,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     }
 
     private void setupBlockRender(ChunkRenderContext pipeline, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData,
-        VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState blockState,
-        int x, int y, int z, int baseX, int baseY, int baseZ) {
+                                  VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState blockState,
+                                  int x, int y, int z, int baseX, int baseY, int baseZ) {
         if (blockState.isAir()) {
             return;
         }
@@ -131,7 +130,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             occluder.setOpaqueCube(pos);
         }
 
-        int boundsX = x-baseX, boundsY = y-baseY, boundsZ = z-baseZ;
+        int boundsX = x - baseX, boundsY = y - baseY, boundsZ = z - baseZ;
 
         if (blockState.hasTileEntity()) {
             TileEntity entity = this.slice.getBlockEntity(pos, Chunk.CreateEntityType.CHECK);
