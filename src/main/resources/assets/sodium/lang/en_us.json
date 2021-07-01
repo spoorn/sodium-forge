@@ -48,7 +48,7 @@
   "sodium.options.animate_only_visible_textures.name": "Animate Only Visible Textures",
   "sodium.options.animate_only_visible_textures.tooltip": "If enabled, only animated textures determined to be visible will be updated. This can provide a significant boost to frame rates on some hardware. If you experience issues with some textures not being animated, disable this option.",
   "sodium.options.translucency_sorting.name": "(Partial) Translucency Sorting",
-  "sodium.options.translucency_sorting.tooltip": "If enabled, translucent blocks will be sorted correctly from back to front to provide better rendering, especially when multiple translucent blocks are in view and layered.  This is only a partial solution, some angles will still render oddly, but acceptable.",
+  "sodium.options.translucency_sorting.tooltip": "If enabled, translucent blocks will be sorted correctly from back to front to provide better rendering, especially when multiple translucent blocks are in view and layered.  This is only a partial solution, some angles will still render oddly, but acceptable.  This is a rather expensive operation.",
   "sodium.options.use_memory_intrinsics.name": "Use Memory Intrinsics",
   "sodium.options.use_memory_intrinsics.tooltip": "If enabled, special intrinsics will be used to speed up the copying of client memory in certain vertex-limited scenarios, such as particle and text rendering. This option only exists for debugging purposes and should be left enabled unless you know what you are doing.",
   "sodium.options.disable_driver_blacklist.name": "Disable Driver Blacklist",

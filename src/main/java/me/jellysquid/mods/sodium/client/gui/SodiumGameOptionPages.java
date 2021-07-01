@@ -306,7 +306,7 @@ public class SodiumGameOptionPages {
                         .setTooltip(I18n.format("sodium.options.translucency_sorting.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.advanced.translucencySorting = value, opts -> opts.advanced.translucencySorting)
-                        .setImpact(OptionImpact.MEDIUM)
+                        .setImpact(OptionImpact.HIGH)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
