@@ -3,9 +3,12 @@ package me.jellysquid.mods.sodium.client.render.chunk.cull.graph;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
+import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
 import me.jellysquid.mods.sodium.client.render.chunk.cull.ChunkCuller;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
+import me.jellysquid.mods.sodium.common.util.IdTable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.chunk.SetVisibility;
@@ -17,7 +20,9 @@ import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ChunkGraphCuller implements ChunkCuller {
     private final Long2ObjectMap<ChunkGraphNode> nodes = new Long2ObjectOpenHashMap<>();
@@ -209,5 +214,90 @@ public class ChunkGraphCuller implements ChunkCuller {
         }
 
         return render.getLastVisibleFrame() == this.activeFrame;
+    }
+
+    @Override
+    public <T extends ChunkGraphicsState> boolean isInDirectView(IdTable<ChunkRenderContainer<T>> renders,
+        ChunkRenderContainer<T> render, float camX, float camY, float camZ) {
+        List<BlockPos> srcTranslucent = render.getData().getTranslucentBlocks();
+
+        int minX = MathHelper.floor(camX);
+        int minY = MathHelper.floor(camY);
+        int minZ = MathHelper.floor(camZ);
+
+        Set<Set<BlockPos>> intersects = new HashSet<>();
+
+        for (BlockPos pos : srcTranslucent) {
+            intersects.add(getIntersectingGrids(minX, minY, minZ, pos.getX(), pos.getY(), pos.getZ()));
+        }
+
+        if (intersects.isEmpty()) {
+            return true;
+        }
+
+        for (int id : this.visible.getOrderedIdList()) {
+            if (id == render.getId()) {
+                return true;
+            }
+
+            ChunkRenderContainer<T> other = renders.get(id);
+            List<BlockPos> otherBlocks = other.getData().getOpaqueBlocks();
+
+            for (BlockPos otherPos : otherBlocks) {
+                intersects.removeIf(blockPos -> blockPos.contains(otherPos));
+
+                if (intersects.isEmpty()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Ray trace to find all block positions from one coordinate to another.
+     *
+     * From http://playtechs.blogspot.com/2007/03/raytracing-on-grid.html.
+     */
+    private Set<BlockPos> getIntersectingGrids(int x, int y, int z, int maxX, int maxY, int maxZ) {
+        float dx = Math.abs(maxX - x);
+        float dy = Math.abs(maxY - y);
+        float dz = Math.abs(maxZ - z);
+
+        float xWeight = 1.0f/dx;
+        float yWeight = 1.0f/dy;
+        float zWeight = 1.0f/dz;
+
+        int x_inc = Integer.compare(maxX, x);
+        int y_inc = Integer.compare(maxY, y);
+        int z_inc = Integer.compare(maxZ, z);
+
+        float n = 1 + dx + dy + dz;
+        float errorX = xWeight;
+        float errorY = yWeight;
+        float errorZ = zWeight;
+
+        Set<BlockPos> ret = new HashSet<>();
+
+        for (; n > 0; n--) {
+            if (x == maxX && y == maxY && z == maxZ) {
+                return ret;
+            }
+            ret.add(new BlockPos(x, y, z));
+
+            if (errorX < errorY && errorX < errorZ) {
+                x += x_inc;
+                errorX += xWeight;
+            } else if (errorY < errorX && errorY < errorZ) {
+                y += y_inc;
+                errorY += yWeight;
+            } else {
+                z += z_inc;
+                errorZ += zWeight;
+            }
+        }
+
+        return ret;
     }
 }

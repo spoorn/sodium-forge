@@ -9,6 +9,7 @@ public class ChunkGraphIterationQueue {
     private int[] positions;
     private ChunkGraphNode[] nodes;
     private Direction[] directions;
+    private IntArrayList cachedSortedList;
 
     private int pos;
     private int capacity;
@@ -55,6 +56,7 @@ public class ChunkGraphIterationQueue {
 
     public void clear() {
         this.pos = 0;
+        this.cachedSortedList = null;
     }
 
     public int size() {
@@ -62,6 +64,9 @@ public class ChunkGraphIterationQueue {
     }
 
     public IntArrayList getOrderedIdList() {
-        return IntArrayList.wrap(this.positions, this.pos);
+        if (this.cachedSortedList == null) {
+            this.cachedSortedList = IntArrayList.wrap(this.positions, this.pos);
+        }
+        return this.cachedSortedList;
     }
 }

@@ -100,6 +100,8 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private boolean useFogCulling;
     private double fogRenderCutoff;
 
+    private int squaredRenderDistance;
+
     @Setter
     private Matrix4f projection;
 
@@ -124,6 +126,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.culler = new ChunkGraphCuller(world, renderDistance);
         this.useChunkFaceCulling = SodiumClientMod.options().advanced.useChunkFaceCulling;
         this.translucencySorting = SodiumClientMod.options().advanced.translucencySorting;
+        this.squaredRenderDistance = renderDistance * renderDistance;
 
         TranslucentPoolUtil.resetTranslucentRebuilds();
     }
@@ -158,18 +161,12 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         boolean rebuild = render.needsRebuild() && render.canRebuild();
 
         if (this.translucencySorting && render.hasTranslucentBlocks() && this.cameraChanged
-                && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget) {
-            ChunkRenderBounds bounds = render.getBounds();
-            if (bounds != null) {
-                // TODO: This should actually check if any part of the chunk is in the frustum
-                boolean isInFrustum = currFrustum.fastAabbTest(bounds.x1, bounds.y1, bounds.z1, bounds.x2, bounds.y2, bounds.z2);
-                if (isInFrustum) {
-                    TranslucentPoolUtil.incrementTranslucentRebuilds();
-                    rebuild = true;
-                } else {
-                    rebuild = false;
-                }
-            }
+                && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget
+                && !render.isOutsideFrustum(this.currFrustum)
+                && render.getSquaredDistance(cameraX, cameraY, cameraZ) < squaredRenderDistance
+                && this.culler.isInDirectView(this.renders, render, cameraX, cameraY, cameraZ)) {
+                TranslucentPoolUtil.incrementTranslucentRebuilds();
+                rebuild = true;
         }
 
         if (rebuild) {

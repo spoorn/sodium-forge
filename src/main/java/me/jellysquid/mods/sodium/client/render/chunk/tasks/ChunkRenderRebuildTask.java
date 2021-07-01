@@ -124,10 +124,9 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             return;
         }
 
-        Block block = blockState.getBlock();
-
         pos.setPos(x, y, z);
 
+        // TODO: don't create a new BlockPos, just use coordinates
         if (blockState.isOpaqueCube(this.slice, pos)) {
             occluder.setOpaqueCube(pos);
         }
@@ -154,6 +153,12 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             FluidState fluidState = blockState.getFluidState();
 
             if (!fluidState.isEmpty() && RenderTypeLookupUtil.canRenderInLayer(fluidState, layer)) {
+                if (layer == RenderType.getTranslucent() || layer == RenderType.getTripwire()) {
+                    renderData.addTranslucentBlock(pos.toImmutable());
+                } else {
+                    renderData.addOpaqueBlock(pos.toImmutable());
+                }
+
                 buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
                 if (pipeline.renderFluid(this.slice, fluidState, pos, buffers.get(layer))) {
@@ -163,6 +168,12 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
             if (blockState.getRenderType() != BlockRenderType.MODEL || !RenderTypeLookupUtil.canRenderInLayer(blockState, layer)) {
                 continue;
+            }
+
+            if (layer == RenderType.getTranslucent() || layer == RenderType.getTripwire()) {
+                renderData.addTranslucentBlock(pos.toImmutable());
+            } else {
+                renderData.addOpaqueBlock(pos.toImmutable());
             }
 
             // Solid blocks

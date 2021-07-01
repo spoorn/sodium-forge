@@ -2,6 +2,7 @@ package me.jellysquid.mods.sodium.client.render.chunk.data;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import lombok.Getter;
 import me.jellysquid.mods.sodium.client.gl.util.BufferSlice;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
@@ -9,6 +10,7 @@ import net.minecraft.client.renderer.chunk.SetVisibility;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.*;
 
@@ -23,6 +25,10 @@ public class ChunkRenderData {
 
     private List<TileEntity> globalBlockEntities;
     private List<TileEntity> blockEntities;
+    @Getter
+    private List<BlockPos> opaqueBlocks;
+    @Getter
+    private List<BlockPos> translucentBlocks;
 
     private EnumMap<BlockRenderPass, ChunkMeshData> meshes;
 
@@ -87,6 +93,8 @@ public class ChunkRenderData {
     public static class Builder {
         private final List<TileEntity> globalBlockEntities = new ArrayList<>();
         private final List<TileEntity> blockEntities = new ArrayList<>();
+        private final List<BlockPos> opaqueBlocks = new ArrayList<>();
+        private final List<BlockPos> translucentBlocks = new ArrayList<>();
         private final Set<TextureAtlasSprite> animatedSprites = new ObjectOpenHashSet<>();
 
         private final EnumMap<BlockRenderPass, ChunkMeshData> meshes = new EnumMap<>(BlockRenderPass.class);
@@ -132,10 +140,20 @@ public class ChunkRenderData {
             (cull ? this.blockEntities : this.globalBlockEntities).add(entity);
         }
 
+        public void addOpaqueBlock(BlockPos pos) {
+            this.opaqueBlocks.add(pos);
+        }
+
+        public void addTranslucentBlock(BlockPos pos) {
+            this.translucentBlocks.add(pos);
+        }
+
         public ChunkRenderData build() {
             ChunkRenderData data = new ChunkRenderData();
             data.globalBlockEntities = this.globalBlockEntities;
             data.blockEntities = this.blockEntities;
+            data.opaqueBlocks = this.opaqueBlocks;
+            data.translucentBlocks = this.translucentBlocks;
             data.occlusionData = this.occlusionData;
             data.meshes = this.meshes;
             data.bounds = this.bounds;
