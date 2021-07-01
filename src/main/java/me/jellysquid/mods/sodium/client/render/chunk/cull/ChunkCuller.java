@@ -17,5 +17,5 @@ public interface ChunkCuller {
 
     boolean isSectionVisible(int x, int y, int z);
 
-    <T extends ChunkGraphicsState> boolean isInDirectView(IdTable<ChunkRenderContainer<T>> renders, ChunkRenderContainer<T> render, float camX, float camY, float camZ);
+    <T extends ChunkGraphicsState> boolean isInDirectView(ChunkRenderContainer<T> render, float camX, float camY, float camZ);
 }

@@ -3,12 +3,16 @@ package me.jellysquid.mods.sodium.client.render.chunk.cull.graph;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
 import me.jellysquid.mods.sodium.client.render.chunk.cull.ChunkCuller;
+import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderBounds;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
 import me.jellysquid.mods.sodium.common.util.IdTable;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.chunk.SetVisibility;
@@ -18,16 +22,13 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.SectionPos;
 import net.minecraft.world.World;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ChunkGraphCuller implements ChunkCuller {
     private final Long2ObjectMap<ChunkGraphNode> nodes = new Long2ObjectOpenHashMap<>();
 
     private final ChunkGraphIterationQueue visible = new ChunkGraphIterationQueue();
+    private final Object2BooleanMap<BlockPos> blockStateCache = new Object2BooleanArrayMap<>();
     private final World world;
     private final int renderDistance;
 
@@ -80,6 +81,7 @@ public class ChunkGraphCuller implements ChunkCuller {
         this.frustum = frustum;
         this.useOcclusionCulling = Minecraft.getInstance().renderChunksMany;
 
+        this.blockStateCache.clear();
         this.visible.clear();
 
         BlockPos origin = camera.getBlockPos();
@@ -217,50 +219,37 @@ public class ChunkGraphCuller implements ChunkCuller {
     }
 
     @Override
-    public <T extends ChunkGraphicsState> boolean isInDirectView(IdTable<ChunkRenderContainer<T>> renders,
-        ChunkRenderContainer<T> render, float camX, float camY, float camZ) {
+    public <T extends ChunkGraphicsState> boolean isInDirectView(ChunkRenderContainer<T> render, float camX, float camY, float camZ) {
         List<BlockPos> srcTranslucent = render.getData().getTranslucentBlocks();
 
         int minX = MathHelper.floor(camX);
         int minY = MathHelper.floor(camY);
         int minZ = MathHelper.floor(camZ);
 
-        Set<Set<BlockPos>> intersects = new HashSet<>();
-
+        ChunkRenderBounds bounds = render.getBounds();
+        float boundMinX = bounds.x1;
+        float boundMinY = bounds.y1;
+        float boundMinZ = bounds.z1;
+        float boundMaxX = bounds.x2;
+        float boundMaxY = bounds.y2;
+        float boundMaxZ = bounds.z2;
         for (BlockPos pos : srcTranslucent) {
-            intersects.add(getIntersectingGrids(minX, minY, minZ, pos.getX(), pos.getY(), pos.getZ()));
-        }
-
-        if (intersects.isEmpty()) {
-            return true;
-        }
-
-        for (int id : this.visible.getOrderedIdList()) {
-            if (id == render.getId()) {
+            if (checkIntersectingGrids(minX, minY, minZ, pos.getX(), pos.getY(), pos.getZ(),
+                    boundMinX, boundMinY, boundMinZ, boundMaxX, boundMaxY, boundMaxZ)) {
                 return true;
             }
-
-            ChunkRenderContainer<T> other = renders.get(id);
-            List<BlockPos> otherBlocks = other.getData().getOpaqueBlocks();
-
-            for (BlockPos otherPos : otherBlocks) {
-                intersects.removeIf(blockPos -> blockPos.contains(otherPos));
-
-                if (intersects.isEmpty()) {
-                    return false;
-                }
-            }
         }
 
-        return true;
+        return false;
     }
 
     /**
-     * Ray trace to find all block positions from one coordinate to another.
+     * Ray trace to find block positions from one coordinate to another.
      *
      * From http://playtechs.blogspot.com/2007/03/raytracing-on-grid.html.
      */
-    private Set<BlockPos> getIntersectingGrids(int x, int y, int z, int maxX, int maxY, int maxZ) {
+    private boolean checkIntersectingGrids(int x, int y, int z, int maxX, int maxY, int maxZ,
+            float boundMinX, float boundMinY, float boundMinZ, float boundMaxX, float boundMaxY, float boundMaxZ) {
         float dx = Math.abs(maxX - x);
         float dy = Math.abs(maxY - y);
         float dz = Math.abs(maxZ - z);
@@ -278,13 +267,25 @@ public class ChunkGraphCuller implements ChunkCuller {
         float errorY = yWeight;
         float errorZ = zWeight;
 
-        Set<BlockPos> ret = new HashSet<>();
-
         for (; n > 0; n--) {
-            if (x == maxX && y == maxY && z == maxZ) {
-                return ret;
+            // We hit the source chunk we are testing for, so it's directly visible
+            if ((x >= boundMinX || x <= boundMaxX) && (y >= boundMinY || x <= boundMaxY) && (z >= boundMinZ || x <= boundMaxZ)) {
+                return true;
             }
-            ret.add(new BlockPos(x, y, z));
+
+            BlockPos curr = new BlockPos(x, y, z);
+            if (blockStateCache.getOrDefault(curr, false)) {
+                return false;
+            } else {
+                BlockState state = this.world.getBlockState(curr);
+                // We found an opaque block from another chunk that's blocking the view to this translucent block
+                if (!state.isAir() &&state.isOpaqueCube(this.world, curr)) {
+                    blockStateCache.put(curr, true);
+                    return false;
+                } else {
+                    blockStateCache.put(curr, false);
+                }
+            }
 
             if (errorX < errorY && errorX < errorZ) {
                 x += x_inc;
@@ -298,6 +299,6 @@ public class ChunkGraphCuller implements ChunkCuller {
             }
         }
 
-        return ret;
+        return true;
     }
 }

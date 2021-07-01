@@ -155,8 +155,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             if (!fluidState.isEmpty() && RenderTypeLookupUtil.canRenderInLayer(fluidState, layer)) {
                 if (layer == RenderType.getTranslucent() || layer == RenderType.getTripwire()) {
                     renderData.addTranslucentBlock(pos.toImmutable());
-                } else {
-                    renderData.addOpaqueBlock(pos.toImmutable());
                 }
 
                 buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
@@ -172,8 +170,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
             if (layer == RenderType.getTranslucent() || layer == RenderType.getTripwire()) {
                 renderData.addTranslucentBlock(pos.toImmutable());
-            } else {
-                renderData.addOpaqueBlock(pos.toImmutable());
             }
 
             // Solid blocks

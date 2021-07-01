@@ -100,7 +100,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private boolean useFogCulling;
     private double fogRenderCutoff;
 
-    private int squaredRenderDistance;
+    private final int translucencyBlockRenderDistance;
 
     @Setter
     private Matrix4f projection;
@@ -126,7 +126,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.culler = new ChunkGraphCuller(world, renderDistance);
         this.useChunkFaceCulling = SodiumClientMod.options().advanced.useChunkFaceCulling;
         this.translucencySorting = SodiumClientMod.options().advanced.translucencySorting;
-        this.squaredRenderDistance = renderDistance * renderDistance;
+        this.translucencyBlockRenderDistance = Math.min(9216, (renderDistance << 4) * (renderDistance << 4));
 
         TranslucentPoolUtil.resetTranslucentRebuilds();
     }
@@ -163,10 +163,10 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         if (this.translucencySorting && render.hasTranslucentBlocks() && this.cameraChanged
                 && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget
                 && !render.isOutsideFrustum(this.currFrustum)
-                && render.getSquaredDistance(cameraX, cameraY, cameraZ) < squaredRenderDistance
-                && this.culler.isInDirectView(this.renders, render, cameraX, cameraY, cameraZ)) {
-                TranslucentPoolUtil.incrementTranslucentRebuilds();
-                rebuild = true;
+                && render.getSquaredDistance(cameraX, cameraY, cameraZ) < translucencyBlockRenderDistance
+                && this.culler.isInDirectView(render, cameraX, cameraY, cameraZ)) {
+            TranslucentPoolUtil.incrementTranslucentRebuilds();
+            rebuild = true;
         }
 
         if (rebuild) {
