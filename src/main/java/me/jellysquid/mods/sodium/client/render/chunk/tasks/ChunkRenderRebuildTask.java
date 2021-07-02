@@ -46,9 +46,10 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     private final boolean translucencySorting;
     private final ChunkRenderContext context;
 
-    public ChunkRenderRebuildTask(ChunkRenderContainer<T> render, ChunkRenderContext context, BlockPos offset) {
+    public ChunkRenderRebuildTask(ChunkRenderContainer<T> render, ChunkRenderContext context, BlockPos offset, Vector3d camera) {
         this.render = render;
         this.offset = offset;
+        this.camera = camera;
         this.translucencySorting = SodiumClientMod.options().advanced.translucencySorting;
         this.context = context;
     }
@@ -74,13 +75,13 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
         boolean shouldSortBackwards = false;
 
-        for (int y = baseY; y < baseY + CHUNK_BUILD_SIZE; y++) {
+        for (int y = 0; y < CHUNK_BUILD_SIZE; y++) {
             if (cancellationSource.isCancelled()) {
                 return null;
             }
-            for (int z = baseZ; z < baseZ + CHUNK_BUILD_SIZE; z++) {
-                for (int x = baseX; x < baseX + CHUNK_BUILD_SIZE; x++) {
-                    BlockState state = slice.getBlockStateRelative(x, y, z);
+            for (int z = 0; z < CHUNK_BUILD_SIZE; z++) {
+                for (int x = 0; x < CHUNK_BUILD_SIZE; x++) {
+                    BlockState state = slice.getBlockStateRelative(x + CHUNK_BUILD_SIZE, y + CHUNK_BUILD_SIZE, z + CHUNK_BUILD_SIZE);
 
                     if (this.translucencySorting && !shouldSortBackwards) {
                         for (BlockRenderPass pass : BlockRenderPass.TRANSLUCENTS) {
@@ -91,8 +92,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                         }
                     }
 
-                    setupBlockRender(cache, buffers, renderData, slice, occluder, bounds, pos, renderOffset, state, x, y, z,
-                            baseX, baseY, baseZ);
+                    setupBlockRender(cache, buffers, renderData, slice, occluder, bounds, pos, renderOffset, state, x+baseX, y+baseY, z+baseZ);
                 }
             }
         }
@@ -119,7 +119,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
     private void setupBlockRender(ChunkRenderCacheLocal cache, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData, WorldSlice slice,
                                   VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState blockState,
-                                  int x, int y, int z, int baseX, int baseY, int baseZ) {
+                                  int x, int y, int z) {
         if (blockState.isAir()) {
             return;
         }
@@ -130,7 +130,6 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
         if (blockState.isOpaqueCube(slice, pos)) {
             occluder.setOpaqueCube(pos);
         }
-        int boundsX = x - baseX, boundsY = y - baseY, boundsZ = z - baseZ;
 
         if (blockState.hasTileEntity()) {
             TileEntity entity = slice.getTileEntity(pos);
@@ -141,7 +140,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 if (renderer != null) {
                     renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
 
-                    bounds.addBlock(boundsX, boundsY, boundsZ);
+                    bounds.addBlock(x, y, z);
                 }
             }
         }
@@ -159,7 +158,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 }
 
                 if (cache.getFluidRenderer().render(slice, fluidState, pos, buffers.get(layer))) {
-                    bounds.addBlock(boundsX, boundsY, boundsZ);
+                    bounds.addBlock(x, y, z);
                 }
             }
 
@@ -178,7 +177,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
             // Solid blocks
             if (cache.getBlockRenderer().renderModel(slice, blockState, pos, model, buffers.get(layer), true, seed)) {
-                bounds.addBlock(boundsX, boundsY, boundsZ);
+                bounds.addBlock(x, y, z);
             }
         }
         ForgeHooksClient.setRenderLayer(null);

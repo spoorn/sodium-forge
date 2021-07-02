@@ -32,7 +32,7 @@ public class BiomeColorCache {
         this.minX = origin.getWorldStartX() - (this.radius + 2);
         this.minZ = origin.getWorldStartZ() - (this.radius + 2);
 
-        this.height = origin.getMinY();
+        this.height = origin.getWorldStartY();
         this.dim = 16 + ((this.radius + 2) * 2);
 
         this.cache = new int[this.dim * this.dim];
