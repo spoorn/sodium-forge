@@ -40,8 +40,8 @@ public class BiomeColorCache {
         this.height = origin.getWorldStartY();
         this.dim = 16 + ((this.radius + 2) * 2);
 
-        this.blendedColorsMinX = origin.getMinX() - 2;
-        this.blendedColorsMinZ = origin.getMinZ() - 2;
+        this.blendedColorsMinX = origin.getWorldStartX() - 2;
+        this.blendedColorsMinZ = origin.getWorldStartZ() - 2;
 
         this.cache = new int[this.dim * this.dim];
         this.blendedColors = new int[BLENDED_COLORS_DIM * BLENDED_COLORS_DIM];
