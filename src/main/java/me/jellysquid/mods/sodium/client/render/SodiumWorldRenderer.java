@@ -59,6 +59,8 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     private double lastCameraX, lastCameraY, lastCameraZ;
     private double lastCameraPitch, lastCameraYaw;
 
+    private double lastCamPosX, lastCamPosY, lastCamPosZ;
+
     private boolean useEntityCulling;
 
     private final LongSet loadedChunkPositions = new LongOpenHashSet();
@@ -172,8 +174,8 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
     public void updateChunks(ActiveRenderInfo camera, ClippingHelper frustum, boolean hasForcedFrustum, int frame, boolean spectator, Matrix4f projection) {
         this.frustum = frustum;
 
-        // Denied queue used for translucent passes, clear it between each render pass and reset cameraChanged
-        chunkRenderManager.setCameraChanged(false);
+        // Reset camera position changed flag
+        chunkRenderManager.setCameraPosChanged(false);
 
         this.chunkRenderManager.setProjection(projection);
         this.useEntityCulling = SodiumClientMod.options().advanced.useAdvancedEntityCulling;
@@ -199,9 +201,14 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         boolean dirty = cameraPos.x != this.lastCameraX || cameraPos.y != this.lastCameraY || cameraPos.z != this.lastCameraZ ||
                 pitch != this.lastCameraPitch || yaw != this.lastCameraYaw;
 
+
         if (dirty) {
             this.chunkRenderManager.markDirty();
-            this.chunkRenderManager.markCameraChanged();
+        }
+
+        BlockPos camBlockPos = camera.getBlockPos();
+        if (camBlockPos.getX() != this.lastCamPosX || camBlockPos.getY() != this.lastCamPosY || camBlockPos.getZ() != this.lastCamPosZ) {
+            this.chunkRenderManager.markCameraPosChanged();
         }
 
         this.lastCameraX = cameraPos.x;
@@ -209,6 +216,10 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         this.lastCameraZ = cameraPos.z;
         this.lastCameraPitch = pitch;
         this.lastCameraYaw = yaw;
+
+        this.lastCamPosX = camBlockPos.getX();
+        this.lastCamPosY = camBlockPos.getY();
+        this.lastCamPosZ = camBlockPos.getZ();
 
         profiler.endStartSection("chunk_update");
 

@@ -90,8 +90,9 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     private float cameraX, cameraY, cameraZ;
     private boolean dirty;
+
     @Setter
-    private boolean cameraChanged;
+    private boolean cameraPosChanged;
 
     private final boolean translucencySorting;
 
@@ -160,7 +161,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private void addChunk(ChunkRenderContainer<T> render, int translucentBudget) {
         boolean rebuild = render.needsRebuild() && render.canRebuild();
 
-        if (this.translucencySorting && render.shouldRebuildForTranslucents() && this.cameraChanged
+        if (this.translucencySorting && render.shouldRebuildForTranslucents() && this.cameraPosChanged
                 && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget
                 && !render.isOutsideFrustum(this.currFrustum)
                 && render.getSquaredDistance(cameraX, cameraY, cameraZ) < translucencyBlockRenderDistance) {
@@ -498,8 +499,8 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.dirty = true;
     }
 
-    public void markCameraChanged() {
-        this.cameraChanged = true;
+    public void markCameraPosChanged() {
+        this.cameraPosChanged = true;
     }
 
     public boolean isDirty() {
