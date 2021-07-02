@@ -160,7 +160,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private void addChunk(ChunkRenderContainer<T> render, int translucentBudget) {
         boolean rebuild = render.needsRebuild() && render.canRebuild();
 
-        if (this.translucencySorting && render.hasTranslucentBlocks() && this.cameraChanged
+        if (this.translucencySorting && render.shouldRebuildForTranslucents() && this.cameraChanged
                 && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget
                 && !render.isOutsideFrustum(this.currFrustum)
                 && render.getSquaredDistance(cameraX, cameraY, cameraZ) < translucencyBlockRenderDistance) {
@@ -206,7 +206,10 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private void addChunkToRenderLists(ChunkRenderContainer<T> render) {
-        int visibleFaces = this.computeVisibleFaces(render) & render.getFacesWithData();
+        // Show all faces if we're doing translucency sorting, otherwise some faces will disappear and flicker around
+        int visibleFaces = ((this.translucencySorting && render.shouldRebuildForTranslucents()) ? ChunkFaceFlags.ALL
+                : this.computeVisibleFaces(render))
+                    & render.getFacesWithData();
 
         if (visibleFaces == 0) {
             return;

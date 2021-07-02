@@ -62,7 +62,7 @@ public class ChunkRenderBackendOneshot extends ChunkRenderShaderBackend<ChunkOne
 
             render.setData(data);
 
-            if (render.hasTranslucentBlocks()) {
+            if (render.shouldRebuildForTranslucents()) {
                 TranslucentPoolUtil.decrementTranslucentRebuilds();
             }
         }

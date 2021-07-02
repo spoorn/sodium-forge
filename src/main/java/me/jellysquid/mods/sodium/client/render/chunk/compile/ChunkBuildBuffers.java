@@ -11,6 +11,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelV
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkMeshData;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import me.jellysquid.mods.sodium.client.render.chunk.format.ChunkModelOffset;
+import me.jellysquid.mods.sodium.client.render.chunk.format.sfp.SFPModelVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
 import me.jellysquid.mods.sodium.client.util.UnsafeUtil;
@@ -110,13 +111,15 @@ public class ChunkBuildBuffers {
 
             VertexBufferBuilder builder = this.buffersByLayer[pass.ordinal()][entry.getKey().ordinal()];
 
-            if (pass.isTranslucent() && shouldSortBackwards) {
-                builder.sortQuads(x, y, z);
-            }
             builder.copyInto(buffer);
         }
 
         buffer.flip();
+
+        if (pass.isTranslucent() && shouldSortBackwards && (vertexType instanceof SFPModelVertexType)) {
+            System.out.println("sorting");
+            ChunkBufferSorter.sortStandardFormat(vertexType, buffer, bufferLen, x, y, z);
+        }
 
         meshData.setVertexData(new VertexData(buffer, this.vertexType.getCustomVertexFormat()));
 

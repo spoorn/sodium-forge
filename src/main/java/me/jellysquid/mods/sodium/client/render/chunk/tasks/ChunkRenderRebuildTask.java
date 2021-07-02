@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.tasks;
 
+import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildBuffers;
@@ -44,12 +45,15 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
     private final WorldSlice slice;
     private final BlockPos offset;
 
+    private final boolean translucencySorting;
+
     public ChunkRenderRebuildTask(ChunkBuilder<T> chunkBuilder, ChunkRenderContainer<T> render, WorldSlice slice, BlockPos offset) {
         this.chunkBuilder = chunkBuilder;
         this.render = render;
         this.camera = chunkBuilder.getCameraPosition();
         this.slice = slice;
         this.offset = offset;
+        this.translucencySorting = SodiumClientMod.options().advanced.translucencySorting;
     }
 
     @Override
@@ -78,7 +82,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 for (int x = baseX; x < baseX + CHUNK_BUILD_SIZE; x++) {
                     BlockState state = this.slice.getBlockState(x, y, z);
 
-                    if (!shouldSortBackwards) {
+                    if (this.translucencySorting && !shouldSortBackwards) {
                         for (BlockRenderPass pass : BlockRenderPass.TRANSLUCENTS) {
                             if (RenderTypeLookupUtil.canRenderInLayer(state, pass.getLayer())) {
                                 shouldSortBackwards = true;
@@ -93,7 +97,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             }
         }
 
-        render.setHasTranslucentBlocks(shouldSortBackwards);
+        render.setRebuildableForTranslucents(shouldSortBackwards);
 
         for (BlockRenderPass pass : BlockRenderPass.VALUES) {
             ChunkMeshData mesh = buffers.createMesh(pass, (float) camera.x - offset.getX(),

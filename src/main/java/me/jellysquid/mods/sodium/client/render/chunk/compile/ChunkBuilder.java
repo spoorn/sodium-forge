@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.compile;
 
+import lombok.extern.log4j.Log4j2;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
@@ -32,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@Log4j2
 public class ChunkBuilder<T extends ChunkGraphicsState> {
     /**
      * The maximum number of jobs that can be queued for a given worker thread.
@@ -351,6 +353,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
                     result = job.task.performBuild(this.pipeline, this.bufferCache, job);
                 } catch (Exception e) {
                     // Propagate any exception from chunk building
+                    log.error("Job completed exceptionally", e);
                     job.future.completeExceptionally(e);
                     continue;
                 } finally {

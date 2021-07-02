@@ -35,7 +35,7 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     private int id;
 
     @Setter
-    private boolean hasTranslucentBlocks;
+    private boolean rebuildableForTranslucents;
 
     public ChunkRenderContainer(ChunkRenderBackend<T> backend, SodiumWorldRenderer worldRenderer, int chunkX, int chunkY, int chunkZ, ChunkRenderColumn<T> column) {
         this.worldRenderer = worldRenderer;
@@ -47,7 +47,7 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         //noinspection unchecked
         this.graphicsStates = (T[]) Array.newInstance(backend.getGraphicsStateType(), BlockRenderPass.COUNT);
 
-        hasTranslucentBlocks = false;
+        this.rebuildableForTranslucents = false;
         this.column = column;
     }
 
@@ -107,8 +107,8 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
         }
     }
 
-    public boolean hasTranslucentBlocks() {
-        return hasTranslucentBlocks;
+    public boolean shouldRebuildForTranslucents() {
+        return this.rebuildableForTranslucents;
     }
 
     public void setData(ChunkRenderData info) {
@@ -125,10 +125,10 @@ public class ChunkRenderContainer<T extends ChunkGraphicsState> {
     // Note: this doesn't seem to work anymore since the mesh data gets removed during rendering
     public void updateTranslucentBlockState() {
         // If chunk changed, check if there are any translucent blocks again
-        hasTranslucentBlocks = false;
+        rebuildableForTranslucents = false;
         for (BlockRenderPass pass : BlockRenderPass.VALUES) {
             if (pass.isTranslucent() && data.getMesh(pass).hasVertexData()) {
-                hasTranslucentBlocks = true;
+                rebuildableForTranslucents = true;
                 break;
             }
         }

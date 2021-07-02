@@ -253,7 +253,7 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
 
             uploadQueue.add(result);
 
-            if (render.hasTranslucentBlocks()) {
+            if (render.shouldRebuildForTranslucents()) {
                 TranslucentPoolUtil.decrementTranslucentRebuilds();
             }
         }
