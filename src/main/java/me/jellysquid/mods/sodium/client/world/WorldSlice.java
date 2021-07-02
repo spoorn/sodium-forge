@@ -50,12 +50,6 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     // The number of outward blocks from the origin chunk to slice
     public static final int NEIGHBOR_BLOCK_RADIUS = 2;
 
-    // The number of blocks on each axis of this slice.
-    private static final int BLOCK_LENGTH = SECTION_BLOCK_LENGTH + (NEIGHBOR_BLOCK_RADIUS * 2);
-
-    // The number of blocks contained by a world slice
-    public static final int BLOCK_COUNT = BLOCK_LENGTH * BLOCK_LENGTH * BLOCK_LENGTH;
-
     // The number of outward chunks from the origin chunk to slice
     public static final int NEIGHBOR_CHUNK_RADIUS = MathHelper.roundUp(NEIGHBOR_BLOCK_RADIUS, 16) >> 4;
 

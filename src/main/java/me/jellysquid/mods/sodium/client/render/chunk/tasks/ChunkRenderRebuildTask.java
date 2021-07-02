@@ -75,13 +75,13 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
         boolean shouldSortBackwards = false;
 
-        for (int y = 0; y < CHUNK_BUILD_SIZE; y++) {
+        for (int relY = 0; relY < CHUNK_BUILD_SIZE; relY++) {
             if (cancellationSource.isCancelled()) {
                 return null;
             }
-            for (int z = 0; z < CHUNK_BUILD_SIZE; z++) {
-                for (int x = 0; x < CHUNK_BUILD_SIZE; x++) {
-                    BlockState state = slice.getBlockStateRelative(x + CHUNK_BUILD_SIZE, y + CHUNK_BUILD_SIZE, z + CHUNK_BUILD_SIZE);
+            for (int relZ = 0; relZ < CHUNK_BUILD_SIZE; relZ++) {
+                for (int relX = 0; relX < CHUNK_BUILD_SIZE; relX++) {
+                    BlockState state = slice.getBlockStateRelative(relX + CHUNK_BUILD_SIZE, relY + CHUNK_BUILD_SIZE, relZ + CHUNK_BUILD_SIZE);
 
                     if (this.translucencySorting && !shouldSortBackwards) {
                         for (BlockRenderPass pass : BlockRenderPass.TRANSLUCENTS) {
@@ -92,7 +92,8 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                         }
                     }
 
-                    setupBlockRender(cache, buffers, renderData, slice, occluder, bounds, pos, renderOffset, state, x+baseX, y+baseY, z+baseZ);
+                    setupBlockRender(cache, buffers, renderData, slice, occluder, bounds, pos, renderOffset, state, relX, relY, relZ,
+                            relX+baseX, relY+baseY, relZ+baseZ);
                 }
             }
         }
@@ -119,12 +120,13 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
     private void setupBlockRender(ChunkRenderCacheLocal cache, ChunkBuildBuffers buffers, ChunkRenderData.Builder renderData, WorldSlice slice,
                                   VisGraph occluder, ChunkRenderBounds.Builder bounds, BlockPos.Mutable pos, BlockPos offset, BlockState blockState,
-                                  int x, int y, int z) {
+                                  int relX, int relY, int relZ, int x, int y, int z) {
         if (blockState.isAir()) {
             return;
         }
 
         pos.setPos(x, y, z);
+        buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
         // TODO: don't create a new BlockPos, just use coordinates
         if (blockState.isOpaqueCube(slice, pos)) {
@@ -140,7 +142,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 if (renderer != null) {
                     renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
 
-                    bounds.addBlock(x, y, z);
+                    bounds.addBlock(relX, relY, relZ);
                 }
             }
         }
@@ -150,15 +152,13 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             // Fluids
             FluidState fluidState = blockState.getFluidState();
 
-            buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
-
             if (!fluidState.isEmpty() && RenderTypeLookupUtil.canRenderInLayer(fluidState, layer)) {
                 if (layer == RenderType.getTranslucent() || layer == RenderType.getTripwire()) {
                     renderData.addTranslucentBlock(pos.toImmutable());
                 }
 
                 if (cache.getFluidRenderer().render(slice, fluidState, pos, buffers.get(layer))) {
-                    bounds.addBlock(x, y, z);
+                    bounds.addBlock(relX, relY, relZ);
                 }
             }
 
@@ -177,7 +177,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
 
             // Solid blocks
             if (cache.getBlockRenderer().renderModel(slice, blockState, pos, model, buffers.get(layer), true, seed)) {
-                bounds.addBlock(x, y, z);
+                bounds.addBlock(relX, relY, relZ);
             }
         }
         ForgeHooksClient.setRenderLayer(null);
