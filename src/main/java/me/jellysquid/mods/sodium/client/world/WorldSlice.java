@@ -50,6 +50,11 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     // The number of outward blocks from the origin chunk to slice
     public static final int NEIGHBOR_BLOCK_RADIUS = 2;
 
+    // The number of blocks on each axis of this slice.
+    private static final int BLOCK_LENGTH = SECTION_BLOCK_LENGTH + (NEIGHBOR_BLOCK_RADIUS * 2);
+    // The number of blocks contained by a world slice
+    public static final int BLOCK_COUNT = BLOCK_LENGTH * BLOCK_LENGTH * BLOCK_LENGTH;
+
     // The number of outward chunks from the origin chunk to slice
     public static final int NEIGHBOR_CHUNK_RADIUS = MathHelper.roundUp(NEIGHBOR_BLOCK_RADIUS, 16) >> 4;
 
@@ -68,6 +73,10 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
     // The world this slice has copied data from
     private final World world;
+
+    // The data arrays for this slice
+    // These are allocated once and then re-used when the slice is released back to an object pool
+    private final BlockState[] blockStates;
 
     // Local Section->BlockState table.
     private final BlockState[][] blockStatesArrays;
@@ -94,6 +103,8 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
     // The chunk origin of this slice
     private SectionPos origin;
+
+    private ChunkRenderContext context;
 
     public static ChunkRenderContext prepare(World world, SectionPos origin, ClonedChunkSectionCache sectionCache) {
         Chunk chunk = world.getChunk(origin.getX(), origin.getZ());
@@ -142,6 +153,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         this.sections = new ClonedChunkSection[SECTION_TABLE_ARRAY_SIZE];
         this.blockStatesArrays = new BlockState[SECTION_TABLE_ARRAY_SIZE][];
         this.biomeCaches = new BiomeCache[SECTION_TABLE_ARRAY_SIZE];
+        this.blockStates = new BlockState[BLOCK_COUNT];
 
         for (int x = 0; x < SECTION_LENGTH; x++) {
             for (int y = 0; y < SECTION_LENGTH; y++) {
@@ -158,6 +170,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     public void copyData(ChunkRenderContext context) {
         this.origin = context.getOrigin();
         this.sections = context.getSections();
+        this.context = context;
 
         this.prevColorCache = null;
         this.prevColorResolver = null;
@@ -182,11 +195,11 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     private void unpackBlockData(BlockState[] states, ClonedChunkSection section, MutableBoundingBox box) {
-        if (this.origin.equals(section.getPosition()))  {
+       /* if (this.origin.equals(section.getPosition()))  {
             this.unpackBlockDataZ(states, section);
-        } else {
+        } else {*/
             this.unpackBlockDataR(states, section, box);
-        }
+        //}
     }
 
     private void unpackBlockDataR(BlockState[] states, ClonedChunkSection section, MutableBoundingBox box) {
@@ -196,15 +209,15 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         SectionPos pos = section.getPosition();
 
         int minBlockX = Math.max(box.minX, pos.getWorldStartX());
-        int maxBlockX = Math.min(box.maxX, pos.getWorldEndX());
+        int maxBlockX = Math.min(box.maxX, (pos.getSectionX() + 1) << 4);
 
         int minBlockY = Math.max(box.minY, pos.getWorldStartY());
-        int maxBlockY = Math.min(box.maxY, pos.getWorldEndY());
+        int maxBlockY = Math.min(box.maxY, (pos.getSectionY() + 1) << 4);
 
         int minBlockZ = Math.max(box.minZ, pos.getWorldStartZ());
-        int maxBlockZ = Math.min(box.maxZ, pos.getWorldEndZ());
+        int maxBlockZ = Math.min(box.maxZ, (pos.getSectionZ() + 1) << 4);
 
-        for (int y = minBlockY; y <= maxBlockY; y++) {
+        /*for (int y = minBlockY; y <= maxBlockY; y++) {
             for (int z = minBlockZ; z <= maxBlockZ; z++) {
                 for (int x = minBlockX; x <= maxBlockX; x++) {
                     int blockIdx = getLocalBlockIndex(x & 15, y & 15, z & 15);
@@ -213,7 +226,29 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
                     states[blockIdx] = palette.get(value);
                 }
             }
+        }*/
+
+        // NOTE: This differs from the parent repo as when I was trying to pull
+        // https://github.com/CaffeineMC/sodium-fabric/commit/eb664ec9bf22428678691f761fa0a6a73c916410
+        // I ran into some NPE, likely due to a compatibility issue with another mod.
+
+        for (int y = minBlockY; y <= maxBlockY; y++) {
+            for (int z = minBlockZ; z <= maxBlockZ; z++) {
+                for (int x = minBlockX; x <= maxBlockX; x++) {
+                    this.blockStates[this.getBlockIndex(box, x, y, z)] = section.getBlockState(x & 15, y & 15, z & 15);
+                }
+            }
         }
+    }
+
+    /**
+     * Returns the index of a block in global coordinate space for this slice.
+     */
+    private int getBlockIndex(MutableBoundingBox box, int x, int y, int z) {
+        int x2 = x - box.minX;
+        int y2 = y - box.minY;
+        int z2 = z - box.minZ;
+        return (y2 * BLOCK_LENGTH * BLOCK_LENGTH) + (z2 * BLOCK_LENGTH) + x2;
     }
 
     private void unpackBlockDataZ(BlockState[] states, ClonedChunkSection section) {
@@ -227,12 +262,13 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     public BlockState getBlockState(int x, int y, int z) {
-        int relX = x - this.baseX;
+        return this.blockStates[this.getBlockIndex(this.context.getVolume(), x, y, z)];
+       /* int relX = x - this.baseX;
         int relY = y - this.baseY;
         int relZ = z - this.baseZ;
 
         return this.blockStatesArrays[getLocalSectionIndex(relX >> 4, relY >> 4, relZ >> 4)]
-                [getLocalBlockIndex(relX & 15, relY & 15, relZ & 15)];
+                [getLocalBlockIndex(relX & 15, relY & 15, relZ & 15)];*/
     }
 
     public BlockState getBlockStateRelative(int x, int y, int z) {

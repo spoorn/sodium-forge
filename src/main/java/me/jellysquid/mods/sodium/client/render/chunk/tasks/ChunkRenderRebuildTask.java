@@ -81,7 +81,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             }
             for (int relZ = 0; relZ < CHUNK_BUILD_SIZE; relZ++) {
                 for (int relX = 0; relX < CHUNK_BUILD_SIZE; relX++) {
-                    BlockState state = slice.getBlockStateRelative(relX + CHUNK_BUILD_SIZE, relY + CHUNK_BUILD_SIZE, relZ + CHUNK_BUILD_SIZE);
+                    BlockState state = slice.getBlockState(baseX + relX, baseY + relY, baseZ + relZ);
 
                     if (this.translucencySorting && !shouldSortBackwards) {
                         for (BlockRenderPass pass : BlockRenderPass.TRANSLUCENTS) {
