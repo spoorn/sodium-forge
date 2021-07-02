@@ -11,6 +11,7 @@ import net.minecraftforge.fml.network.FMLNetworkConstants;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 import java.nio.file.Paths;
 
@@ -30,9 +31,7 @@ public class SodiumClientMod {
                 .getModContainerById("sodium")
                 .orElseThrow(NullPointerException::new);
 
-        MOD_VERSION = mod.getModInfo()
-                .getVersion()
-                .getQualifier();
+        MOD_VERSION = mod.getModInfo().getVersion().toString();
 
         //Make sure the mod being absent on the other network side does not cause the client to display the server as incompatible
         ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST, () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
