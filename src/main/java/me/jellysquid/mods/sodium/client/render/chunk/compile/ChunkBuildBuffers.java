@@ -117,7 +117,6 @@ public class ChunkBuildBuffers {
         buffer.flip();
 
         if (pass.isTranslucent() && shouldSortBackwards && (vertexType instanceof SFPModelVertexType)) {
-            System.out.println("sorting");
             ChunkBufferSorter.sortStandardFormat(vertexType, buffer, bufferLen, x, y, z);
         }
 
