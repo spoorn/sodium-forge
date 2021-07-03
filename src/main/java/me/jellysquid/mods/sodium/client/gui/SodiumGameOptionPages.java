@@ -328,6 +328,15 @@ public class SodiumGameOptionPages {
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
+                .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)
+                        .setName(I18n.format("sodium.options.leaves_culling.name"))
+                        .setTooltip(I18n.format("sodium.options.leaves_culling.tooltip"))
+                        .setControl(TickBoxControl::new)
+                        .setBinding((opts, value) -> opts.advanced.useLeavesCulling = value, opts -> opts.advanced.useLeavesCulling)
+                        .setImpact(OptionImpact.MEDIUM)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build()
+                )
                 .build());
 
         groups.add(OptionGroup.createBuilder()
