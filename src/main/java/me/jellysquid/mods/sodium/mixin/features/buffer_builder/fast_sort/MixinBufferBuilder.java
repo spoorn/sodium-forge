@@ -98,8 +98,8 @@ public class MixinBufferBuilder {
     private static void sliceQuad(FloatBuffer floatBuffer, int quadIdx, int quadStride, int quadStart) {
         int base = quadStart + (quadIdx * quadStride);
 
-        floatBuffer.limit(base + quadStride);
-        floatBuffer.position(base);
+        ((Buffer)floatBuffer).limit(base + quadStride);
+        ((Buffer)floatBuffer).position(base);
     }
 
     private static float getDistanceSq(FloatBuffer buffer, float xCenter, float yCenter, float zCenter, int stride, int start) {
