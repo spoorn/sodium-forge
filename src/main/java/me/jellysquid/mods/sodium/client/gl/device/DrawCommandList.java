@@ -9,6 +9,8 @@ public interface DrawCommandList extends AutoCloseable {
 
     void multiDrawArraysIndirect(long pointer, int count, int stride);
 
+    void multiDrawArraysIndirectCount(long pointer, long drawCount, int maxDrawCount, int stride);
+
     void endTessellating();
 
     void flush();

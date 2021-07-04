@@ -198,6 +198,12 @@ public class GLRenderDevice implements RenderDevice {
         }
 
         @Override
+        public void multiDrawArraysIndirectCount(long pointer, long drawCount, int maxDrawCount, int stride) {
+            GlPrimitiveType primitiveType = GLRenderDevice.this.activeTessellation.getPrimitiveType();
+            GlFunctions.INDIRECT_DRAW.glMultiDrawArraysIndirectCount(primitiveType.getId(), pointer, drawCount, maxDrawCount, stride);
+        }
+
+        @Override
         public void endTessellating() {
             GLRenderDevice.this.activeTessellation.unbind(GLRenderDevice.this.commandList);
             GLRenderDevice.this.activeTessellation = null;

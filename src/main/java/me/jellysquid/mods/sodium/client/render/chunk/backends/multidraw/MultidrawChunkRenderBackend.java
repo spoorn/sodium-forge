@@ -88,23 +88,30 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
     private final GlMutableBuffer uploadBuffer;
     private final GlMutableBuffer uniformBuffer;
     private final GlMutableBuffer commandBuffer;
+    private final GlMutableBuffer drawCountBuffer;
 
     private final ChunkDrawParamsVector uniformBufferBuilder;
     private final IndirectCommandBufferVector commandClientBufferBuilder;
+    private final IndirectParameterBufferVector drawCountBufferBuilder;
+
+    private final boolean supportsMultiDrawIndirectCount;
 
     public MultidrawChunkRenderBackend(RenderDevice device, ChunkVertexType vertexType) {
         super(vertexType);
 
         this.bufferManager = new ChunkRegionManager<>(device);
+        this.supportsMultiDrawIndirectCount = GlFunctions.isIndirectMultiDrawCountSupported();
 
         try (CommandList commands = device.createCommandList()) {
             this.uploadBuffer = commands.createMutableBuffer(GlBufferUsage.GL_STREAM_DRAW);
             this.uniformBuffer = commands.createMutableBuffer(GlBufferUsage.GL_STATIC_DRAW);
             this.commandBuffer = isWindowsIntelDriver() ? null : commands.createMutableBuffer(GlBufferUsage.GL_STREAM_DRAW);
+            this.drawCountBuffer = this.supportsMultiDrawIndirectCount ? commands.createMutableBuffer(GlBufferUsage.GL_STREAM_DRAW) : null;
         }
 
         this.uniformBufferBuilder = ChunkDrawParamsVector.create(2048);
         this.commandClientBufferBuilder = IndirectCommandBufferVector.create(2048);
+        this.drawCountBufferBuilder = this.supportsMultiDrawIndirectCount ? IndirectParameterBufferVector.create(512) : null;
     }
 
     @Override
@@ -193,7 +200,7 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
         this.bufferManager.cleanup();
 
         this.setupDrawBatches(commandList, renders, camera);
-        this.buildCommandBuffer();
+        this.buildCommandBuffer(commandList);
 
         if (this.commandBuffer != null) {
             commandList.bindBuffer(GlBufferTarget.DRAW_INDIRECT_BUFFER, this.commandBuffer);
@@ -202,30 +209,50 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
 
         long pointer = this.commandBuffer == null ? this.commandClientBufferBuilder.getBufferAddress() : 0L;
 
+        long drawCount = 0L;
         for (ChunkRegion<?> region : this.pendingBatches) {
             ChunkDrawCallBatcher batch = region.getDrawBatcher();
 
             try (DrawCommandList drawCommandList = commandList.beginTessellating(region.getTessellation())) {
-                drawCommandList.multiDrawArraysIndirect(pointer, batch.getCount(), 0 /* tightly packed */);
+                if (this.supportsMultiDrawIndirectCount) {
+                    drawCommandList.multiDrawArraysIndirectCount(pointer, drawCount << 2, batch.getCount(), 0 /* tightly packed */);
+                } else {
+                    drawCommandList.multiDrawArraysIndirect(pointer, batch.getCount(), 0 /* tightly packed */);
+                }
             }
 
+            drawCount++;
             pointer += batch.getArrayLength();
         }
 
         this.pendingBatches.clear();
     }
 
-    private void buildCommandBuffer() {
+    private void buildCommandBuffer(CommandList commandList) {
         this.commandClientBufferBuilder.begin();
+
+        if (this.drawCountBufferBuilder != null) {
+            this.drawCountBufferBuilder.begin();
+        }
 
         for (ChunkRegion<?> region : this.pendingBatches) {
             ChunkDrawCallBatcher batcher = region.getDrawBatcher();
             batcher.end();
 
             this.commandClientBufferBuilder.pushCommandBuffer(batcher);
+
+            if (this.drawCountBufferBuilder != null) {
+                this.drawCountBufferBuilder.pushBatchCount(batcher);
+            }
         }
 
         this.commandClientBufferBuilder.end();
+
+        if (this.drawCountBufferBuilder != null) {
+            this.drawCountBufferBuilder.end();
+            commandList.bindBuffer(GlBufferTarget.PARAMETER_BUFFER, this.drawCountBuffer);
+            commandList.uploadData(this.drawCountBuffer, this.drawCountBufferBuilder.getBuffer());
+        }
     }
 
     private void setupUploadBatches(Iterator<ChunkBuildResult<MultidrawGraphicsState>> renders) {
@@ -279,7 +306,6 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
 
             if (!batch.isBuilding()) {
                 batch.begin();
-
                 this.pendingBatches.add(region);
             }
 
@@ -322,12 +348,19 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
             if (this.commandBuffer != null) {
                 commands.deleteBuffer(this.commandBuffer);
             }
+
+            if (this.drawCountBuffer != null)
+                commands.deleteBuffer(this.drawCountBuffer);
         }
 
         this.bufferManager.delete();
 
         this.commandClientBufferBuilder.delete();
         this.uniformBufferBuilder.delete();
+
+        if (this.drawCountBufferBuilder != null) {
+            this.drawCountBufferBuilder.delete();
+        }
     }
 
     @Override
