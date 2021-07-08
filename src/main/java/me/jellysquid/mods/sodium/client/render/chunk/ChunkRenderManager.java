@@ -161,7 +161,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private void addChunk(ChunkRenderContainer<T> render, int translucentBudget) {
         boolean rebuild = render.needsRebuild() && render.canRebuild();
 
-        if (this.translucencySorting && render.shouldRebuildForTranslucents() && this.cameraPosChanged
+        if (!rebuild && this.translucencySorting && render.shouldRebuildForTranslucents() && this.cameraPosChanged
                 && TranslucentPoolUtil.getTranslucentRebuilds() <= translucentBudget
                 && !render.isOutsideFrustum(this.currFrustum)
                 && render.getSquaredDistance(cameraX, cameraY, cameraZ) < translucencyBlockRenderDistance) {
