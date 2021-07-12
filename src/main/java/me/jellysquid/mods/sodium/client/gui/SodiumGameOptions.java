@@ -21,6 +21,8 @@ public class SodiumGameOptions {
 
     private Path configPath;
 
+    public boolean fpsCounter = false;
+
     public void notifyListeners() {
         SodiumClientMod.onConfigChanged(this);
     }

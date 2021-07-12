@@ -116,6 +116,13 @@ public class SodiumGameOptionPages {
                             Minecraft.getInstance().getMainWindow().setFramerateLimit(value);
                         }, opts -> opts.framerateLimit)
                         .build())
+                .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)
+                        .setName(I18n.format("sodium.options.fps_counter.name"))
+                        .setTooltip(I18n.format("sodium.options.fps_counter.tooltip"))
+                        .setControl(TickBoxControl::new)
+                        .setBinding((opts, value) ->  opts.fpsCounter = value, (opts) -> opts.fpsCounter)
+                        .setImpact(OptionImpact.LOW)
+                        .build())
                 .build());
 
         groups.add(OptionGroup.createBuilder()
