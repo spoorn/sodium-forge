@@ -124,7 +124,7 @@
     "block.MixinShapeCache",
     "chunk.MixinChunkNibbleArray",
     "chunk.MixinWorldChunk",
-    "chunk.light.MixinLightingProvider",
+   /* "chunk.light.MixinLightingProvider",
     "chunk.light.MixinBlockLightStorageData",
     "chunk.light.MixinChunkBlockLightProvider",
     "chunk.light.MixinChunkLightProvider",
@@ -134,11 +134,11 @@
     "chunk.light.MixinLightStorage",
     "chunk.light.MixinBlockLightStorage",
     "chunk.light.MixinSkyLightStorage",
-    "chunk.light.MixinSkyLightStorageData",
-    "chunk.light.MixinServerLightingProvider",
+    "chunk.light.MixinSkyLightStorageData",*/
+    //"chunk.light.MixinServerLightingProvider",
     "chunk.MixinProtoChunk",
     "world.MixinThreadedAnvilChunkStorage",
-    "chunk.MixinChunkStatus",
+    //"chunk.MixinChunkStatus",
     "world.MixinChunkSerializer"
   ],
   "client": [
