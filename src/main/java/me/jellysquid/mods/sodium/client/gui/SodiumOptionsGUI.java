@@ -12,6 +12,7 @@ import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.IRenderable;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.VideoSettingsScreen;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.*;
 import org.lwjgl.glfw.GLFW;
@@ -76,9 +77,9 @@ public class SodiumOptionsGUI extends Screen {
         this.rebuildGUIPages();
         this.rebuildGUIOptions();
 
-        this.undoButton = new FlatButtonWidget(new Dim2i(this.width - 211, this.height - 26, 65, 20), "Undo", this::undoChanges);
-        this.applyButton = new FlatButtonWidget(new Dim2i(this.width - 142, this.height - 26, 65, 20), "Apply", this::applyChanges);
-        this.closeButton = new FlatButtonWidget(new Dim2i(this.width - 73, this.height - 26, 65, 20), "Close", this::onClose);
+        this.undoButton = new FlatButtonWidget(new Dim2i(this.width - 211, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.undo"), this::undoChanges);
+        this.applyButton = new FlatButtonWidget(new Dim2i(this.width - 142, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.apply"), this::applyChanges);
+        this.closeButton = new FlatButtonWidget(new Dim2i(this.width - 73, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.close"), this::closeScreen);
 
         this.children.add(this.undoButton);
         this.children.add(this.applyButton);
