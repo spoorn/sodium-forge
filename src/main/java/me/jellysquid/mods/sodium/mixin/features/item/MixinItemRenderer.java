@@ -79,7 +79,13 @@ public class MixinItemRenderer {
                     colorProvider = ((ItemColorsExtended) this.itemColors).getColorProvider(stack);
                 }
 
-                color = ColorARGB.toABGR((colorProvider.getColor(stack, bakedQuad.getTintIndex())), 255);
+                // Some mods mess with ItemRenderer and ItemColors.  Handle NPE here
+                // See https://github.com/spoorn/sodium-forge/issues/100
+                if (colorProvider == null) {
+                    color = this.itemColors.getColor(stack, bakedQuad.getTintIndex());
+                } else {
+                    color = ColorARGB.toABGR((colorProvider.getColor(stack, bakedQuad.getTintIndex())), 255);
+                }
             }
 
             ModelQuadView quad = ((ModelQuadView) bakedQuad);
