@@ -94,7 +94,16 @@ public class MixinItemRenderer {
             for (int i = 0; i < 4; i++) {
                 // Combine the tint color with Item registered color to support Dynamic Overriden BakedModels
                 // Fixes https://github.com/spoorn/sodium-forge/issues/103, https://github.com/spoorn/sodium-forge/issues/104
-                int finalColor = bakedQuad.hasTintIndex() ? multABGRInts(quad.getColor(quad.getColorIndex()), color) : color;
+                int finalColor = color;
+                try {
+                    if (bakedQuad.hasTintIndex()) {
+                        finalColor = multABGRInts(quad.getColor(quad.getColorIndex()), color);
+                    }
+                } catch (Exception ex) {
+                    // Sometimes fetching the Color runs into an IndexOutOfBoundsException, seems to conflict with JEI logic
+                    // See https://github.com/spoorn/sodium-forge/issues/106
+                    // TODO: This is not a true solution.  We should deep dive to see why color index is out of bounds
+                }
                 drain.writeQuad(entry, quad.getX(i), quad.getY(i), quad.getZ(i), finalColor, quad.getTexU(i), quad.getTexV(i),
                         combinedLightIn, combinedOverlayIn, ModelQuadUtil.getFacingNormal(bakedQuad.getFace()));
             }
