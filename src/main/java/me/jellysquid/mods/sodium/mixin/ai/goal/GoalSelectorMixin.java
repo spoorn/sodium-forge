@@ -1,11 +1,10 @@
 package me.jellysquid.mods.sodium.mixin.ai.goal;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.ai.goal.GoalSelector;
-import net.minecraft.entity.ai.goal.PrioritizedGoal;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.profiler.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.GoalSelector;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,12 +21,12 @@ public abstract class GoalSelectorMixin {
 
     @Shadow
     @Final
-    private Supplier<IProfiler> profiler;
+    private Supplier<ProfilerFiller> profiler;
 
     @Mutable
     @Shadow
     @Final
-    private Set<PrioritizedGoal> goals;
+    private Set<WrappedGoal> availableGoals;
 
     @Shadow
     @Final
@@ -35,14 +34,14 @@ public abstract class GoalSelectorMixin {
 
     @Shadow
     @Final
-    private Map<Goal.Flag, PrioritizedGoal> flagGoals;
+    private Map<Goal.Flag, WrappedGoal> lockedFlags;
 
     /**
      * Replace the goal set with an optimized collection type which performs better for iteration.
      */
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void reinit(Supplier<Profiler> supplier, CallbackInfo ci) {
-        this.goals = new ObjectLinkedOpenHashSet<>(this.goals);
+    private void reinit(Supplier<ProfilerFiller> supplier, CallbackInfo ci) {
+        this.availableGoals = new ObjectLinkedOpenHashSet<>(this.availableGoals);
     }
 
     /**
