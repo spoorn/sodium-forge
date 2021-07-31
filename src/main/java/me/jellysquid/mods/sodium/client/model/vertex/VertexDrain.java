@@ -1,6 +1,6 @@
 package me.jellysquid.mods.sodium.client.model.vertex;
 
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.jellysquid.mods.sodium.client.model.vertex.type.VertexType;
 
 /**
@@ -8,12 +8,12 @@ import me.jellysquid.mods.sodium.client.model.vertex.type.VertexType;
  */
 public interface VertexDrain {
     /**
-     * Returns a {@link VertexDrain} implementation on the provided {@link IVertexBuilder}. Since the interface
+     * Returns a {@link VertexDrain} implementation on the provided {@link VertexConsumer}. Since the interface
      * is always implemented on a given VertexConsumer, this is simply implemented as a cast internally.
-     * @param consumer The {@link IVertexBuilder}
+     * @param consumer The {@link VertexConsumer}
      * @return A {@link VertexDrain}
      */
-    static VertexDrain of(IVertexBuilder consumer) {
+    static VertexDrain of(VertexConsumer consumer) {
         return (VertexDrain) consumer;
     }
 

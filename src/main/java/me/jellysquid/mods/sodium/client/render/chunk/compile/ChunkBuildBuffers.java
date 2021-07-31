@@ -15,8 +15,8 @@ import me.jellysquid.mods.sodium.client.render.chunk.format.sfp.SFPModelVertexTy
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
 import me.jellysquid.mods.sodium.client.util.UnsafeUtil;
-import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.RenderType;
+import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -43,13 +43,13 @@ public class ChunkBuildBuffers {
 
         this.offset = new ChunkModelOffset();
 
-        for (RenderType layer : RenderType.getBlockRenderTypes()) {
+        for (RenderType layer : RenderType.chunkBufferLayers()) {
             int passId = this.renderPassManager.getRenderPassId(layer);
 
             VertexBufferBuilder[] buffers = this.buffersByLayer[passId];
 
             for (ModelQuadFacing facing : ModelQuadFacing.VALUES) {
-                buffers[facing.ordinal()] = new VertexBufferBuilder(vertexType.getBufferVertexFormat(), layer.getBufferSize() / ModelQuadFacing.COUNT);
+                buffers[facing.ordinal()] = new VertexBufferBuilder(vertexType.getBufferVertexFormat(), layer.bufferSize() / ModelQuadFacing.COUNT);
             }
         }
     }
@@ -103,7 +103,7 @@ public class ChunkBuildBuffers {
             return null;
         }
 
-        ByteBuffer buffer = GLAllocation.createDirectByteBuffer(bufferLen);
+        ByteBuffer buffer = BufferUtils.createByteBuffer(bufferLen);
 
         for (Map.Entry<ModelQuadFacing, BufferSlice> entry : meshData.getSlices()) {
             BufferSlice slice = entry.getValue();

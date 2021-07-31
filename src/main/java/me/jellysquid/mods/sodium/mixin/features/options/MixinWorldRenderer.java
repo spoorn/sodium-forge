@@ -2,15 +2,15 @@ package me.jellysquid.mods.sodium.mixin.features.options;
 
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.LevelRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(WorldRenderer.class)
+@Mixin(LevelRenderer.class)
 public class MixinWorldRenderer {
-    @Redirect(method = "renderRainSnow", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isFancyGraphicsEnabled()Z"))
+    @Redirect(method = "renderSnowAndRain", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;useFancyGraphics()Z"), remap = false)
     private boolean redirectGetFancyWeather() {
-        return SodiumClientMod.options().quality.weatherQuality.isFancy(Minecraft.getInstance().gameSettings.graphicFanciness);
+        return SodiumClientMod.options().quality.weatherQuality.isFancy(Minecraft.getInstance().options.graphicsMode);
     }
 }

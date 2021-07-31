@@ -1,9 +1,9 @@
 package me.jellysquid.mods.sodium.client.gui.options.control;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.jellysquid.mods.sodium.client.gui.options.Option;
 import me.jellysquid.mods.sodium.client.util.Dim2i;
-import net.minecraft.client.renderer.Rectangle2d;
+import net.minecraft.client.renderer.Rect2i;
 
 public class TickBoxControl implements Control<Boolean> {
     private final Option<Boolean> option;
@@ -28,16 +28,16 @@ public class TickBoxControl implements Control<Boolean> {
     }
 
     private static class TickBoxControlElement extends ControlElement<Boolean> {
-        private final Rectangle2d button;
+        private final Rect2i button;
 
         public TickBoxControlElement(Option<Boolean> option, Dim2i dim) {
             super(option, dim);
 
-            this.button = new Rectangle2d(dim.getLimitX() - 16, dim.getCenterY() - 5, 10, 10);
+            this.button = new Rect2i(dim.getLimitX() - 16, dim.getCenterY() - 5, 10, 10);
         }
 
         @Override
-        public void render(MatrixStack matrixStack, int mouseX, int mouseY, float delta) {
+        public void render(PoseStack matrixStack, int mouseX, int mouseY, float delta) {
             super.render(matrixStack, mouseX, mouseY, delta);
 
             final int x = this.button.getX();

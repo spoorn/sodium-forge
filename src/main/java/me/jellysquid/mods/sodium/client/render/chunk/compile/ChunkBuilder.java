@@ -17,9 +17,9 @@ import me.jellysquid.mods.sodium.client.world.cloned.ChunkRenderContext;
 import me.jellysquid.mods.sodium.client.world.cloned.ClonedChunkSectionCache;
 import me.jellysquid.mods.sodium.common.util.collections.DequeDrain;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.World;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,8 +49,8 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
 
     private ClonedChunkSectionCache sectionCache;
 
-    private World world;
-    private Vector3d cameraPosition;
+    private Level world;
+    private Vec3 cameraPosition;
     private BlockRenderPassManager renderPassManager;
 
     private final int limitThreads;
@@ -180,13 +180,13 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
      * Sets the current camera position of the player used for task prioritization.
      */
     public void setCameraPosition(double x, double y, double z) {
-        this.cameraPosition = new Vector3d(x, y, z);
+        this.cameraPosition = new Vec3(x, y, z);
     }
 
     /**
      * Returns the current camera position of the player used for task prioritization.
      */
-    public Vector3d getCameraPosition() {
+    public Vec3 getCameraPosition() {
         return this.cameraPosition;
     }
 
@@ -204,7 +204,7 @@ public class ChunkBuilder<T extends ChunkGraphicsState> {
      * @param world The world instance
      * @param renderPassManager The render pass manager used for the world
      */
-    public void init(ClientWorld world, BlockRenderPassManager renderPassManager) {
+    public void init(ClientLevel world, BlockRenderPassManager renderPassManager) {
         if (world == null) {
             throw new NullPointerException("World is null");
         }

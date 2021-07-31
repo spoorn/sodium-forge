@@ -1,7 +1,7 @@
 package me.jellysquid.mods.sodium.mixin.features.item;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
@@ -13,13 +13,13 @@ import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
 import me.jellysquid.mods.sodium.client.util.rand.XoRoShiRoRandom;
 import me.jellysquid.mods.sodium.client.world.biome.ItemColorsExtended;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
-import net.minecraft.client.renderer.ItemRenderer;
-import net.minecraft.client.renderer.color.IItemColor;
-import net.minecraft.client.renderer.color.ItemColors;
-import net.minecraft.client.renderer.model.BakedQuad;
-import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Direction;
+import net.minecraft.client.color.item.ItemColor;
+import net.minecraft.client.color.item.ItemColors;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -39,22 +39,22 @@ public class MixinItemRenderer {
      * @reason Avoid allocations
      * @author JellySquid
      */
-    @Overwrite
-    public void renderModel(IBakedModel model, ItemStack stack, int light, int overlay, MatrixStack matrices, IVertexBuilder vertices) {
+    @Overwrite(remap = false)
+    public void renderModelLists(BakedModel model, ItemStack stack, int light, int overlay, PoseStack matrices, VertexConsumer vertices) {
         XoRoShiRoRandom random = this.random;
 
         for (Direction direction : DirectionUtil.ALL_DIRECTIONS) {
             List<BakedQuad> quads = model.getQuads(null, direction, random.setSeedAndReturn(42L));
 
             if (!quads.isEmpty()) {
-                this.renderQuads(matrices, vertices, quads, stack, light, overlay);
+                this.renderQuadList(matrices, vertices, quads, stack, light, overlay);
             }
         }
 
         List<BakedQuad> quads = model.getQuads(null, null, random.setSeedAndReturn(42L));
 
         if (!quads.isEmpty()) {
-            this.renderQuads(matrices, vertices, quads, stack, light, overlay);
+            this.renderQuadList(matrices, vertices, quads, stack, light, overlay);
         }
     }
 
@@ -62,11 +62,11 @@ public class MixinItemRenderer {
      * @reason Use vertex building intrinsics
      * @author JellySquid
      */
-    @Overwrite
-    public void renderQuads(MatrixStack matrixStackIn, IVertexBuilder bufferIn, List<BakedQuad> quadsIn, ItemStack itemStackIn, int combinedLightIn, int combinedOverlayIn) {
-        MatrixStack.Entry entry = matrixStackIn.getLast();
+    @Overwrite(remap = false)
+    public void renderQuadList(PoseStack matrixStackIn, VertexConsumer bufferIn, List<BakedQuad> quadsIn, ItemStack itemStackIn, int combinedLightIn, int combinedOverlayIn) {
+        PoseStack.Pose entry = matrixStackIn.last();
 
-        IItemColor colorProvider = null;
+        ItemColor colorProvider = null;
 
         QuadVertexSink drain = VertexDrain.of(bufferIn)
                 .createSink(VanillaVertexTypes.QUADS);
@@ -75,7 +75,7 @@ public class MixinItemRenderer {
         for (BakedQuad bakedQuad : quadsIn) {
             int color = 0xFFFFFFFF;
 
-            if (!itemStackIn.isEmpty() && bakedQuad.hasTintIndex()) {
+            if (!itemStackIn.isEmpty() && bakedQuad.isTinted()) {
                 if (colorProvider == null) {
                     colorProvider = ((ItemColorsExtended) this.itemColors).getColorProvider(itemStackIn);
                 }
@@ -96,7 +96,7 @@ public class MixinItemRenderer {
                 // Fixes https://github.com/spoorn/sodium-forge/issues/103, https://github.com/spoorn/sodium-forge/issues/104
                 int finalColor = color;
                 try {
-                    if (bakedQuad.hasTintIndex()) {
+                    if (bakedQuad.isTinted()) {
                         finalColor = multABGRInts(quad.getColor(quad.getColorIndex()), color);
                     }
                 } catch (Exception ex) {
@@ -105,7 +105,7 @@ public class MixinItemRenderer {
                     // TODO: This is not a true solution.  We should deep dive to see why color index is out of bounds
                 }
                 drain.writeQuad(entry, quad.getX(i), quad.getY(i), quad.getZ(i), finalColor, quad.getTexU(i), quad.getTexV(i),
-                        combinedLightIn, combinedOverlayIn, ModelQuadUtil.getFacingNormal(bakedQuad.getFace()));
+                        combinedLightIn, combinedOverlayIn, ModelQuadUtil.getFacingNormal(bakedQuad.getDirection()));
             }
 
             SpriteUtil.markSpriteActive(quad.getSprite());

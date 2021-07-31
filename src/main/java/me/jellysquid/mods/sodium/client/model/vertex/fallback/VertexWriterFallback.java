@@ -1,6 +1,6 @@
 package me.jellysquid.mods.sodium.client.model.vertex.fallback;
 
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexSink;
 
 /**
@@ -12,9 +12,9 @@ import me.jellysquid.mods.sodium.client.model.vertex.VertexSink;
  * to the backing implementation.
  */
 public abstract class VertexWriterFallback implements VertexSink {
-    protected final IVertexBuilder consumer;
+    protected final VertexConsumer consumer;
 
-    protected VertexWriterFallback(IVertexBuilder consumer) {
+    protected VertexWriterFallback(VertexConsumer consumer) {
         this.consumer = consumer;
     }
 

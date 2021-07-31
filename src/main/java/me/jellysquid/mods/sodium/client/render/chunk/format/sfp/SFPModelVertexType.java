@@ -1,6 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.format.sfp;
 
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexAttributeFormat;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
@@ -25,7 +25,7 @@ public class SFPModelVertexType implements ChunkVertexType {
     public static final float TEXTURE_SCALE = 1.0f;
 
     @Override
-    public ModelVertexSink createFallbackWriter(IVertexBuilder consumer) {
+    public ModelVertexSink createFallbackWriter(VertexConsumer consumer) {
         throw new UnsupportedOperationException();
     }
 

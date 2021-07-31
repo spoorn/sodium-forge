@@ -4,8 +4,8 @@ import com.google.common.collect.Lists;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderBackend;
-import net.minecraft.client.gui.overlay.DebugOverlayGui;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.components.DebugScreenOverlay;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,24 +15,25 @@ import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-@Mixin(DebugOverlayGui.class)
+@Mixin(DebugScreenOverlay.class)
 public abstract class MixinDebugHud {
+
     @Shadow
-    private static long bytesToMb(long bytes) {
+    private static long bytesToMegabytes(long bytes) {
         throw new UnsupportedOperationException();
     }
 
-    @Redirect(method = "getDebugInfoRight", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList([Ljava/lang/Object;)Ljava/util/ArrayList;"))
+    @Redirect(method = "getSystemInformation", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList([Ljava/lang/Object;)Ljava/util/ArrayList;"), remap = false)
     private ArrayList<String> redirectRightTextEarly(Object[] elements) {
         ArrayList<String> strings = Lists.newArrayList((String[]) elements);
         strings.add("");
         strings.add("Sodium Renderer");
-        strings.add(TextFormatting.UNDERLINE + getFormattedVersionText());
+        strings.add(ChatFormatting.UNDERLINE + getFormattedVersionText());
         strings.add("");
         strings.addAll(getChunkRendererDebugStrings());
 
         if (SodiumClientMod.options().advanced.ignoreDriverBlacklist) {
-            strings.add(TextFormatting.RED + "(!!) Driver blacklist ignored");
+            strings.add(ChatFormatting.RED + "(!!) Driver blacklist ignored");
         }
 
         for (int i = 0; i < strings.size(); i++) {
@@ -50,14 +51,14 @@ public abstract class MixinDebugHud {
 
     private static String getFormattedVersionText() {
         String version = SodiumClientMod.getVersion();
-        TextFormatting color;
+        ChatFormatting color;
 
         if (version.endsWith("-dirty")) {
-            color = TextFormatting.RED;
+            color = ChatFormatting.RED;
         } else if (version.contains("+rev.")) {
-            color = TextFormatting.LIGHT_PURPLE;
+            color = ChatFormatting.LIGHT_PURPLE;
         } else {
-            color = TextFormatting.GREEN;
+            color = ChatFormatting.GREEN;
         }
 
         return color + version;
@@ -74,6 +75,6 @@ public abstract class MixinDebugHud {
     }
 
     private static String getNativeMemoryString() {
-        return "Off-Heap: +" + bytesToMb(ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed()) + "MB";
+        return "Off-Heap: +" + bytesToMegabytes(ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed()) + "MB";
     }
 }

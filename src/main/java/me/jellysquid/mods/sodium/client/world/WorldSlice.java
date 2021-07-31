@@ -8,24 +8,24 @@ import me.jellysquid.mods.sodium.client.world.cloned.ClonedChunkSection;
 import me.jellysquid.mods.sodium.client.world.cloned.ClonedChunkSectionCache;
 import me.jellysquid.mods.sodium.client.world.cloned.PackedIntegerArrayExtended;
 import me.jellysquid.mods.sodium.client.world.cloned.palette.ClonedPalette;
-import net.minecraft.block.BlockState;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.BitArray;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.MutableBoundingBox;
-import net.minecraft.util.math.SectionPos;
-import net.minecraft.world.IBlockDisplayReader;
-import net.minecraft.world.LightType;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeManager;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
+import net.minecraft.util.BitStorage;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.ColorResolver;
-import net.minecraft.world.lighting.WorldLightManager;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.material.FluidState;
 
 import java.util.Map;
 
@@ -40,7 +40,7 @@ import java.util.Map;
  * You should use object pooling with this type to avoid huge allocations as instances of this class contain many large
  * arrays.
  */
-public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReader {
+public class WorldSlice implements BlockAndTintGetter, BiomeManager.NoiseBiomeSource {
     // The number of blocks on each axis in a section.
     private static final int SECTION_BLOCK_LENGTH = 16;
 
@@ -56,14 +56,14 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     public static final int BLOCK_COUNT = BLOCK_LENGTH * BLOCK_LENGTH * BLOCK_LENGTH;
 
     // The number of outward chunks from the origin chunk to slice
-    public static final int NEIGHBOR_CHUNK_RADIUS = MathHelper.roundUp(NEIGHBOR_BLOCK_RADIUS, 16) >> 4;
+    public static final int NEIGHBOR_CHUNK_RADIUS = Mth.roundToward(NEIGHBOR_BLOCK_RADIUS, 16) >> 4;
 
     // The number of sections on each axis of this slice.
     private static final int SECTION_LENGTH = 1 + (NEIGHBOR_CHUNK_RADIUS * 2);
 
     // The size of the lookup tables used for mapping values to coordinate int pairs. The lookup table size is always
     // a power of two so that multiplications can be replaced with simple bit shifts in hot code paths.
-    private static final int TABLE_LENGTH = MathHelper.smallestEncompassingPowerOfTwo(SECTION_LENGTH);
+    private static final int TABLE_LENGTH = Mth.smallestEncompassingPowerOfTwo(SECTION_LENGTH);
 
     // The number of bits needed for each X/Y/Z component in a lookup table.
     private static final int TABLE_BITS = Integer.bitCount(TABLE_LENGTH - 1);
@@ -72,7 +72,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     private static final int SECTION_TABLE_ARRAY_SIZE = TABLE_LENGTH * TABLE_LENGTH * TABLE_LENGTH;
 
     // The world this slice has copied data from
-    private final World world;
+    private final Level world;
 
     // The data arrays for this slice
     // These are allocated once and then re-used when the slice is released back to an object pool
@@ -106,23 +106,23 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
     private ChunkRenderContext context;
 
-    public static ChunkRenderContext prepare(World world, SectionPos origin, ClonedChunkSectionCache sectionCache) {
-        Chunk chunk = world.getChunk(origin.getX(), origin.getZ());
-        ChunkSection section = chunk.getSections()[origin.getY()];
+    public static ChunkRenderContext prepare(Level world, SectionPos origin, ClonedChunkSectionCache sectionCache) {
+        LevelChunk chunk = world.getChunk(origin.getX(), origin.getZ());
+        LevelChunkSection section = chunk.getSections()[origin.getY()];
 
         // If the chunk section is absent or empty, simply terminate now. There will never be anything in this chunk
         // section to render, so we need to signal that a chunk render task shouldn't created. This saves a considerable
         // amount of time in queueing instant build tasks and greatly accelerates how quickly the world can be loaded.
-        if (ChunkSection.isEmpty(section)) {
+        if (LevelChunkSection.isEmpty(section)) {
             return null;
         }
 
-        MutableBoundingBox volume = new MutableBoundingBox(origin.getWorldStartX() - NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldStartY() - NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldStartZ() - NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldEndX() + NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldEndY() + NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldEndZ() + NEIGHBOR_BLOCK_RADIUS);
+        BoundingBox volume = new BoundingBox(origin.minBlockX() - NEIGHBOR_BLOCK_RADIUS,
+                origin.minBlockY() - NEIGHBOR_BLOCK_RADIUS,
+                origin.minBlockZ() - NEIGHBOR_BLOCK_RADIUS,
+                origin.maxBlockX() + NEIGHBOR_BLOCK_RADIUS,
+                origin.maxBlockY() + NEIGHBOR_BLOCK_RADIUS,
+                origin.maxBlockZ() + NEIGHBOR_BLOCK_RADIUS);
 
         // The min/max bounds of the chunks copied by this slice
         final int minChunkX = origin.getX() - NEIGHBOR_CHUNK_RADIUS;
@@ -147,7 +147,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         return new ChunkRenderContext(origin, sections, volume);
     }
 
-    public WorldSlice(World world) {
+    public WorldSlice(Level world) {
         this.world = world;
 
         this.sections = new ClonedChunkSection[SECTION_TABLE_ARRAY_SIZE];
@@ -194,7 +194,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         }
     }
 
-    private void unpackBlockData(BlockState[] states, ClonedChunkSection section, MutableBoundingBox box) {
+    private void unpackBlockData(BlockState[] states, ClonedChunkSection section, BoundingBox box) {
        /* if (this.origin.equals(section.getPosition()))  {
             this.unpackBlockDataZ(states, section);
         } else {*/
@@ -202,20 +202,20 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         //}
     }
 
-    private void unpackBlockDataR(BlockState[] states, ClonedChunkSection section, MutableBoundingBox box) {
-        BitArray intArray = section.getBlockData();
+    private void unpackBlockDataR(BlockState[] states, ClonedChunkSection section, BoundingBox box) {
+        BitStorage intArray = section.getBlockData();
         ClonedPalette<BlockState> palette = section.getBlockPalette();
 
         SectionPos pos = section.getPosition();
 
-        int minBlockX = Math.max(box.minX, pos.getWorldStartX());
-        int maxBlockX = Math.min(box.maxX, (pos.getSectionX() + 1) << 4);
+        int minBlockX = Math.max(box.minX(), pos.minBlockX());
+        int maxBlockX = Math.min(box.maxX(), (pos.x() + 1) << 4);
 
-        int minBlockY = Math.max(box.minY, pos.getWorldStartY());
-        int maxBlockY = Math.min(box.maxY, (pos.getSectionY() + 1) << 4);
+        int minBlockY = Math.max(box.minY(), pos.minBlockY());
+        int maxBlockY = Math.min(box.maxY(), (pos.y() + 1) << 4);
 
-        int minBlockZ = Math.max(box.minZ, pos.getWorldStartZ());
-        int maxBlockZ = Math.min(box.maxZ, (pos.getSectionZ() + 1) << 4);
+        int minBlockZ = Math.max(box.minZ(), pos.minBlockZ());
+        int maxBlockZ = Math.min(box.maxZ(), (pos.z() + 1) << 4);
 
         /*for (int y = minBlockY; y <= maxBlockY; y++) {
             for (int z = minBlockZ; z <= maxBlockZ; z++) {
@@ -244,10 +244,10 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     /**
      * Returns the index of a block in global coordinate space for this slice.
      */
-    private int getBlockIndex(MutableBoundingBox box, int x, int y, int z) {
-        int x2 = x - box.minX;
-        int y2 = y - box.minY;
-        int z2 = z - box.minZ;
+    private int getBlockIndex(BoundingBox box, int x, int y, int z) {
+        int x2 = x - box.minX();
+        int y2 = y - box.minY();
+        int z2 = z - box.minZ();
         return (y2 * BLOCK_LENGTH * BLOCK_LENGTH) + (z2 * BLOCK_LENGTH) + x2;
     }
 
@@ -282,21 +282,21 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public float func_230487_a_(Direction direction, boolean shaded) {
-        return this.world.func_230487_a_(direction, shaded);
+    public float getShade(Direction direction, boolean shaded) {
+        return this.world.getShade(direction, shaded);
     }
 
     @Override
-    public WorldLightManager getLightManager() {
-        return this.world.getLightManager();
+    public LevelLightEngine getLightEngine() {
+        return this.world.getLightEngine();
     }
 
     @Override
-    public TileEntity getTileEntity(BlockPos pos) {
-        return this.getTileEntity(pos.getX(), pos.getY(), pos.getZ());
+    public BlockEntity getBlockEntity(BlockPos pos) {
+        return this.getBlockEntity(pos.getX(), pos.getY(), pos.getZ());
     }
 
-    public TileEntity getTileEntity(int x, int y, int z) {
+    public BlockEntity getBlockEntity(int x, int y, int z) {
         int relX = x - this.baseX;
         int relY = y - this.baseY;
         int relZ = z - this.baseZ;
@@ -306,7 +306,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public int getBlockColor(BlockPos pos, ColorResolver resolver) {
+    public int getBlockTint(BlockPos pos, ColorResolver resolver) {
         BiomeColorCache cache;
 
         if (this.prevColorResolver == resolver) {
@@ -326,7 +326,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public int getLightFor(LightType type, BlockPos pos) {
+    public int getBrightness(LightLayer type, BlockPos pos) {
         int relX = pos.getX() - this.baseX;
         int relY = pos.getY() - this.baseY;
         int relZ = pos.getZ() - this.baseZ;
@@ -336,7 +336,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public int getLightSubtracted(BlockPos pos, int ambientDarkness) {
+    public int getRawBrightness(BlockPos pos, int ambientDarkness) {
         return 0;
     }
 
@@ -359,7 +359,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
             return section.getBiomeForNoiseGen(x, y, z);
         }
 
-        return this.world.getNoiseBiomeRaw(x, y, z);
+        return this.world.getUncachedNoiseBiome(x, y, z);
     }
 
     /**
@@ -389,5 +389,15 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
     public static int getLocalChunkIndex(int x, int z) {
         return z << TABLE_BITS | x;
+    }
+
+    @Override
+    public int getHeight() {
+        return this.world.getHeight();
+    }
+
+    @Override
+    public int getMinBuildHeight() {
+        return this.world.getMinBuildHeight();
     }
 }

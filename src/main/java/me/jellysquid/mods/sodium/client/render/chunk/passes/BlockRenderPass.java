@@ -5,11 +5,11 @@ import net.minecraft.client.renderer.RenderType;
 
 // TODO: Move away from using an enum, make this extensible
 public enum BlockRenderPass {
-    SOLID(RenderType.getSolid(), false),
-    CUTOUT(RenderType.getCutout(), false),
-    CUTOUT_MIPPED(RenderType.getCutoutMipped(), false),
-    TRANSLUCENT(RenderType.getTranslucent(), true),
-    TRIPWIRE(RenderType.getTripwire(), true);
+    SOLID(RenderType.solid(), false),
+    CUTOUT(RenderType.cutout(), false),
+    CUTOUT_MIPPED(RenderType.cutoutMipped(), false),
+    TRANSLUCENT(RenderType.translucent(), true),
+    TRIPWIRE(RenderType.tripwire(), true);
 
     public static final BlockRenderPass[] VALUES = BlockRenderPass.values();
     public static final BlockRenderPass[] TRANSLUCENTS = new BlockRenderPass[2];

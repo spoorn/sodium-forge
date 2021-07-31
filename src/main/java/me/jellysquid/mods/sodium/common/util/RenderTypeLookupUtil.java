@@ -1,17 +1,16 @@
 package me.jellysquid.mods.sodium.common.util;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LeavesBlock;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.fluid.FluidState;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Vanilla {@link net.minecraft.client.renderer.RenderTypeLookup} has a synchronized block around predicate function.
+ * Vanilla {@link net.minecraft.client.renderer.ItemBlockRenderTypes} has a synchronized block around predicate function.
  * No need for that, we can instead cache the values and avoid computation every time.
  */
 public class RenderTypeLookupUtil {
@@ -24,7 +23,7 @@ public class RenderTypeLookupUtil {
         if (blockStateLookup.containsKey(key) && !(state.getBlock() instanceof LeavesBlock)) {
             return blockStateLookup.get(key);
         } else {
-            boolean canRender = RenderTypeLookup.canRenderInLayer(state, layer);
+            boolean canRender = ItemBlockRenderTypes.canRenderInLayer(state, layer);
             blockStateLookup.put(key, canRender);
             return canRender;
         }
@@ -35,7 +34,7 @@ public class RenderTypeLookupUtil {
         if (fluidStateLookup.containsKey(key)) {
             return fluidStateLookup.get(key);
         } else {
-            boolean canRender = RenderTypeLookup.canRenderInLayer(state, layer);
+            boolean canRender = ItemBlockRenderTypes.canRenderInLayer(state, layer);
             fluidStateLookup.put(key, canRender);
             return canRender;
         }
@@ -108,7 +107,7 @@ public class RenderTypeLookupUtil {
             final FluidState other$state = other.state;
             if (this$state == null && other$state != null || this$state != null && other$state == null) return false;
             if (this$state == other$state) return true;
-            return this$state.getFluid().equals(other$state.getFluid());
+            return this$state.getType().equals(other$state.getType());
         }
 
         protected boolean canEqual(final Object other) {

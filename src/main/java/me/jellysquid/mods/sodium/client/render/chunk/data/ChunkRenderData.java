@@ -6,11 +6,11 @@ import lombok.Getter;
 import me.jellysquid.mods.sodium.client.gl.util.BufferSlice;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import net.minecraft.client.renderer.chunk.SetVisibility;
+import net.minecraft.client.renderer.chunk.VisibilitySet;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.*;
 
@@ -23,14 +23,14 @@ public class ChunkRenderData {
             .build();
     public static final ChunkRenderData EMPTY = createEmptyData();
 
-    private List<TileEntity> globalBlockEntities;
-    private List<TileEntity> blockEntities;
+    private List<BlockEntity> globalBlockEntities;
+    private List<BlockEntity> blockEntities;
     @Getter
     private List<BlockPos> translucentBlocks;
 
     private EnumMap<BlockRenderPass, ChunkMeshData> meshes;
 
-    private SetVisibility occlusionData;
+    private VisibilitySet occlusionData;
     private ChunkRenderBounds bounds;
 
     private List<TextureAtlasSprite> animatedSprites;
@@ -50,7 +50,7 @@ public class ChunkRenderData {
         return this.bounds;
     }
 
-    public SetVisibility getOcclusionData() {
+    public VisibilitySet getOcclusionData() {
         return this.occlusionData;
     }
 
@@ -61,7 +61,7 @@ public class ChunkRenderData {
     /**
      * The collection of block entities contained by this rendered chunk.
      */
-    public Collection<TileEntity> getBlockEntities() {
+    public Collection<BlockEntity> getBlockEntities() {
         return this.blockEntities;
     }
 
@@ -69,7 +69,7 @@ public class ChunkRenderData {
      * The collection of block entities contained by this rendered chunk section which are not part of its culling
      * volume. These entities should always be rendered regardless of the render being visible in the frustum.
      */
-    public Collection<TileEntity> getGlobalBlockEntities() {
+    public Collection<BlockEntity> getGlobalBlockEntities() {
         return this.globalBlockEntities;
     }
 
@@ -89,14 +89,14 @@ public class ChunkRenderData {
     }
 
     public static class Builder {
-        private final List<TileEntity> globalBlockEntities = new ArrayList<>();
-        private final List<TileEntity> blockEntities = new ArrayList<>();
+        private final List<BlockEntity> globalBlockEntities = new ArrayList<>();
+        private final List<BlockEntity> blockEntities = new ArrayList<>();
         private final List<BlockPos> translucentBlocks = new ArrayList<>();
         private final Set<TextureAtlasSprite> animatedSprites = new ObjectOpenHashSet<>();
 
         private final EnumMap<BlockRenderPass, ChunkMeshData> meshes = new EnumMap<>(BlockRenderPass.class);
 
-        private SetVisibility occlusionData;
+        private VisibilitySet occlusionData;
         private ChunkRenderBounds bounds = ChunkRenderBounds.ALWAYS_FALSE;
 
         public Builder() {
@@ -109,7 +109,7 @@ public class ChunkRenderData {
             this.bounds = bounds;
         }
 
-        public void setOcclusionData(SetVisibility data) {
+        public void setOcclusionData(VisibilitySet data) {
             this.occlusionData = data;
         }
 
@@ -119,7 +119,7 @@ public class ChunkRenderData {
          * @param TextureAtlasSprite The TextureAtlasSprite
          */
         public void addSprite(TextureAtlasSprite TextureAtlasSprite) {
-            if (TextureAtlasSprite.hasAnimationMetadata()) {
+            if (TextureAtlasSprite.getAnimationTicker() != null) {
                 this.animatedSprites.add(TextureAtlasSprite);
             }
         }
@@ -133,7 +133,7 @@ public class ChunkRenderData {
          * @param entity The block entity itself
          * @param cull True if the block entity can be culled to this chunk render's volume, otherwise false
          */
-        public void addBlockEntity(TileEntity entity, boolean cull) {
+        public void addBlockEntity(BlockEntity entity, boolean cull) {
             (cull ? this.blockEntities : this.globalBlockEntities).add(entity);
         }
 
@@ -171,8 +171,8 @@ public class ChunkRenderData {
     }
 
     private static ChunkRenderData createEmptyData() {
-        SetVisibility occlusionData = new SetVisibility();
-        occlusionData.setManyVisible(EnumSet.allOf(Direction.class));
+        VisibilitySet occlusionData = new VisibilitySet();
+        occlusionData.add(EnumSet.allOf(Direction.class));
 
         ChunkRenderData.Builder meshInfo = new ChunkRenderData.Builder();
         meshInfo.setOcclusionData(occlusionData);

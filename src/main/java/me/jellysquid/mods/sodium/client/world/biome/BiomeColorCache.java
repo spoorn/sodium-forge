@@ -3,8 +3,8 @@ package me.jellysquid.mods.sodium.client.world.biome;
 import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.SectionPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ColorResolver;
 
 import java.util.Arrays;
@@ -30,18 +30,18 @@ public class BiomeColorCache {
     public BiomeColorCache(ColorResolver resolver, WorldSlice slice) {
         this.resolver = resolver;
         this.slice = slice;
-        this.radius = Minecraft.getInstance().gameSettings.biomeBlendRadius;
+        this.radius = Minecraft.getInstance().options.biomeBlendRadius;
 
         SectionPos origin = this.slice.getOrigin();
 
-        this.minX = origin.getWorldStartX() - (this.radius + 2);
-        this.minZ = origin.getWorldStartZ() - (this.radius + 2);
+        this.minX = origin.minBlockX() - (this.radius + 2);
+        this.minZ = origin.minBlockZ() - (this.radius + 2);
 
-        this.height = origin.getWorldStartY();
+        this.height = origin.minBlockY();
         this.dim = 16 + ((this.radius + 2) * 2);
 
-        this.blendedColorsMinX = origin.getWorldStartX() - 2;
-        this.blendedColorsMinZ = origin.getWorldStartZ() - 2;
+        this.blendedColorsMinX = origin.minBlockX() - 2;
+        this.blendedColorsMinZ = origin.minBlockZ() - 2;
 
         this.cache = new int[this.dim * this.dim];
         this.blendedColors = new int[BLENDED_COLORS_DIM * BLENDED_COLORS_DIM];

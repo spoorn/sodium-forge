@@ -1,7 +1,7 @@
 package me.jellysquid.mods.sodium.client.render;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.util.math.vector.Matrix4f;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
@@ -22,7 +22,7 @@ public class GameRendererContext {
      * @return A float-buffer on the stack containing the model-view-projection matrix in a format suitable for
      * uploading as uniform state
      */
-    public static FloatBuffer getModelViewProjectionMatrix(MatrixStack.Entry matrices, MemoryStack memoryStack) {
+    public static FloatBuffer getModelViewProjectionMatrix(PoseStack.Pose matrices, MemoryStack memoryStack) {
         if (PROJECTION_MATRIX == null) {
             throw new IllegalStateException("Projection matrix has not been captured");
         }
@@ -30,8 +30,8 @@ public class GameRendererContext {
         FloatBuffer bufModelViewProjection = memoryStack.mallocFloat(16);
 
         Matrix4f matrix = PROJECTION_MATRIX.copy();
-        matrix.mul(matrices.getMatrix());
-        matrix.write(bufModelViewProjection);
+        matrix.multiply(matrices.pose());
+        matrix.store(bufModelViewProjection);
 
         return bufModelViewProjection;
     }

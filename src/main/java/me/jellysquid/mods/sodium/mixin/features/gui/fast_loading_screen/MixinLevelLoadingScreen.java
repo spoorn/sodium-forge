@@ -1,7 +1,8 @@
 package me.jellysquid.mods.sodium.mixin.features.gui.fast_loading_screen;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.*;
+import com.mojang.math.Matrix4f;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
@@ -9,13 +10,9 @@ import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.screen_quad.BasicScreenQuadVertexSink;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
-import net.minecraft.client.gui.screen.WorldLoadProgressScreen;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.listener.TrackingChunkStatusListener;
+import net.minecraft.client.gui.screens.LevelLoadingScreen;
+import net.minecraft.server.level.progress.StoringChunkProgressListener;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import org.lwjgl.opengl.GL20C;
 import org.spongepowered.asm.mixin.*;
 
@@ -23,7 +20,8 @@ import org.spongepowered.asm.mixin.*;
  * Re-implements the loading screen with considerations to reduce draw calls and other sources of overhead. This can
  * improve world load times on slower processors with very few cores.
  */
-@Mixin(WorldLoadProgressScreen.class)
+
+@Mixin(LevelLoadingScreen.class)
 public class MixinLevelLoadingScreen {
     @Mutable
     @Shadow
@@ -44,8 +42,8 @@ public class MixinLevelLoadingScreen {
      * @reason Significantly optimized implementation.
      * @author JellySquid
      */
-    @Overwrite
-    public static void func_238625_a_(MatrixStack matrixStack, TrackingChunkStatusListener tracker, int mapX, int mapY, int mapScale, int mapPadding) {
+    @Overwrite(remap = false)
+    public static void renderChunks(PoseStack matrixStack, StoringChunkProgressListener tracker, int mapX, int mapY, int mapScale, int mapPadding) {
         if (STATUS_TO_COLOR_FAST == null) {
             STATUS_TO_COLOR_FAST = new Reference2IntOpenHashMap<>(COLORS.size());
             STATUS_TO_COLOR_FAST.put(null, NULL_STATUS_COLOR);
@@ -53,21 +51,21 @@ public class MixinLevelLoadingScreen {
                     .forEach(entry -> STATUS_TO_COLOR_FAST.put(entry.getKey(), ColorARGB.toABGR(entry.getIntValue(), 0xFF)));
         }
 
-        Matrix4f matrix = matrixStack.getLast().getMatrix();
+        Matrix4f matrix = matrixStack.last().pose();
 
-        Tessellator tessellator = Tessellator.getInstance();
+        Tesselator tessellator = Tesselator.getInstance();
 
         RenderSystem.enableBlend();
         RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
         
-        BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL20C.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        BufferBuilder buffer = tessellator.getBuilder();
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         BasicScreenQuadVertexSink sink = VertexDrain.of(buffer).createSink(VanillaVertexTypes.BASIC_SCREEN_QUADS);
 
         int centerSize = tracker.getDiameter();
-        int size = tracker.func_219523_d();
+        int size = tracker.getDiameter();
 
         int tileSize = mapScale + mapPadding;
 
@@ -113,7 +111,7 @@ public class MixinLevelLoadingScreen {
         }
 
         sink.flush();
-        tessellator.draw();
+        tessellator.end();
 
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();

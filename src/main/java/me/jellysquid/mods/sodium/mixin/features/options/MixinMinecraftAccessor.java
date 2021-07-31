@@ -6,6 +6,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(Minecraft.class)
 public interface MixinMinecraftAccessor {
-    @Accessor("debugFPS")
+    @Accessor("fps")
     abstract int getFPSCounter();
 }

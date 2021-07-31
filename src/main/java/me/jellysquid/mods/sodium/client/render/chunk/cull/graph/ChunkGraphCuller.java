@@ -8,14 +8,14 @@ import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import me.jellysquid.mods.sodium.client.render.chunk.cull.ChunkCuller;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ActiveRenderInfo;
-import net.minecraft.client.renderer.chunk.SetVisibility;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.SectionPos;
-import net.minecraft.world.World;
+import net.minecraft.client.renderer.chunk.VisibilitySet;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,7 +26,7 @@ public class ChunkGraphCuller implements ChunkCuller {
 
     private final ChunkGraphIterationQueue visible = new ChunkGraphIterationQueue();
     private final Object2BooleanMap<BlockPos> blockStateCache = new Object2BooleanArrayMap<>();
-    private final World world;
+    private final Level world;
     private final int renderDistance;
 
     private FrustumExtended frustum;
@@ -35,13 +35,13 @@ public class ChunkGraphCuller implements ChunkCuller {
     private int activeFrame = 0;
     private int centerChunkX, centerChunkY, centerChunkZ;
 
-    public ChunkGraphCuller(World world, int renderDistance) {
+    public ChunkGraphCuller(Level world, int renderDistance) {
         this.world = world;
         this.renderDistance = renderDistance;
     }
 
     @Override
-    public IntArrayList computeVisible(ActiveRenderInfo camera, FrustumExtended frustum, int frame, boolean spectator) {
+    public IntArrayList computeVisible(Camera camera, FrustumExtended frustum, int frame, boolean spectator) {
         this.initSearch(camera, frustum, frame, spectator);
 
         ChunkGraphIterationQueue queue = this.visible;
@@ -81,15 +81,15 @@ public class ChunkGraphCuller implements ChunkCuller {
         return this.useOcclusionCulling && from != null && !node.isVisibleThrough(from, to);
     }
 
-    private void initSearch(ActiveRenderInfo camera, FrustumExtended frustum, int frame, boolean spectator) {
+    private void initSearch(Camera camera, FrustumExtended frustum, int frame, boolean spectator) {
         this.activeFrame = frame;
         this.frustum = frustum;
-        this.useOcclusionCulling = Minecraft.getInstance().renderChunksMany;
+        this.useOcclusionCulling = Minecraft.getInstance().smartCull;
 
         this.blockStateCache.clear();
         this.visible.clear();
 
-        BlockPos origin = camera.getBlockPos();
+        BlockPos origin = camera.getBlockPosition();
 
         int chunkX = origin.getX() >> 4;
         int chunkY = origin.getY() >> 4;
@@ -105,13 +105,13 @@ public class ChunkGraphCuller implements ChunkCuller {
             rootNode.resetCullingState();
             rootNode.setLastVisibleFrame(frame);
 
-            if (spectator && this.world.getBlockState(origin).isOpaqueCube(this.world, origin)) {
+            if (spectator && this.world.getBlockState(origin).isSolidRender(this.world, origin)) {
                 this.useOcclusionCulling = false;
             }
 
             this.visible.add(rootNode, null);
         } else {
-            chunkY = MathHelper.clamp(origin.getY() >> 4, 0, 15);
+            chunkY = Mth.clamp(origin.getY() >> 4, 0, 15);
 
             List<ChunkGraphNode> bestNodes = new ArrayList<>();
 
@@ -179,7 +179,7 @@ public class ChunkGraphCuller implements ChunkCuller {
     }
 
     private ChunkGraphNode findAdjacentNode(ChunkGraphNode node, Direction dir) {
-        return this.getNode(node.getChunkX() + dir.getXOffset(), node.getChunkY() + dir.getYOffset(), node.getChunkZ() + dir.getZOffset());
+        return this.getNode(node.getChunkX() + dir.getStepX(), node.getChunkY() + dir.getStepY(), node.getChunkZ() + dir.getStepZ());
     }
 
     private ChunkGraphNode getNode(int x, int y, int z) {
@@ -187,7 +187,7 @@ public class ChunkGraphCuller implements ChunkCuller {
     }
 
     @Override
-    public void onSectionStateChanged(int x, int y, int z, SetVisibility occlusionData) {
+    public void onSectionStateChanged(int x, int y, int z, VisibilitySet occlusionData) {
         ChunkGraphNode node = this.getNode(x, y, z);
 
         if (node != null) {

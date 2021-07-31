@@ -1,11 +1,11 @@
 package me.jellysquid.mods.sodium.mixin.core.matrix;
 
+import com.mojang.math.Matrix3f;
+import com.mojang.math.Quaternion;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
 import me.jellysquid.mods.sodium.client.util.math.Matrix3fExtended;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.vector.Matrix3f;
-import net.minecraft.util.math.vector.Quaternion;
-import net.minecraft.util.math.vector.Vector3i;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -55,9 +55,9 @@ public class MixinMatrix3f implements Matrix3fExtended {
 
     @Override
     public void rotate(Quaternion quaternion) {
-        boolean x = quaternion.getX() != 0.0F;
-        boolean y = quaternion.getY() != 0.0F;
-        boolean z = quaternion.getZ() != 0.0F;
+        boolean x = quaternion.i() != 0.0F;
+        boolean y = quaternion.j() != 0.0F;
+        boolean z = quaternion.k() != 0.0F;
 
         // Try to determine if this is a simple rotation on one axis component only
         if (x) {
@@ -79,7 +79,7 @@ public class MixinMatrix3f implements Matrix3fExtended {
 
     @Override
     public int computeNormal(Direction dir) {
-        Vector3i faceNorm = dir.getDirectionVec();
+        Vec3i faceNorm = dir.getNormal();
 
         float x = faceNorm.getX();
         float y = faceNorm.getY();
@@ -93,8 +93,8 @@ public class MixinMatrix3f implements Matrix3fExtended {
     }
 
     private void rotateX(Quaternion quaternion) {
-        float x = quaternion.getX();
-        float w = quaternion.getW();
+        float x = quaternion.i();
+        float w = quaternion.r();
 
         float xx = 2.0F * x * x;
 
@@ -121,8 +121,8 @@ public class MixinMatrix3f implements Matrix3fExtended {
     }
 
     private void rotateY(Quaternion quaternion) {
-        float y = quaternion.getY();
-        float w = quaternion.getW();
+        float y = quaternion.j();
+        float w = quaternion.r();
 
         float yy = 2.0F * y * y;
 
@@ -150,8 +150,8 @@ public class MixinMatrix3f implements Matrix3fExtended {
     }
 
     private void rotateZ(Quaternion quaternion) {
-        float z = quaternion.getZ();
-        float w = quaternion.getW();
+        float z = quaternion.k();
+        float w = quaternion.r();
 
         float zz = 2.0F * z * z;
 
@@ -179,10 +179,10 @@ public class MixinMatrix3f implements Matrix3fExtended {
     }
 
     private void rotateXYZ(Quaternion quaternion) {
-        float x = quaternion.getX();
-        float y = quaternion.getY();
-        float z = quaternion.getZ();
-        float w = quaternion.getW();
+        float x = quaternion.i();
+        float y = quaternion.j();
+        float z = quaternion.k();
+        float w = quaternion.r();
 
         float xx = 2.0F * x * x;
         float yy = 2.0F * y * y;

@@ -1,20 +1,20 @@
 package me.jellysquid.mods.sodium.client.render.occlusion;
 
 import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.shapes.IBooleanFunction;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.math.shapes.VoxelShapes;
-import net.minecraft.world.IBlockReader;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class BlockOcclusionCache {
     private static final byte UNCACHED_VALUE = (byte) 127;
 
     private final Object2ByteLinkedOpenHashMap<CachedOcclusionShapeTest> map;
     private final CachedOcclusionShapeTest cachedTest = new CachedOcclusionShapeTest();
-    private final BlockPos.Mutable cpos = new BlockPos.Mutable();
+    private final BlockPos.MutableBlockPos cpos = new BlockPos.MutableBlockPos();
 
     public BlockOcclusionCache() {
         this.map = new Object2ByteLinkedOpenHashMap<>(2048, 0.5F);
@@ -28,19 +28,19 @@ public class BlockOcclusionCache {
      * @param facing The facing direction of the side to check
      * @return True if the block side facing {@param dir} is not occluded, otherwise false
      */
-    public boolean shouldDrawSide(BlockState selfState, IBlockReader view, BlockPos pos, Direction facing) {
-        BlockPos.Mutable adjPos = this.cpos;
-        adjPos.setPos(pos.getX() + facing.getXOffset(), pos.getY() + facing.getYOffset(), pos.getZ() + facing.getZOffset());
+    public boolean shouldDrawSide(BlockState selfState, BlockGetter view, BlockPos pos, Direction facing) {
+        BlockPos.MutableBlockPos adjPos = this.cpos;
+        adjPos.set(pos.getX() + facing.getStepX(), pos.getY() + facing.getStepY(), pos.getZ() + facing.getStepZ());
 
         BlockState adjState = view.getBlockState(adjPos);
 
-        if (selfState.isSideInvisible(adjState, facing)) {
+        if (selfState.skipRendering(adjState, facing)) {
             return false;
-        } else if (adjState.isSolid()) {
+        } else if (adjState.canOcclude()) {
             VoxelShape selfShape = selfState.getFaceOcclusionShape(view, pos, facing);
             VoxelShape adjShape = adjState.getFaceOcclusionShape(view, adjPos, facing.getOpposite());
 
-            if (selfShape == VoxelShapes.fullCube() && adjShape == VoxelShapes.fullCube()) {
+            if (selfShape == Shapes.block() && adjShape == Shapes.block()) {
                 return false;
             }
 
@@ -62,7 +62,7 @@ public class BlockOcclusionCache {
             return cached == 1;
         }
 
-        boolean ret = VoxelShapes.compare(selfShape, adjShape, IBooleanFunction.ONLY_FIRST);
+        boolean ret = Shapes.joinIsNotEmpty(selfShape, adjShape, BooleanOp.ONLY_FIRST);
 
         this.map.put(cache.copy(), (byte) (ret ? 1 : 0));
 

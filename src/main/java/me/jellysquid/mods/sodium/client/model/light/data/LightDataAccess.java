@@ -1,12 +1,12 @@
 package me.jellysquid.mods.sodium.client.model.light.data;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockDisplayReader;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * The light data cache is used to make accessing the light data and occlusion properties of blocks cheaper. The data
@@ -24,21 +24,21 @@ import net.minecraft.world.IBlockDisplayReader;
  * You can use the various static pack/unpack methods to extract these values in a usable format.
  */
 public abstract class LightDataAccess {
-    protected static final FluidState EMPTY_FLUID_STATE = Fluids.EMPTY.getDefaultState();
+    protected static final FluidState EMPTY_FLUID_STATE = Fluids.EMPTY.defaultFluidState();
 
-    private final BlockPos.Mutable pos = new BlockPos.Mutable();
-    protected IBlockDisplayReader world;
+    private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+    protected BlockAndTintGetter world;
 
     public long get(int x, int y, int z, Direction d1, Direction d2) {
-        return this.get(x + d1.getXOffset() + d2.getXOffset(),
-                y + d1.getYOffset() + d2.getYOffset(),
-                z + d1.getZOffset() + d2.getZOffset());
+        return this.get(x + d1.getStepX() + d2.getStepX(),
+                y + d1.getStepY() + d2.getStepY(),
+                z + d1.getStepZ() + d2.getStepZ());
     }
 
     public long get(int x, int y, int z, Direction dir) {
-        return this.get(x + dir.getXOffset(),
-                y + dir.getYOffset(),
-                z + dir.getZOffset());
+        return this.get(x + dir.getStepX(),
+                y + dir.getStepY(),
+                z + dir.getStepZ());
     }
 
     public long get(BlockPos pos, Direction dir) {
@@ -56,28 +56,28 @@ public abstract class LightDataAccess {
     public abstract long get(int x, int y, int z);
 
     protected long compute(int x, int y, int z) {
-        BlockPos pos = this.pos.setPos(x, y, z);
-        IBlockDisplayReader world = this.world;
+        BlockPos pos = this.pos.set(x, y, z);
+        BlockAndTintGetter world = this.world;
 
         BlockState state = world.getBlockState(pos);
 
         float ao;
 
-        if (state.getLightValue() == 0) {
-            ao = state.getAmbientOcclusionLightValue(world, pos);
+        if (state.getLightEmission() == 0) {
+            ao = state.getShadeBrightness(world, pos);
         } else {
             ao = 1.0f;
         }
 
         // FIX: Fluids are always non-translucent despite blocking light, so we need a special check here in order to
         // solve lighting issues underwater.
-        boolean op = state.getFluidState() != EMPTY_FLUID_STATE || state.getOpacity(world, pos) == 0;
-        boolean fo = state.isOpaqueCube(world, pos);
-        boolean em = state.isEmissiveRendering(world, pos);
+        boolean op = state.getFluidState() != EMPTY_FLUID_STATE || state.getLightBlock(world, pos) == 0;
+        boolean fo = state.isSolidRender(world, pos);
+        boolean em = state.emissiveRendering(world, pos);
 
         // OPTIMIZE: Do not calculate lightmap data if the block is full and opaque.
         // FIX: Calculate lightmap data for emissive blocks (currently only magma), even though they are full and opaque.
-        int lm = (fo && !em) ? 0 : WorldRenderer.getPackedLightmapCoords(world, state, pos);
+        int lm = (fo && !em) ? 0 : LevelRenderer.getLightColor(world, state, pos);
 
         return packAO(ao) | packLM(lm) | packOP(op) | packFO(fo) | (1L << 60);
     }
@@ -116,7 +116,7 @@ public abstract class LightDataAccess {
         return aoi * (1.0f / 4096.0f);
     }
 
-    public IBlockDisplayReader getWorld() {
+    public BlockAndTintGetter getWorld() {
         return this.world;
     }
 }

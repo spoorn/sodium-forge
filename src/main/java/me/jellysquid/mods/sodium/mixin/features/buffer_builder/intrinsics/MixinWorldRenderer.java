@@ -1,29 +1,29 @@
 package me.jellysquid.mods.sodium.mixin.features.buffer_builder.intrinsics;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Matrix4f;
 import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.formats.line.LineVertexSink;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.math.Matrix4fExtended;
 import me.jellysquid.mods.sodium.client.util.math.MatrixUtil;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.client.renderer.LevelRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
-@Mixin(WorldRenderer.class)
+@Mixin(LevelRenderer.class)
 public class MixinWorldRenderer {
     /**
      * @author JellySquid
      * @reason Use intrinsics where possible to speed up vertex writing
      */
-    @Overwrite
-    public static void drawBoundingBox(MatrixStack matrices, IVertexBuilder vertexConsumer, double x1, double y1, double z1,
-                               double x2, double y2, double z2, float red, float green, float blue, float alpha,
-                               float xAxisRed, float yAxisGreen, float zAxisBlue) {
-        Matrix4f model = matrices.getLast().getMatrix();
+    @Overwrite(remap = false)
+    public static void renderLineBox(PoseStack matrices, VertexConsumer vertexConsumer, double x1, double y1, double z1,
+                                       double x2, double y2, double z2, float red, float green, float blue, float alpha,
+                                       float xAxisRed, float yAxisGreen, float zAxisBlue) {
+        Matrix4f model = matrices.last().pose();
 
         float x1f = (float) x1;
         float y1f = (float) y1;

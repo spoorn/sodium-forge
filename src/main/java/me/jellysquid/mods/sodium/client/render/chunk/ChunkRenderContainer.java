@@ -8,8 +8,8 @@ import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
 import me.jellysquid.mods.sodium.client.util.math.FrustumExtended;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.SectionPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 
 import java.lang.reflect.Array;
 import java.util.concurrent.CompletableFuture;

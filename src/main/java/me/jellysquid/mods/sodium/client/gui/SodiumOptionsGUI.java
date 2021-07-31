@@ -1,20 +1,24 @@
 package me.jellysquid.mods.sodium.client.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.jellysquid.mods.sodium.client.gui.options.*;
 import me.jellysquid.mods.sodium.client.gui.options.control.Control;
 import me.jellysquid.mods.sodium.client.gui.options.control.ControlElement;
 import me.jellysquid.mods.sodium.client.gui.options.storage.OptionStorage;
 import me.jellysquid.mods.sodium.client.gui.widgets.FlatButtonWidget;
 import me.jellysquid.mods.sodium.client.util.Dim2i;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.IRenderable;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.VideoSettingsScreen;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.*;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.VideoSettingsScreen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.FormattedCharSequence;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -27,7 +31,7 @@ public class SodiumOptionsGUI extends Screen {
     private final List<OptionPage> pages = new ArrayList<>();
 
     private final List<ControlElement<?>> controls = new ArrayList<>();
-    private final List<IRenderable> IRenderable = new ArrayList<>();
+    private final List<Widget> widgets = new ArrayList<>();
 
     private final Screen prevScreen;
 
@@ -38,7 +42,7 @@ public class SodiumOptionsGUI extends Screen {
     private ControlElement<?> hoveredElement;
 
     public SodiumOptionsGUI(Screen prevScreen) {
-        super(new TranslationTextComponent("Sodium Options"));
+        super(new TranslatableComponent("Sodium Options"));
 
         this.prevScreen = prevScreen;
 
@@ -63,7 +67,7 @@ public class SodiumOptionsGUI extends Screen {
     private void rebuildGUI() {
         this.controls.clear();
         this.children.clear();
-        this.IRenderable.clear();
+        this.widgets.clear();
 
         if (this.currentPage == null) {
             if (this.pages.isEmpty()) {
@@ -77,17 +81,17 @@ public class SodiumOptionsGUI extends Screen {
         this.rebuildGUIPages();
         this.rebuildGUIOptions();
 
-        this.undoButton = new FlatButtonWidget(new Dim2i(this.width - 211, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.undo"), this::undoChanges);
-        this.applyButton = new FlatButtonWidget(new Dim2i(this.width - 142, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.apply"), this::applyChanges);
-        this.closeButton = new FlatButtonWidget(new Dim2i(this.width - 73, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.close"), this::closeScreen);
+        this.undoButton = new FlatButtonWidget(new Dim2i(this.width - 211, this.height - 26, 65, 20), I18n.get("sodium.options.buttons.undo"), this::undoChanges);
+        this.applyButton = new FlatButtonWidget(new Dim2i(this.width - 142, this.height - 26, 65, 20), I18n.get("sodium.options.buttons.apply"), this::applyChanges);
+        this.closeButton = new FlatButtonWidget(new Dim2i(this.width - 73, this.height - 26, 65, 20), I18n.get("sodium.options.buttons.close"), this::onClose);
 
         this.children.add(this.undoButton);
         this.children.add(this.applyButton);
         this.children.add(this.closeButton);
 
-        for (IGuiEventListener element : this.children) {
-            if (element instanceof IRenderable) {
-                this.IRenderable.add((IRenderable) element);
+        for (GuiEventListener element : this.children) {
+            if (element instanceof Widget) {
+                this.widgets.add((Widget) element);
             }
         }
     }
@@ -97,7 +101,7 @@ public class SodiumOptionsGUI extends Screen {
         int y = 6;
 
         for (OptionPage page : this.pages) {
-            int width = 12 + this.font.getStringWidth(page.getName());
+            int width = 12 + this.font.width(page.getName());
 
             FlatButtonWidget button = new FlatButtonWidget(new Dim2i(x, y, width, 18), page.getName(), () -> this.setPage(page));
             button.setSelected(this.currentPage == page);
@@ -131,13 +135,13 @@ public class SodiumOptionsGUI extends Screen {
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float delta) {
+    public void render(PoseStack matrixStack, int mouseX, int mouseY, float delta) {
         super.renderBackground(matrixStack);
 
         this.updateControls();
 
-        for (IRenderable IRenderable : this.IRenderable) {
-            IRenderable.render(matrixStack, mouseX, mouseY, delta);
+        for (Widget widget : this.widgets) {
+            widget.render(matrixStack, mouseX, mouseY, delta);
         }
 
         if (this.hoveredElement != null) {
@@ -179,7 +183,7 @@ public class SodiumOptionsGUI extends Screen {
         return this.controls.stream();
     }
 
-    private void renderOptionTooltip(MatrixStack matrixStack, ControlElement<?> element) {
+    private void renderOptionTooltip(PoseStack matrixStack, ControlElement<?> element) {
         Dim2i dim = element.getDimensions();
 
         int textPadding = 3;
@@ -193,13 +197,13 @@ public class SodiumOptionsGUI extends Screen {
 
         Option<?> option = element.getOption();
 
-        ITextProperties title = new StringTextComponent(option.getName()).mergeStyle(TextFormatting.GRAY);
+        FormattedText title = new TextComponent(option.getName()).withStyle(ChatFormatting.GRAY);
 
-        List<IReorderingProcessor> tooltip = new ArrayList<>(this.font.trimStringToWidth(option.getTooltip(), boxWidth - (textPadding * 2)));
+        List<FormattedCharSequence> tooltip = new ArrayList<>(this.font.split(option.getTooltip(), boxWidth - (textPadding * 2)));
         OptionImpact impact = option.getImpact();
 
         if (impact != null) {
-            tooltip.add(LanguageMap.getInstance().func_241870_a(new StringTextComponent(TextFormatting.GRAY + "Performance Impact: " + impact.toDisplayString())));
+            tooltip.add(Language.getInstance().getVisualOrder(new TextComponent(ChatFormatting.GRAY + "Performance Impact: " + impact.toDisplayString())));
         }
         int boxHeight = (tooltip.size() * 12) + boxPadding;
         int boxYLimit = boxY + boxHeight;
@@ -211,7 +215,7 @@ public class SodiumOptionsGUI extends Screen {
         this.fillGradient(matrixStack, boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xE0000000, 0xE0000000);
 
         for (int i = 0; i < tooltip.size(); i++) {
-            this.font.func_238422_b_(matrixStack, tooltip.get(i), boxX + textPadding, boxY + textPadding + (i * 12), 0xFFFFFFFF);
+            this.font.draw(matrixStack, tooltip.get(i), boxX + textPadding, boxY + textPadding + (i * 12), 0xFFFFFFFF);
         }
     }
 
@@ -233,12 +237,12 @@ public class SodiumOptionsGUI extends Screen {
         Minecraft client = Minecraft.getInstance();
 
         if (flags.contains(OptionFlag.REQUIRES_RENDERER_RELOAD)) {
-            client.worldRenderer.loadRenderers();
+            client.levelRenderer.allChanged();
         }
 
         if (flags.contains(OptionFlag.REQUIRES_ASSET_RELOAD)) {
-            client.setMipmapLevels(client.gameSettings.mipmapLevels);
-            client.scheduleResourcesRefresh();
+            client.updateMaxMipLevel(client.options.mipmapLevels);
+            client.delayTextureReload();
         }
 
         for (OptionStorage<?> storage : dirtyStorages) {
@@ -254,7 +258,7 @@ public class SodiumOptionsGUI extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_P && (modifiers & GLFW.GLFW_MOD_SHIFT) != 0) {
-            Minecraft.getInstance().displayGuiScreen(new VideoSettingsScreen(this.prevScreen, Minecraft.getInstance().gameSettings));
+            Minecraft.getInstance().setScreen(new VideoSettingsScreen(this.prevScreen, Minecraft.getInstance().options));
 
             return true;
         }
@@ -268,7 +272,7 @@ public class SodiumOptionsGUI extends Screen {
     }
 
     @Override
-    public void closeScreen() {
-        this.minecraft.displayGuiScreen(this.prevScreen);
+    public void onClose() {
+        this.minecraft.setScreen(this.prevScreen);
     }
 }

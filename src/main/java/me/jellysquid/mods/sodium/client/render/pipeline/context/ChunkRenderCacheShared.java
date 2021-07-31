@@ -7,17 +7,17 @@ import me.jellysquid.mods.sodium.client.model.quad.blender.BiomeColorBlender;
 import me.jellysquid.mods.sodium.client.render.pipeline.BlockRenderer;
 import me.jellysquid.mods.sodium.client.render.pipeline.ChunkRenderCache;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.IBlockDisplayReader;
+import net.minecraft.world.level.BlockAndTintGetter;
 
 import java.util.Map;
 
 public class ChunkRenderCacheShared extends ChunkRenderCache {
-    private static final Map<IBlockDisplayReader, ChunkRenderCacheShared> INSTANCES = new Reference2ObjectOpenHashMap<>();
+    private static final Map<BlockAndTintGetter, ChunkRenderCacheShared> INSTANCES = new Reference2ObjectOpenHashMap<>();
 
     private final BlockRenderer blockRenderer;
     private final HashLightDataCache lightCache;
 
-    private ChunkRenderCacheShared(IBlockDisplayReader world) {
+    private ChunkRenderCacheShared(BlockAndTintGetter world) {
             Minecraft client = Minecraft.getInstance();
 
         this.lightCache = new HashLightDataCache(world);
@@ -36,7 +36,7 @@ public class ChunkRenderCacheShared extends ChunkRenderCache {
         this.lightCache.clearCache();
     }
 
-    public static ChunkRenderCacheShared getInstance(IBlockDisplayReader world) {
+    public static ChunkRenderCacheShared getInstance(BlockAndTintGetter world) {
         ChunkRenderCacheShared instance = INSTANCES.get(world);
 
         if (instance == null) {
@@ -46,13 +46,13 @@ public class ChunkRenderCacheShared extends ChunkRenderCache {
         return instance;
     }
 
-    public static void destroyRenderContext(IBlockDisplayReader world) {
+    public static void destroyRenderContext(BlockAndTintGetter world) {
         if (INSTANCES.remove(world) == null) {
             throw new IllegalStateException("No render context exists for world: " + world);
         }
     }
 
-    public static void createRenderContext(IBlockDisplayReader world) {
+    public static void createRenderContext(BlockAndTintGetter world) {
         if (INSTANCES.containsKey(world)) {
             throw new IllegalStateException("Render context already exists for world: " + world);
         }

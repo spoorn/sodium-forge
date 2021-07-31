@@ -9,8 +9,8 @@ import me.jellysquid.mods.sodium.client.render.pipeline.FluidRenderer;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import me.jellysquid.mods.sodium.client.world.cloned.ChunkRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockModelShapes;
-import net.minecraft.world.World;
+import net.minecraft.client.renderer.block.BlockModelShaper;
+import net.minecraft.world.level.Level;
 
 public class ChunkRenderCacheLocal extends ChunkRenderCache {
     private final ArrayLightDataCache lightDataCache;
@@ -18,10 +18,10 @@ public class ChunkRenderCacheLocal extends ChunkRenderCache {
     private final BlockRenderer blockRenderer;
     private final FluidRenderer fluidRenderer;
 
-    private final BlockModelShapes blockModels;
+    private final BlockModelShaper blockModels;
     private final WorldSlice worldSlice;
 
-    public ChunkRenderCacheLocal(Minecraft client, World world) {
+    public ChunkRenderCacheLocal(Minecraft client, Level world) {
         this.worldSlice = new WorldSlice(world);
         this.lightDataCache = new ArrayLightDataCache(this.worldSlice);
 
@@ -31,10 +31,10 @@ public class ChunkRenderCacheLocal extends ChunkRenderCache {
         this.blockRenderer = new BlockRenderer(client, lightPipelineProvider, biomeColorBlender);
         this.fluidRenderer = new FluidRenderer(client, lightPipelineProvider, biomeColorBlender);
 
-        this.blockModels = client.getModelManager().getBlockModelShapes();
+        this.blockModels = client.getModelManager().getBlockModelShaper();
     }
 
-    public BlockModelShapes getBlockModels() {
+    public BlockModelShaper getBlockModels() {
         return this.blockModels;
     }
 

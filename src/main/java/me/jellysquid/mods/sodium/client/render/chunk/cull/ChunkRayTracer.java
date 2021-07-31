@@ -5,19 +5,19 @@ import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderContainer;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderBounds;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
 public class ChunkRayTracer {
 
     private final Object2BooleanMap<BlockPos> blockStateCache;
-    private final World world;
+    private final Level world;
 
-    public ChunkRayTracer(World world) {
+    public ChunkRayTracer(Level world) {
         this.world = world;
         this.blockStateCache = new Object2BooleanArrayMap<>();
     }
@@ -29,9 +29,9 @@ public class ChunkRayTracer {
     public <T extends ChunkGraphicsState> boolean isInDirectView(ChunkRenderContainer<T> render, float camX, float camY, float camZ) {
         List<BlockPos> srcTranslucent = render.getData().getTranslucentBlocks();
 
-        int minX = MathHelper.floor(camX);
-        int minY = MathHelper.floor(camY);
-        int minZ = MathHelper.floor(camZ);
+        int minX = Mth.floor(camX);
+        int minY = Mth.floor(camY);
+        int minZ = Mth.floor(camZ);
 
         ChunkRenderBounds bounds = render.getBounds();
         float boundMinX = bounds.x1;
@@ -86,7 +86,7 @@ public class ChunkRayTracer {
             } else {
                 BlockState state = this.world.getBlockState(curr);
                 // We found an opaque block from another chunk that's blocking the view to this translucent block
-                if (!state.isAir() && state.isOpaqueCube(this.world, curr)) {
+                if (!state.isAir() && state.isSolidRender(this.world, curr)) {
                     blockStateCache.put(curr, true);
                     return false;
                 } else {

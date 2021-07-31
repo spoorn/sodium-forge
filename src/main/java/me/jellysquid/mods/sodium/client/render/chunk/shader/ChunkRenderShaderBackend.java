@@ -1,6 +1,7 @@
 package me.jellysquid.mods.sodium.client.render.chunk.shader;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Matrix4f;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.gl.compat.LegacyFogHelper;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
@@ -12,8 +13,7 @@ import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderBackend;
 import me.jellysquid.mods.sodium.client.render.chunk.format.ChunkMeshAttribute;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.EnumMap;
 
@@ -62,14 +62,14 @@ public abstract class ChunkRenderShaderBackend<T extends ChunkGraphicsState>
     }
 
     @Override
-    public void begin(MatrixStack matrixStack, Matrix4f projection) {
+    public void begin(PoseStack matrixStack, Matrix4f projection) {
         this.activeProgram = this.programs.get(LegacyFogHelper.getFogMode());
         this.activeProgram.bind();
         this.activeProgram.setup(matrixStack, this.vertexType.getModelScale(), this.vertexType.getTextureScale(), projection);
     }
 
     @Override
-    public void end(MatrixStack matrixStack) {
+    public void end(PoseStack matrixStack) {
         this.activeProgram.unbind();
     }
 

@@ -1,6 +1,7 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Matrix4f;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -32,14 +33,13 @@ import me.jellysquid.mods.sodium.common.util.DirectionUtil;
 import me.jellysquid.mods.sodium.common.util.IdTable;
 import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
 import me.jellysquid.mods.sodium.common.util.collections.FutureDequeDrain;
-import net.minecraft.client.renderer.ActiveRenderInfo;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.client.Camera;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -80,10 +80,10 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private final ChunkRenderList<T>[] chunkRenderLists = new ChunkRenderList[BlockRenderPass.COUNT];
     private final ObjectList<ChunkRenderContainer<T>> tickableChunks = new ObjectArrayList<>();
 
-    private final ObjectList<TileEntity> visibleBlockEntities = new ObjectArrayList<>();
+    private final ObjectList<BlockEntity> visibleBlockEntities = new ObjectArrayList<>();
 
     private final SodiumWorldRenderer renderer;
-    private final ClientWorld world;
+    private final ClientLevel world;
 
     private final ChunkCuller culler;
     private final boolean useBlockFaceCulling;
@@ -110,7 +110,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
     @SuppressWarnings("unchecked")
     public ChunkRenderManager(SodiumWorldRenderer renderer, ChunkRenderBackend<T> backend, BlockRenderPassManager renderPassManager,
-                              ClientWorld world, int renderDistance) {
+                              ClientLevel world, int renderDistance) {
         this.backend = backend;
         this.renderer = renderer;
         this.world = world;
@@ -132,7 +132,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.useBlockFaceCulling = SodiumClientMod.options().advanced.useBlockFaceCulling;
     }
 
-    public void update(ActiveRenderInfo camera, FrustumExtended frustum, int frame, boolean spectator) {
+    public void update(Camera camera, FrustumExtended frustum, int frame, boolean spectator) {
         this.reset();
         this.unloadPending();
 
@@ -145,7 +145,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         this.dirty = false;
     }
 
-    private void iterateChunks(ActiveRenderInfo camera, FrustumExtended frustum, int frame, boolean spectator) {
+    private void iterateChunks(Camera camera, FrustumExtended frustum, int frame, boolean spectator) {
         IntList list = this.culler.computeVisible(camera, frustum, frame, spectator);
         IntIterator it = list.iterator();
 
@@ -187,8 +187,8 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         }
     }
 
-    private void setup(ActiveRenderInfo camera) {
-        Vector3d cameraPos = camera.getProjectedView();
+    private void setup(Camera camera) {
+        Vec3 cameraPos = camera.getPosition();
 
         this.cameraX = (float) cameraPos.x;
         this.cameraY = (float) cameraPos.y;
@@ -278,7 +278,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private void addEntitiesToRenderLists(ChunkRenderContainer<T> render) {
-        Collection<TileEntity> blockEntities = render.getData().getBlockEntities();
+        Collection<BlockEntity> blockEntities = render.getData().getBlockEntities();
 
         if (!blockEntities.isEmpty()) {
             this.visibleBlockEntities.addAll(blockEntities);
@@ -317,7 +317,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         }
     }
 
-    public Collection<TileEntity> getVisibleBlockEntities() {
+    public Collection<BlockEntity> getVisibleBlockEntities() {
         return this.visibleBlockEntities;
     }
 
@@ -411,7 +411,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private ChunkRenderColumn<T> getAdjacentColumn(ChunkRenderColumn<T> column, Direction dir) {
-        return this.getColumn(column.getX() + dir.getXOffset(), column.getZ() + dir.getZOffset());
+        return this.getColumn(column.getX() + dir.getStepX(), column.getZ() + dir.getStepZ());
     }
 
     private ChunkRenderColumn<T> getColumn(int x, int z) {
@@ -421,7 +421,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     private ChunkRenderContainer<T> createChunkRender(ChunkRenderColumn<T> column, int x, int y, int z) {
         ChunkRenderContainer<T> render = new ChunkRenderContainer<>(this.backend, this.renderer, x, y, z, column);
 
-        if (ChunkSection.isEmpty(this.world.getChunk(x, z).getSections()[y])) {
+        if (LevelChunkSection.isEmpty(this.world.getChunk(x, z).getSections()[y])) {
             render.setData(ChunkRenderData.EMPTY);
         } else {
             render.scheduleRebuild(false);
@@ -432,7 +432,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         return render;
     }
 
-    public void renderLayer(MatrixStack matrixStack, BlockRenderPass pass, double x, double y, double z) {
+    public void renderLayer(PoseStack matrixStack, BlockRenderPass pass, double x, double y, double z) {
         ChunkRenderList<T> chunkRenderList = this.chunkRenderLists[pass.ordinal()];
         ChunkRenderListIterator<T> iterator = chunkRenderList.iterator(pass.isTranslucent());
 

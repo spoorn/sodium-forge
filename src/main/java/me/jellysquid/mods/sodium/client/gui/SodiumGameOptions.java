@@ -5,8 +5,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gui.options.TextProvider;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.GraphicsFanciness;
+import net.minecraft.client.GraphicsStatus;
+import net.minecraft.client.resources.language.I18n;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -67,11 +67,11 @@ public class SodiumGameOptions {
 
         @Override
         public String getLocalizedName() {
-            return I18n.format(this.name);
+            return I18n.get(this.name);
         }
 
-        public boolean isFancy(GraphicsFanciness graphicsMode) {
-            return (this == FANCY) || (this == DEFAULT && (graphicsMode == GraphicsFanciness.FANCY || graphicsMode == GraphicsFanciness.FABULOUS));
+        public boolean isFancy(GraphicsStatus graphicsMode) {
+            return (this == FANCY) || (this == DEFAULT && (graphicsMode == GraphicsStatus.FANCY || graphicsMode == GraphicsStatus.FABULOUS));
         }
     }
 

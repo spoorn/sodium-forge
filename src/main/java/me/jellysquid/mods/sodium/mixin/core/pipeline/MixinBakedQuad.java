@@ -2,9 +2,9 @@ package me.jellysquid.mods.sodium.mixin.core.pipeline;
 
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFlags;
-import net.minecraft.client.renderer.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.Direction;
+import net.minecraft.core.Direction;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,7 +18,7 @@ import static me.jellysquid.mods.sodium.client.util.ModelQuadUtil.*;
 public class MixinBakedQuad implements ModelQuadView {
     @Shadow
     @Final
-    protected int[] vertexData;
+    protected int[] vertices;
 
     @Shadow
     @Final
@@ -37,22 +37,22 @@ public class MixinBakedQuad implements ModelQuadView {
 
     @Override
     public float getX(int idx) {
-        return Float.intBitsToFloat(this.vertexData[vertexOffset(idx) + POSITION_INDEX]);
+        return Float.intBitsToFloat(this.vertices[vertexOffset(idx) + POSITION_INDEX]);
     }
 
     @Override
     public float getY(int idx) {
-        return Float.intBitsToFloat(this.vertexData[vertexOffset(idx) + POSITION_INDEX + 1]);
+        return Float.intBitsToFloat(this.vertices[vertexOffset(idx) + POSITION_INDEX + 1]);
     }
 
     @Override
     public float getZ(int idx) {
-        return Float.intBitsToFloat(this.vertexData[vertexOffset(idx) + POSITION_INDEX + 2]);
+        return Float.intBitsToFloat(this.vertices[vertexOffset(idx) + POSITION_INDEX + 2]);
     }
 
     @Override
     public int getColor(int idx) {
-        return this.vertexData[vertexOffset(idx) + COLOR_INDEX];
+        return this.vertices[vertexOffset(idx) + COLOR_INDEX];
     }
 
     @Override
@@ -62,12 +62,12 @@ public class MixinBakedQuad implements ModelQuadView {
 
     @Override
     public float getTexU(int idx) {
-        return Float.intBitsToFloat(this.vertexData[vertexOffset(idx) + TEXTURE_INDEX]);
+        return Float.intBitsToFloat(this.vertices[vertexOffset(idx) + TEXTURE_INDEX]);
     }
 
     @Override
     public float getTexV(int idx) {
-        return Float.intBitsToFloat(this.vertexData[vertexOffset(idx) + TEXTURE_INDEX + 1]);
+        return Float.intBitsToFloat(this.vertices[vertexOffset(idx) + TEXTURE_INDEX + 1]);
     }
 
     @Override
@@ -77,12 +77,12 @@ public class MixinBakedQuad implements ModelQuadView {
 
     @Override
     public int getLight(int idx) {
-        return this.vertexData[vertexOffset(idx) + LIGHT_INDEX];
+        return this.vertices[vertexOffset(idx) + LIGHT_INDEX];
     }
 
     @Override
     public int getNormal(int idx) {
-        return this.vertexData[vertexOffset(idx) + NORMAL_INDEX];
+        return this.vertices[vertexOffset(idx) + NORMAL_INDEX];
     }
 
     @Override

@@ -1,7 +1,7 @@
 package me.jellysquid.mods.sodium.client.gl.compat;
 
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkFogMode;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL20C;
 
@@ -14,7 +14,7 @@ import java.nio.FloatBuffer;
 @Deprecated
 public class LegacyFogHelper {
     private static final float FAR_PLANE_THRESHOLD_EXP = (float) Math.log(1.0f / 0.0019f);
-    private static final float FAR_PLANE_THRESHOLD_EXP2 = MathHelper.sqrt(FAR_PLANE_THRESHOLD_EXP);
+    private static final float FAR_PLANE_THRESHOLD_EXP2 = Mth.sqrt(FAR_PLANE_THRESHOLD_EXP);
 
     public static float getFogEnd() {
         return GL20C.glGetFloat(GL20.GL_FOG_END);

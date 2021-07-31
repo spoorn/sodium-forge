@@ -1,10 +1,10 @@
 package me.jellysquid.mods.sodium.client.render.chunk.shader;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Matrix4f;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.gl.shader.GlProgram;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.system.MemoryStack;
@@ -38,7 +38,7 @@ public class ChunkProgram extends GlProgram {
         this.fogShader = fogShaderFunction.apply(this);
     }
 
-    public void setup(MatrixStack matrixStack, float modelScale, float textureScale, Matrix4f projection) {
+    public void setup(PoseStack matrixStack, float modelScale, float textureScale, Matrix4f projection) {
         GL20C.glUniform1i(this.uBlockTex, 0);
         GL20C.glUniform1i(this.uLightTex, 2);
 
@@ -47,14 +47,14 @@ public class ChunkProgram extends GlProgram {
 
         this.fogShader.setup();
 
-        MatrixStack.Entry matrices = matrixStack.getLast();
+        PoseStack.Pose matrices = matrixStack.last();
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer bufModelViewProjection = stack.mallocFloat(16);
 
-            Matrix4f modelView = matrices.getMatrix().copy();
+            Matrix4f modelView = matrices.pose().copy();
             modelView.multiplyBackward(projection);
-            modelView.write(bufModelViewProjection);
+            modelView.store(bufModelViewProjection);
             GL20.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, bufModelViewProjection);
             // If for some reason vanilla minecraft doesn't expose the projection matrix anymore, we can fetch it
             // if it was pushed onto the GL stack with below code

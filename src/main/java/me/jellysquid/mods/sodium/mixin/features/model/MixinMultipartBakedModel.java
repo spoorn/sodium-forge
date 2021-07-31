@@ -1,11 +1,11 @@
 package me.jellysquid.mods.sodium.mixin.features.model;
 
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.renderer.model.BakedQuad;
-import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.client.renderer.model.MultipartBakedModel;
-import net.minecraft.util.Direction;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.MultiPartBakedModel;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.tuple.Pair;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,13 +15,13 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.*;
 import java.util.function.Predicate;
 
-@Mixin(MultipartBakedModel.class)
+@Mixin(MultiPartBakedModel.class)
 public class MixinMultipartBakedModel {
-    private final Map<BlockState, List<IBakedModel>> stateCacheFast = new Reference2ReferenceOpenHashMap<>();
+    private final Map<BlockState, List<BakedModel>> stateCacheFast = new Reference2ReferenceOpenHashMap<>();
 
     @Shadow
     @Final
-    private List<Pair<Predicate<BlockState>, IBakedModel>> selectors;
+    private List<Pair<Predicate<BlockState>, BakedModel>> selectors;
 
     /**
      * @author JellySquid
@@ -33,7 +33,7 @@ public class MixinMultipartBakedModel {
             return Collections.emptyList();
         }
 
-        List<IBakedModel> models;
+        List<BakedModel> models;
 
         // FIXME: Synchronization-hack because getQuads must be thread-safe
         // Vanilla is actually affected by the exact same issue safety issue, but crashes seem rare in practice
@@ -43,7 +43,7 @@ public class MixinMultipartBakedModel {
             if (models == null) {
                 models = new ArrayList<>(this.selectors.size());
 
-                for (Pair<Predicate<BlockState>, IBakedModel> pair : this.selectors) {
+                for (Pair<Predicate<BlockState>, BakedModel> pair : this.selectors) {
                     if ((pair.getLeft()).test(state)) {
                         models.add(pair.getRight());
                     }
@@ -57,7 +57,7 @@ public class MixinMultipartBakedModel {
 
         long seed = random.nextLong();
 
-        for (IBakedModel model : models) {
+        for (BakedModel model : models) {
             random.setSeed(seed);
 
             list.addAll(model.getQuads(state, face, random, modelData));

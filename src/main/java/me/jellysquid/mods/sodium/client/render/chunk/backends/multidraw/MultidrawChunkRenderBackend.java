@@ -31,8 +31,8 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.ChunkRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkRenderShaderBackend;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderBindingPoints;
 import me.jellysquid.mods.sodium.common.util.TranslucentPoolUtil;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import org.lwjgl.opengl.GL20C;
 
 import java.util.ArrayList;
@@ -391,7 +391,7 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
     private static boolean isWindowsIntelDriver() {
         // We only care about Windows
         // The open-source drivers on Linux are not known to have driver bugs with indirect command buffers
-        if (Util.getOSType() != Util.OS.WINDOWS) {
+        if (Util.getPlatform() != Util.OS.WINDOWS) {
             return false;
         }
 
@@ -438,7 +438,7 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
         List<String> list = new ArrayList<>();
         list.add(String.format("Active Buffers: %s", this.bufferManager.getAllocatedRegionCount()));
         list.add(String.format("Submission Mode: %s", this.commandBuffer != null ?
-                TextFormatting.AQUA + "Buffer" : TextFormatting.LIGHT_PURPLE + "Client Memory"));
+                ChatFormatting.AQUA + "Buffer" : ChatFormatting.LIGHT_PURPLE + "Client Memory"));
 
         return list;
     }

@@ -4,8 +4,8 @@ import me.jellysquid.mods.sodium.client.gui.options.binding.GenericBinding;
 import me.jellysquid.mods.sodium.client.gui.options.binding.OptionBinding;
 import me.jellysquid.mods.sodium.client.gui.options.control.Control;
 import me.jellysquid.mods.sodium.client.gui.options.storage.OptionStorage;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.Validate;
 
 import java.util.Collection;
@@ -23,7 +23,7 @@ public class OptionImpl<S, T> implements Option<T> {
     private final EnumSet<OptionFlag> flags;
 
     private final String name;
-    private final ITextComponent tooltip;
+    private final Component tooltip;
     private final OptionImpact impact;
 
     private T value;
@@ -41,7 +41,7 @@ public class OptionImpl<S, T> implements Option<T> {
                        boolean enabled) {
         this.storage = storage;
         this.name = name;
-        this.tooltip = new StringTextComponent(tooltip);
+        this.tooltip = new TextComponent(tooltip);
         this.binding = binding;
         this.impact = impact;
         this.flags = flags;
@@ -57,7 +57,7 @@ public class OptionImpl<S, T> implements Option<T> {
     }
 
     @Override
-    public ITextComponent getTooltip() {
+    public Component getTooltip() {
         return this.tooltip;
     }
 

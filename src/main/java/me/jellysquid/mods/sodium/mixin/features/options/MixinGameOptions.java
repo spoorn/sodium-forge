@@ -2,33 +2,33 @@ package me.jellysquid.mods.sodium.mixin.features.options;
 
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gui.SodiumGameOptions;
-import net.minecraft.client.GameSettings;
-import net.minecraft.client.settings.CloudOption;
-import net.minecraft.client.settings.GraphicsFanciness;
+import net.minecraft.client.CloudStatus;
+import net.minecraft.client.GraphicsStatus;
+import net.minecraft.client.Options;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(GameSettings.class)
+@Mixin(Options.class)
 public class MixinGameOptions {
     @Shadow
-    public int renderDistanceChunks;
+    public int renderDistance;
 
     @Shadow
-    public GraphicsFanciness graphicFanciness;
+    public GraphicsStatus graphicsMode;
 
     /**
      * @author JellySquid
      * @reason Make the cloud render mode user-configurable
      */
-    @Overwrite
-    public CloudOption getCloudOption() {
+    @Overwrite(remap = false)
+    public CloudStatus getCloudsType() {
         SodiumGameOptions options = SodiumClientMod.options();
 
-        if (this.renderDistanceChunks < 4 || !options.quality.enableClouds) {
-            return CloudOption.OFF;
+        if (this.renderDistance < 4 || !options.quality.enableClouds) {
+            return CloudStatus.OFF;
         }
 
-        return options.quality.cloudQuality.isFancy(this.graphicFanciness) ? CloudOption.FANCY : CloudOption.FAST;
+        return options.quality.cloudQuality.isFancy(this.graphicsMode) ? CloudStatus.FANCY : CloudStatus.FAST;
     }
 }

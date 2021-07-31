@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkGraphicsState;
 import me.jellysquid.mods.sodium.client.util.MathUtil;
-import net.minecraft.util.math.SectionPos;
+import net.minecraft.core.SectionPos;
 import org.apache.commons.lang3.Validate;
 
 public class ChunkRegionManager<T extends ChunkGraphicsState> {

@@ -1,6 +1,8 @@
 package me.jellysquid.mods.sodium.mixin.core.pipeline;
 
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import me.jellysquid.mods.sodium.client.gl.attribute.BufferVertexFormat;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
 import me.jellysquid.mods.sodium.client.model.vertex.VertexSink;
@@ -8,41 +10,38 @@ import me.jellysquid.mods.sodium.client.model.vertex.buffer.VertexBufferView;
 import me.jellysquid.mods.sodium.client.model.vertex.type.BlittableVertexType;
 import me.jellysquid.mods.sodium.client.model.vertex.type.VertexType;
 import me.jellysquid.mods.sodium.client.util.UnsafeUtil;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GLAllocation;
-import net.minecraft.client.renderer.vertex.VertexFormat;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.BufferUtils;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 @Mixin(BufferBuilder.class)
 public abstract class MixinBufferBuilder implements VertexBufferView, VertexDrain {
     @Shadow
-    private int nextElementBytes;
+    private int nextElementByte;
 
     @Shadow
-    private ByteBuffer byteBuffer;
+    private ByteBuffer buffer;
 
     @Shadow
     @Final
     private static Logger LOGGER;
 
     @Shadow
-    private static int roundUpPositive(int amount) {
+    private static int roundUp(int amount) {
         throw new UnsupportedOperationException();
     }
 
     @Shadow
-    private VertexFormat vertexFormat;
+    private VertexFormat format;
 
     @Shadow
-    private int vertexCount;
+    private int vertices;
 
     /**
      * This fixes the IllegalArgumentException in Buffer.limit(newLimit) as described in
@@ -54,62 +53,63 @@ public abstract class MixinBufferBuilder implements VertexBufferView, VertexDrai
      * For some reason the buffer size gets reset and isn't grown before trying to render some particles.
      *
      * No idea why the fuck this has to be a Redirect instead of Inject.  Only slept 5 hours last night.  I'm tired.
+     * @return
      */
-    @Redirect(method = "getNextBuffer", at = @At(value = "INVOKE", target = "Ljava/nio/Buffer;limit(I)Ljava/nio/Buffer;"))
-    public Buffer debugGetNextBuffer(Buffer buffer, int newLimit) {
+    @Redirect(method = "popNextBuffer", at = @At(value = "INVOKE", target = "Ljava/nio/ByteBuffer;limit(I)Ljava/nio/ByteBuffer;"), remap = false)
+    public ByteBuffer debugGetNextBuffer(ByteBuffer byteBuffer, int newLimit) {
         ensureBufferCapacity(newLimit);
-        buffer = (Buffer) this.byteBuffer;
-        buffer.limit(newLimit);
-        return buffer;
+        byteBuffer = this.buffer;
+        byteBuffer.limit(newLimit);
+        return byteBuffer;
     }
 
     @Override
     public boolean ensureBufferCapacity(int bytes) {
         // Ensure that there is always space for 1 more vertex; see BufferBuilder.next()
-        bytes += vertexFormat.getSize();
+        bytes += format.getVertexSize();
 
-        if (this.nextElementBytes + bytes <= this.byteBuffer.capacity()) {
+        if (this.nextElementByte + bytes <= this.buffer.capacity()) {
             return false;
         }
 
-        int newSize = this.byteBuffer.capacity() + roundUpPositive(bytes);
+        int newSize = this.buffer.capacity() + roundUp(bytes);
 
-        LOGGER.debug("Needed to grow BufferBuilder buffer: Old size {} bytes, new size {} bytes.", this.byteBuffer.capacity(), newSize);
+        LOGGER.debug("Needed to grow BufferBuilder buffer: Old size {} bytes, new size {} bytes.", this.buffer.capacity(), newSize);
 
-        this.byteBuffer.position(0);
+        this.buffer.position(0);
 
-        ByteBuffer byteBuffer = GLAllocation.createDirectByteBuffer(newSize);
-        byteBuffer.put(this.byteBuffer);
+        ByteBuffer byteBuffer = BufferUtils.createByteBuffer(newSize);
+        byteBuffer.put(this.buffer);
         byteBuffer.rewind();
 
-        this.byteBuffer = byteBuffer;
+        this.buffer = byteBuffer;
 
         return true;
     }
 
     @Override
     public ByteBuffer getDirectBuffer() {
-        return this.byteBuffer;
+        return this.buffer;
     }
 
     @Override
     public int getWriterPosition() {
-        return this.nextElementBytes;
+        return this.nextElementByte;
     }
 
     @Override
     public BufferVertexFormat getVertexFormat() {
-        return BufferVertexFormat.from(this.vertexFormat);
+        return BufferVertexFormat.from(this.format);
     }
 
     @Override
     public void flush(int vertexCount, BufferVertexFormat format) {
-        if (BufferVertexFormat.from(this.vertexFormat) != format) {
-            throw new IllegalStateException("Mis-matched vertex format (expected: [" + format + "], currently using: [" + this.vertexFormat + "])");
+        if (BufferVertexFormat.from(this.format) != format) {
+            throw new IllegalStateException("Mis-matched vertex format (expected: [" + format + "], currently using: [" + this.format + "])");
         }
 
-        this.vertexCount += vertexCount;
-        this.nextElementBytes += vertexCount * format.getStride();
+        this.vertices += vertexCount;
+        this.nextElementByte += vertexCount * format.getStride();
     }
 
     @Override
@@ -120,6 +120,6 @@ public abstract class MixinBufferBuilder implements VertexBufferView, VertexDrai
             return blittable.createBufferWriter(this, UnsafeUtil.isAvailable());
         }
 
-        return factory.createFallbackWriter((IVertexBuilder) this);
+        return factory.createFallbackWriter((VertexConsumer) this);
     }
 }

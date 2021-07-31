@@ -1,6 +1,6 @@
 package me.jellysquid.mods.sodium.client.render.chunk.data;
 
-import net.minecraft.util.math.SectionPos;
+import net.minecraft.core.SectionPos;
 
 public class ChunkRenderBounds {
     public static final ChunkRenderBounds ALWAYS_FALSE = new ChunkRenderBounds(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
@@ -20,13 +20,13 @@ public class ChunkRenderBounds {
     }
 
     public ChunkRenderBounds(SectionPos origin) {
-        this.x1 = origin.getWorldStartX();
-        this.y1 = origin.getWorldStartY();
-        this.z1 = origin.getWorldStartZ();
+        this.x1 = origin.minBlockX();
+        this.y1 = origin.minBlockY();
+        this.z1 = origin.minBlockZ();
 
-        this.x2 = origin.getWorldEndX() + 1;
-        this.y2 = origin.getWorldEndY() + 1;
-        this.z2 = origin.getWorldEndZ() + 1;
+        this.x2 = origin.maxBlockX() + 1;
+        this.y2 = origin.maxBlockY() + 1;
+        this.z2 = origin.maxBlockZ() + 1;
     }
 
     public static class Builder {
@@ -48,23 +48,23 @@ public class ChunkRenderBounds {
                 return new ChunkRenderBounds(origin);
             }
 
-            int x1 = origin.getWorldStartX() + leftBound(this.x);
-            int x2 = origin.getWorldEndX() + rightBound(this.x);
+            int x1 = origin.minBlockX() + leftBound(this.x);
+            int x2 = origin.maxBlockX() + rightBound(this.x);
 
-            int y1 = origin.getWorldStartY() + leftBound(this.y);
-            int y2 = origin.getWorldEndY() + rightBound(this.y);
+            int y1 = origin.minBlockY() + leftBound(this.y);
+            int y2 = origin.maxBlockY() + rightBound(this.y);
 
-            int z1 = origin.getWorldStartZ() + leftBound(this.z);
-            int z2 = origin.getWorldEndZ() + rightBound(this.z);
+            int z1 = origin.minBlockZ() + leftBound(this.z);
+            int z2 = origin.maxBlockZ() + rightBound(this.z);
 
             return new ChunkRenderBounds(
-                    Math.max(x1, origin.getWorldStartX()) - 0.5f,
-                    Math.max(y1, origin.getWorldStartY()) - 0.5f,
-                    Math.max(z1, origin.getWorldStartZ()) - 0.5f,
+                    Math.max(x1, origin.minBlockX()) - 0.5f,
+                    Math.max(y1, origin.minBlockY()) - 0.5f,
+                    Math.max(z1, origin.minBlockZ()) - 0.5f,
 
-                    Math.min(x2, origin.getWorldEndX()) + 0.5f,
-                    Math.min(y2, origin.getWorldEndY()) + 0.5f,
-                    Math.min(z2, origin.getWorldEndZ()) + 0.5f
+                    Math.min(x2, origin.maxBlockX()) + 0.5f,
+                    Math.min(y2, origin.maxBlockY()) + 0.5f,
+                    Math.min(z2, origin.maxBlockZ()) + 0.5f
             );
         }
 

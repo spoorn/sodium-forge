@@ -1,12 +1,12 @@
 package me.jellysquid.mods.sodium.client.render.chunk;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Matrix4f;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
 import me.jellysquid.mods.sodium.client.render.chunk.lists.ChunkRenderListIterator;
-import net.minecraft.util.math.vector.Matrix4f;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -35,9 +35,9 @@ public interface ChunkRenderBackend<T extends ChunkGraphicsState> {
 
     void createShaders(RenderDevice device);
 
-    void begin(MatrixStack matrixStack, Matrix4f projection);
+    void begin(PoseStack matrixStack, Matrix4f projection);
 
-    void end(MatrixStack matrixStack);
+    void end(PoseStack matrixStack);
 
     /**
      * Deletes this render backend and any resources attached to it.

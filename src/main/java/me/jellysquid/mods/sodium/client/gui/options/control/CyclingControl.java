@@ -1,6 +1,6 @@
 package me.jellysquid.mods.sodium.client.gui.options.control;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.jellysquid.mods.sodium.client.gui.options.Option;
 import me.jellysquid.mods.sodium.client.gui.options.TextProvider;
 import me.jellysquid.mods.sodium.client.util.Dim2i;
@@ -83,7 +83,7 @@ public class CyclingControl<T extends Enum<T>> implements Control<T> {
         }
 
         @Override
-        public void render(MatrixStack matrixStack, int mouseX, int mouseY, float delta) {
+        public void render(PoseStack matrixStack, int mouseX, int mouseY, float delta) {
             super.render(matrixStack, mouseX, mouseY, delta);
 
             Enum<T> value = this.option.getValue();

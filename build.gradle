@@ -22,7 +22,7 @@ plugins {
 }
 
 /*plugins {
-    id "org.spongepowered.plugin" version "0.9.0"
+    id "org.spongepowered.plugin" version "0.8.2"
 }*/
 
 apply plugin: 'net.minecraftforge.gradle'
@@ -37,6 +37,7 @@ repositories {
         url "https://maven.latmod.com"
     }
     maven {url='https://repo.spongepowered.org/repository/maven-public'}
+    //maven {url='https://repo.spongepowered.org/repository/fabricmc-proxy'}
 }
 
 version = "${project.mod_version}+${getVersionMetadata()}"
@@ -63,7 +64,7 @@ minecraft {
     runs {
         client {
             workingDirectory project.file('run')
-            arg "-mixin.config=sodium.mixins.json"
+            args("--mixin.config","sodium.mixins.json")
 
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
@@ -80,7 +81,7 @@ minecraft {
 
         server {
             workingDirectory project.file('run')
-            arg "-mixin.config=sodium.mixins.json"
+            args("--mixin.config","sodium.mixins.json")
 
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
@@ -119,12 +120,13 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft 'net.minecraftforge:forge:1.17.1-37.0.12'
+    minecraft('net.minecraftforge:forge:1.17.1-37.0.15')
 
     // You may put jars on which you depend on in ./libs or you may define them like so..
     // compile "some.group:artifact:version:classifier"
     // compile "some.group:artifact:version"
-    compileOnly 'org.spongepowered:mixin:0.8.3-SNAPSHOT'
+    //implementation 'org.spongepowered:mixin:0.8.3-SNAPSHOT'
+    implementation 'net.fabricmc:sponge-mixin:0.9.4+mixin.0.8.2'
 
     // Real examples
     // compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
@@ -146,7 +148,7 @@ dependencies {
         transitive = false
     })*/
 
-    annotationProcessor 'org.spongepowered:mixin:0.8.3:processor'
+    annotationProcessor 'org.spongepowered:mixin:0.8.2:processor'
 }
 
 afterEvaluate {

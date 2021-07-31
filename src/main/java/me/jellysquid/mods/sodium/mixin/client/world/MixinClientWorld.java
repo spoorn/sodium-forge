@@ -1,22 +1,22 @@
 package me.jellysquid.mods.sodium.mixin.client.world;
 
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.lighting.WorldLightManager;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(ClientWorld.class)
+@Mixin(ClientLevel.class)
 public abstract class MixinClientWorld
 {
     @Redirect(
-        method = "onChunkUnloaded(Lnet/minecraft/world/chunk/Chunk;)V",
+        method = "unload",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/lighting/WorldLightManager;enableLightSources(Lnet/minecraft/util/math/ChunkPos;Z)V"
-        )
+            target = "Lnet/minecraft/world/level/lighting/LevelLightEngine;enableLightSources(Lnet/minecraft/world/level/ChunkPos;Z)V"
+        ), remap = false
     )
-    private void cancelDisableLightUpdates(final WorldLightManager lightingProvider, final ChunkPos pos, final boolean enable) {
+    private void cancelDisableLightUpdates(final LevelLightEngine levelLightEngine, final ChunkPos pos, final boolean enable) {
     }
 }

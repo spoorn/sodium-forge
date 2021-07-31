@@ -1,10 +1,10 @@
 package me.jellysquid.mods.sodium.client.gui.options.control;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.jellysquid.mods.sodium.client.gui.options.Option;
 import me.jellysquid.mods.sodium.client.util.Dim2i;
-import net.minecraft.client.renderer.Rectangle2d;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.Validate;
 
 public class SliderControl implements Control<Integer> {
@@ -45,7 +45,7 @@ public class SliderControl implements Control<Integer> {
     private static class Button extends ControlElement<Integer> {
         private static final int THUMB_WIDTH = 2, TRACK_HEIGHT = 1;
 
-        private final Rectangle2d sliderBounds;
+        private final Rect2i sliderBounds;
         private final ControlValueFormatter formatter;
 
         private final int min;
@@ -63,11 +63,11 @@ public class SliderControl implements Control<Integer> {
             this.thumbPosition = this.getThumbPositionForValue(option.getValue());
             this.formatter = formatter;
 
-            this.sliderBounds = new Rectangle2d(dim.getLimitX() - 96, dim.getCenterY() - 5, 90, 10);
+            this.sliderBounds = new Rect2i(dim.getLimitX() - 96, dim.getCenterY() - 5, 90, 10);
         }
 
         @Override
-        public void render(MatrixStack matrixStack, int mouseX, int mouseY, float delta) {
+        public void render(PoseStack matrixStack, int mouseX, int mouseY, float delta) {
             super.render(matrixStack, mouseX, mouseY, delta);
 
             if (this.option.isAvailable() && this.hovered) {
@@ -77,19 +77,19 @@ public class SliderControl implements Control<Integer> {
             }
         }
 
-        private void renderStandaloneValue(MatrixStack matrixStack) {
+        private void renderStandaloneValue(PoseStack matrixStack) {
             int sliderX = this.sliderBounds.getX();
             int sliderY = this.sliderBounds.getY();
             int sliderWidth = this.sliderBounds.getWidth();
             int sliderHeight = this.sliderBounds.getHeight();
 
             String label = this.formatter.format(this.option.getValue());
-            int labelWidth = this.font.getStringWidth(label);
+            int labelWidth = this.font.width(label);
 
             this.drawString(matrixStack, label, sliderX + sliderWidth - labelWidth, sliderY + (sliderHeight / 2) - 4, 0xFFFFFFFF);
         }
 
-        private void renderSlider(MatrixStack matrixStack) {
+        private void renderSlider(PoseStack matrixStack) {
             int sliderX = this.sliderBounds.getX();
             int sliderY = this.sliderBounds.getY();
             int sliderWidth = this.sliderBounds.getWidth();
@@ -97,7 +97,7 @@ public class SliderControl implements Control<Integer> {
 
             this.thumbPosition = this.getThumbPositionForValue(option.getValue());
 
-            double thumbOffset = MathHelper.clamp((double) (this.getIntValue() - this.min) / this.range * sliderWidth, 0, sliderWidth);
+            double thumbOffset = Mth.clamp((double) (this.getIntValue() - this.min) / this.range * sliderWidth, 0, sliderWidth);
 
             double thumbX = sliderX + thumbOffset - THUMB_WIDTH;
             double trackY = sliderY + (sliderHeight / 2) - ((double) TRACK_HEIGHT / 2);
@@ -107,7 +107,7 @@ public class SliderControl implements Control<Integer> {
 
             String label = String.valueOf(this.getIntValue());
 
-            int labelWidth = this.font.getStringWidth(label);
+            int labelWidth = this.font.width(label);
 
             this.drawString(matrixStack, label, sliderX - labelWidth - 6, sliderY + (sliderHeight / 2) - 4, 0xFFFFFFFF);
         }
@@ -140,7 +140,7 @@ public class SliderControl implements Control<Integer> {
         }
 
         private void setValue(double d) {
-            this.thumbPosition = MathHelper.clamp(d, 0.0D, 1.0D);
+            this.thumbPosition = Mth.clamp(d, 0.0D, 1.0D);
 
             int value = this.getIntValue();
 
