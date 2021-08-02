@@ -565,6 +565,11 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     public boolean isChunkPrioritized(ChunkRenderContainer<T> render) {
+        // For https://github.com/spoorn/sodium-forge/issues/115
+        if (render == null) {
+            return false;
+        }
+
         return render.getSquaredDistance(this.cameraX, this.cameraY, this.cameraZ) <= NEARBY_CHUNK_DISTANCE;
     }
 
