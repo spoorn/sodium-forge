@@ -465,6 +465,11 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
         while (!this.importantRebuildQueue.isEmpty()) {
             ChunkRenderContainer<T> render = this.importantRebuildQueue.dequeue();
 
+            // For https://github.com/spoorn/sodium-forge/issues/115, https://github.com/spoorn/sodium-forge/issues/128
+            if (render == null) {
+                continue;
+            }
+
             // Do not allow distant chunks to block rendering
             if (!this.isChunkPrioritized(render)) {
                 this.builder.deferRebuild(render);
@@ -565,11 +570,6 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     public boolean isChunkPrioritized(ChunkRenderContainer<T> render) {
-        // For https://github.com/spoorn/sodium-forge/issues/115
-        if (render == null) {
-            return false;
-        }
-
         return render.getSquaredDistance(this.cameraX, this.cameraY, this.cameraZ) <= NEARBY_CHUNK_DISTANCE;
     }
 

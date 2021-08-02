@@ -9,6 +9,7 @@ import me.jellysquid.mods.sodium.client.world.cloned.ClonedChunkSectionCache;
 import me.jellysquid.mods.sodium.client.world.cloned.PackedIntegerArrayExtended;
 import me.jellysquid.mods.sodium.client.world.cloned.palette.ClonedPalette;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BitArray;
@@ -79,7 +80,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     private final BlockState[] blockStates;
 
     // Local Section->BlockState table.
-    private final BlockState[][] blockStatesArrays;
+    //private final BlockState[][] blockStatesArrays;
 
     // Local section copies. Read-only.
     private ClonedChunkSection[] sections;
@@ -151,7 +152,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         this.world = world;
 
         this.sections = new ClonedChunkSection[SECTION_TABLE_ARRAY_SIZE];
-        this.blockStatesArrays = new BlockState[SECTION_TABLE_ARRAY_SIZE][];
+        //this.blockStatesArrays = new BlockState[SECTION_TABLE_ARRAY_SIZE][];
         this.biomeCaches = new BiomeCache[SECTION_TABLE_ARRAY_SIZE];
         this.blockStates = new BlockState[BLOCK_COUNT];
 
@@ -160,7 +161,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
                 for (int z = 0; z < SECTION_LENGTH; z++) {
                     int i = getLocalSectionIndex(x, y, z);
 
-                    this.blockStatesArrays[i] = new BlockState[SECTION_BLOCK_COUNT];
+                    //this.blockStatesArrays[i] = new BlockState[SECTION_BLOCK_COUNT];
                     this.biomeCaches[i] = new BiomeCache(this.world);
                 }
             }
@@ -188,7 +189,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
                     this.biomeCaches[idx].reset();
 
-                    this.unpackBlockData(this.blockStatesArrays[idx], this.sections[idx], context.getVolume());
+                    this.unpackBlockData(null/*this.blockStatesArrays[idx]*/, this.sections[idx], context.getVolume());
                 }
             }
         }
@@ -209,13 +210,13 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         SectionPos pos = section.getPosition();
 
         int minBlockX = Math.max(box.minX, pos.getWorldStartX());
-        int maxBlockX = Math.min(box.maxX, (pos.getSectionX() + 1) << 4);
+        int maxBlockX = Math.min(box.maxX, pos.getWorldEndX());
 
         int minBlockY = Math.max(box.minY, pos.getWorldStartY());
-        int maxBlockY = Math.min(box.maxY, (pos.getSectionY() + 1) << 4);
+        int maxBlockY = Math.min(box.maxY, pos.getWorldEndY());
 
         int minBlockZ = Math.max(box.minZ, pos.getWorldStartZ());
-        int maxBlockZ = Math.min(box.maxZ, (pos.getSectionZ() + 1) << 4);
+        int maxBlockZ = Math.min(box.maxZ, pos.getWorldEndZ());
 
         /*for (int y = minBlockY; y <= maxBlockY; y++) {
             for (int z = minBlockZ; z <= maxBlockZ; z++) {
@@ -258,11 +259,24 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        return this.getBlockState(pos.getX(), pos.getY(), pos.getZ());
+        return this.getBlockState(pos.getX(), pos.getY(), pos.getZ(), pos);
     }
 
-    public BlockState getBlockState(int x, int y, int z) {
-        return this.blockStates[this.getBlockIndex(this.context.getVolume(), x, y, z)];
+    public BlockState getBlockState(int x, int y, int z, BlockPos pos) {
+        if (World.isYOutOfBounds(y)) {
+            return Blocks.VOID_AIR.getDefaultState();
+        }
+
+        // Some mods such as Inspirations that modifies block colors traverse around the current BlockPos to look for
+        // neighboring blocks.  While traversing, they may move out of this current slice's range causing an out of bounds
+        // error.  When this happens, we can default to the World's getBlockState
+        // See https://github.com/spoorn/sodium-forge/issues?q=is%3Aissue+arrayindexoutofboundsexception+
+        int index = this.getBlockIndex(this.context.getVolume(), x, y, z);
+        if (index < 0 || index >= this.blockStates.length) {
+            return this.world.getBlockState(pos == null ? new BlockPos(x, y, z) : pos);
+        }
+
+        return this.blockStates[index];
        /* int relX = x - this.baseX;
         int relY = y - this.baseY;
         int relZ = z - this.baseZ;
@@ -271,10 +285,10 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
                 [getLocalBlockIndex(relX & 15, relY & 15, relZ & 15)];*/
     }
 
-    public BlockState getBlockStateRelative(int x, int y, int z) {
+    /*public BlockState getBlockStateRelative(int x, int y, int z) {
         return this.blockStatesArrays[getLocalSectionIndex(x >> 4, y >> 4, z >> 4)]
                 [getLocalBlockIndex(x & 15, y & 15, z & 15)];
-    }
+    }*/
 
     @Override
     public FluidState getFluidState(BlockPos pos) {
@@ -293,13 +307,17 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
     @Override
     public TileEntity getTileEntity(BlockPos pos) {
-        return this.getTileEntity(pos.getX(), pos.getY(), pos.getZ());
-    }
+        int relX = pos.getX() - this.baseX;
+        int relY = pos.getY() - this.baseY;
+        int relZ = pos.getZ() - this.baseZ;
 
-    public TileEntity getTileEntity(int x, int y, int z) {
-        int relX = x - this.baseX;
-        int relY = y - this.baseY;
-        int relZ = z - this.baseZ;
+        // Some mods such as Dimensional Portals that modifies block colors traverse around the current BlockPos to look for
+        // neighboring blocks.  While traversing, they may move out of this current slice's range causing an out of bounds
+        // error.  When this happens, we can default to the World's getBlockState
+        int index = getLocalSectionIndex(relX >> 4, relY >> 4, relZ >> 4);
+        if (index < 0 || index >= this.sections.length) {
+            return this.world.getTileEntity(pos);
+        }
 
         return this.sections[getLocalSectionIndex(relX >> 4, relY >> 4, relZ >> 4)]
                 .getBlockEntity(relX & 15, relY & 15, relZ & 15);
