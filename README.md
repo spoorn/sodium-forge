@@ -70,15 +70,6 @@ For most users, these compatibility issues are not relevant, and it should be re
 runtime and apply the required patches. For more information on upgrading and tuning the Java runtime, see the
 guide [here](https://gist.github.com/jellysquid3/8a7b21e57f47f5711eb5697e282e502e).
 
-### Community
-[![Discord chat](https://img.shields.io/badge/chat%20on-discord-7289DA)](https://jellysquid.me/discord)
-
-We have an [official Discord community](https://jellysquid.me/discord) for all of our projects. By joining, you can:
-- Get installation help and technical support with all of our mods 
-- Be notified of the latest developments as they happen
-- Get involved and collaborate with the rest of our team
-- ... and just hang out with the rest of our community.
-
 ### Building from sources
 
 #### Requirements
