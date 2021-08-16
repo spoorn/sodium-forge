@@ -293,6 +293,7 @@ public abstract class ExplosionMixin {
         int maxZ = MathHelper.floor(this.z + (double) range + 1.0D);
 
         List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this.exploder, new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ));
+        net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.world, (Explosion)(Object)this, entities, range);
 
         Vector3d selfPos = new Vector3d(this.x, this.y, this.z);
 
