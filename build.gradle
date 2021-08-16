@@ -29,6 +29,9 @@ repositories {
         name "LatvianModder"
         url "https://maven.latmod.com"
     }
+    flatDir {
+        dirs 'libs'
+    }
 }
 
 version = "${project.mod_version}+${getVersionMetadata()}"

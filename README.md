@@ -2,11 +2,11 @@ Curseforge link: https://www.curseforge.com/minecraft/mc-mods/sodium-reforged
 
 ![Project icon](https://git-assets.jellysquid.me/hotlink-ok/sodium/icon-rounded-128px.png)
 
-# Sodium/Lithium/Phosphor (Forge fork)
+# Sodium/Lithium/Starlight (Forge fork)
 ![GitHub license](https://img.shields.io/github/license/jellysquid3/sodium-fabric.svg)
 ![GitHub tag](https://img.shields.io/github/tag/jellysquid3/sodium-fabric.svg)
 
-### This is Forge edition of Sodium/Lithium/Phosphor
+### This is Forge edition of Sodium/Lithium/Starlight
 
 Sodium is a free and open-source optimization mod for the Minecraft client that improves frame rates, reduces
 micro-stutter, and fixes graphical issues in Minecraft. 
@@ -19,11 +19,7 @@ This fork includes Lithium, as [original repo](https://github.com/CaffeineMC/lit
   better overall performance. It works on both the **client and server**, and **doesn't require the mod to be installed
   on both sides**. 
   
-This fork includes Phosphor, as [original repo](https://github.com/CaffeineMC/phosphor-fabric) says:
-
- * Phosphor is a free and open-source Minecraft mod (under GNU GPLv3) aiming to save your CPU cycles and improve performance by optimizing one of Minecraft's most inefficient areas-- the lighting engine.
-   It works on **both the client and server**, and can be installed on servers **without requiring clients to also have the mod**
- * The mod is designed to be as minimal as possible in the changes it makes, and as such, does not modify the light model or interfaces of vanilla Minecraft. Because of this, Phosphor should be compatible with many Minecraft mods (so long as they do not make drastic changes to how the lighting engine works.) If you've ran into a compatibility problem, please open an issue!
+This fork includes Starlight which is licensed under the LGPL.
 ### Downloads
 
 Currently, only on [release page](https://github.com/Pannoniae/sodium-forge/releases/latest/).
