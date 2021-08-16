@@ -5,6 +5,7 @@ import net.minecraft.util.math.MathHelper;
 import org.lwjgl.system.MemoryUtil;
 import sun.misc.Unsafe;
 
+import java.nio.Buffer;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 
@@ -35,15 +36,15 @@ public abstract class ChunkDrawCallBatcher extends StructBuffer {
         this.count = 0;
         this.arrayLength = 0;
 
-        this.buffer.limit(this.buffer.capacity());
+        ((Buffer)this.buffer).limit(this.buffer.capacity());
     }
 
     public void end() {
         this.isBuilding = false;
 
         this.arrayLength = this.count * this.stride;
-        this.buffer.limit(this.arrayLength);
-        this.buffer.position(0);
+        ((Buffer)this.buffer).limit(this.arrayLength);
+        ((Buffer)this.buffer).position(0);
     }
 
     public boolean isBuilding() {

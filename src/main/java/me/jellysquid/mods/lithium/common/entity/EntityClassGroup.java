@@ -26,13 +26,13 @@ public class EntityClassGroup {
 
     static {
         //String remapped_method_30948 = FabricLoader.getInstance().getMappingResolver().mapMethodName("intermediary", "net.minecraft.class_1297", "method_30948", "()Z");
-        String remapped_method_30948 = ObfuscationReflectionHelper.findMethod(Entity.class, "canBeCollidedWith").getName();
+        String remapped_method_30948 = ObfuscationReflectionHelper.findMethod(Entity.class, "func_241845_aY").getName();
         BOAT_SHULKER_LIKE_COLLISION = new EntityClassGroup(
                 (Class<?> entityClass) -> isMethodFromSuperclassOverwritten(entityClass, Entity.class, remapped_method_30948));
 
 
         //String remapped_method_30949 = FabricLoader.getInstance().getMappingResolver().mapMethodName("intermediary", "net.minecraft.class_1297", "method_30949", "(Lnet/minecraft/class_1297;)Z");
-        String remapped_method_30949 = ObfuscationReflectionHelper.findMethod(Entity.class, "canCollideWith", Entity.class).getName();
+        String remapped_method_30949 = ObfuscationReflectionHelper.findMethod(Entity.class, "func_241849_j", Entity.class).getName();
         MINECART_BOAT_LIKE_COLLISION = new EntityClassGroup(
                 (Class<?> entityClass) -> isMethodFromSuperclassOverwritten(entityClass, Entity.class, remapped_method_30949, Entity.class));
 
@@ -44,7 +44,7 @@ public class EntityClassGroup {
             throw new AssertionError();
         }
         if ((MINECART_BOAT_LIKE_COLLISION.contains(ShulkerEntity.class))) {
-            //should not throw an Error here, because another mod *could* add the method to ShulkerEntity. Wwarning when this sanity check fails.
+            //should not throw an Error here, because another mod *could* add the method to ShulkerEntity. Warning when this sanity check fails.
             Logger.getLogger("Lithium EntityClassGroup").warning("Either chunk.entity_class_groups is broken or something else gave Shulkers the minecart-like collision behavior.");
         }
         BOAT_SHULKER_LIKE_COLLISION.clear();

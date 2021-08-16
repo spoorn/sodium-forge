@@ -3,6 +3,7 @@ package me.jellysquid.mods.sodium.client.gl.util;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.system.MemoryUtil;
 
+import java.nio.Buffer;
 import java.nio.IntBuffer;
 
 /**
@@ -29,16 +30,16 @@ public class GlMultiDrawBatch {
     }
 
     public void begin() {
-        this.bufIndices.clear();
-        this.bufLen.clear();
+        ((Buffer)this.bufIndices).clear();
+        ((Buffer)this.bufLen).clear();
         this.count = 0;
 
         this.isBuilding = true;
     }
 
     public void end() {
-        this.bufIndices.limit(this.count);
-        this.bufLen.limit(this.count);
+        ((Buffer)this.bufIndices).limit(this.count);
+        ((Buffer)this.bufLen).limit(this.count);
 
         this.isBuilding = false;
     }

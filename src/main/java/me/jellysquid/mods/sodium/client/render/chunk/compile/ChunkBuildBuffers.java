@@ -18,6 +18,7 @@ import me.jellysquid.mods.sodium.client.util.UnsafeUtil;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.RenderType;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -107,14 +108,14 @@ public class ChunkBuildBuffers {
 
         for (Map.Entry<ModelQuadFacing, BufferSlice> entry : meshData.getSlices()) {
             BufferSlice slice = entry.getValue();
-            buffer.position(slice.start);
+            ((Buffer)buffer).position(slice.start);
 
             VertexBufferBuilder builder = this.buffersByLayer[pass.ordinal()][entry.getKey().ordinal()];
 
             builder.copyInto(buffer);
         }
 
-        buffer.flip();
+        ((Buffer)buffer).flip();
 
         if (pass.isTranslucent() && shouldSortBackwards && (vertexType instanceof SFPModelVertexType)) {
             ChunkBufferSorter.sortStandardFormat(vertexType, buffer, bufferLen, x, y, z);

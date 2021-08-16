@@ -4,6 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
+import me.jellysquid.mods.sodium.client.util.MixinWorldRendererSodiumAccessor;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
@@ -22,8 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.SortedSet;
 
-@Mixin(WorldRenderer.class)
-public abstract class MixinWorldRenderer {
+@Mixin(value = WorldRenderer.class)
+public abstract class MixinWorldRenderer implements MixinWorldRendererSodiumAccessor {
     @Shadow
     @Final
     private RenderTypeBuffers renderBuffers;
@@ -33,6 +34,11 @@ public abstract class MixinWorldRenderer {
     private Long2ObjectMap<SortedSet<DestroyBlockProgress>> destructionProgress;
 
     private SodiumWorldRenderer renderer;
+
+    @Override
+    public SodiumWorldRenderer getRenderer() {
+        return renderer;
+    }
 
     @Redirect(method = "allChanged", at = @At(value = "FIELD", target = "Lnet/minecraft/client/GameSettings;renderDistance:I", ordinal = 1))
     private int nullifyBuiltChunkStorage(GameSettings options) {
@@ -79,20 +85,7 @@ public abstract class MixinWorldRenderer {
         this.renderer.scheduleTerrainUpdate();
     }
 
-    /**
-     * @reason Redirect the chunk layer render passes to our renderer
-     * @author JellySquid
-     */
-    @Overwrite
-    private void renderChunkLayer(RenderType renderLayer, MatrixStack matrixStack, double x, double y, double z) {
-        RenderDevice.enterManagedCode();
 
-        try {
-            this.renderer.drawChunkLayer(renderLayer, matrixStack, x, y, z);
-        } finally {
-            RenderDevice.exitManagedCode();
-        }
-    }
 
     /**
      * Use our own renderer and pass in all necessary information.

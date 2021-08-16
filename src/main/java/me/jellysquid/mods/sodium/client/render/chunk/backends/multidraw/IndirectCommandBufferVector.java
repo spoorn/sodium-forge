@@ -2,6 +2,8 @@ package me.jellysquid.mods.sodium.client.render.chunk.backends.multidraw;
 
 import org.lwjgl.system.MemoryUtil;
 
+import java.nio.Buffer;
+
 public class IndirectCommandBufferVector extends StructBuffer {
     protected IndirectCommandBufferVector(int capacity) {
         super(capacity, 16);
@@ -12,11 +14,11 @@ public class IndirectCommandBufferVector extends StructBuffer {
     }
 
     public void begin() {
-        this.buffer.clear();
+        ((Buffer)this.buffer).clear();
     }
 
     public void end() {
-        this.buffer.flip();
+        ((Buffer)this.buffer).flip();
     }
 
     public void pushCommandBuffer(ChunkDrawCallBatcher batcher) {

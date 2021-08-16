@@ -10,6 +10,7 @@ import me.jellysquid.mods.sodium.client.gl.state.GlStateTracker;
 import me.jellysquid.mods.sodium.client.gl.tessellation.*;
 import org.lwjgl.opengl.*;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -74,7 +75,7 @@ public class GLRenderDevice implements RenderDevice {
 
             GL20C.glBufferData(GlBufferTarget.ARRAY_BUFFER.getTargetParameter(), byteBuffer, glBuffer.getUsageHint().getId());
 
-            glBuffer.setSize(byteBuffer.limit());
+            glBuffer.setSize(((Buffer)byteBuffer).limit());
         }
 
         @Override

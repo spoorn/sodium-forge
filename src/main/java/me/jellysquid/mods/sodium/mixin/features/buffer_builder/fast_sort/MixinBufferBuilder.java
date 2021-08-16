@@ -64,7 +64,7 @@ public class MixinBufferBuilder {
 
                 if (m != l) {
                     sliceQuad(floatBuffer, m, quadStride, quadStart);
-                    tmp.clear();
+                    ((Buffer)tmp).clear();
                     tmp.put(floatBuffer);
 
                     int n = m;
@@ -81,7 +81,7 @@ public class MixinBufferBuilder {
                     }
 
                     sliceQuad(floatBuffer, l, quadStride, quadStart);
-                    tmp.flip();
+                    ((Buffer)tmp).flip();
 
                     floatBuffer.put(tmp);
                 }

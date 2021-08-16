@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import me.jellysquid.mods.sodium.client.model.vertex.type.ChunkVertexType;
 import org.lwjgl.system.MemoryStack;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.BitSet;
@@ -20,7 +21,7 @@ public class ChunkBufferSorter {
         // Quad stride by Float size
         int quadStride = vertexType.getBufferVertexFormat().getStride();
 
-        int quadStart = buffer.position();
+        int quadStart = ((Buffer)buffer).position();
         int quadCount = bufferLen/quadStride/4;
         int vertexSizeInteger = quadStride / 4;
 
@@ -44,7 +45,7 @@ public class ChunkBufferSorter {
 
                 if (m != l) {
                     sliceQuad(floatBuffer, m, quadStride, quadStart);
-                    tmp.clear();
+                    ((Buffer)tmp).clear();
                     tmp.put(floatBuffer);
 
                     int n = m;
@@ -61,7 +62,7 @@ public class ChunkBufferSorter {
                     }
 
                     sliceQuad(floatBuffer, l, quadStride, quadStart);
-                    tmp.flip();
+                    ((Buffer)tmp).flip();
 
                     floatBuffer.put(tmp);
                 }
@@ -74,8 +75,8 @@ public class ChunkBufferSorter {
     private static void sliceQuad(FloatBuffer floatBuffer, int quadIdx, int quadStride, int quadStart) {
         int base = quadStart + (quadIdx * quadStride);
 
-        floatBuffer.limit(base + quadStride);
-        floatBuffer.position(base);
+        ((Buffer)floatBuffer).limit(base + quadStride);
+        ((Buffer)floatBuffer).position(base);
     }
 
     private static float getDistanceSq(FloatBuffer buffer, float xCenter, float yCenter, float zCenter, int stride, int start) {
