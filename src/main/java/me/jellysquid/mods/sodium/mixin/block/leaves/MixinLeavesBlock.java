@@ -7,6 +7,8 @@ import net.minecraft.block.LeavesBlock;
 import net.minecraft.util.Direction;
 import org.spongepowered.asm.mixin.Mixin;
 
+import net.minecraft.block.AbstractBlock.Properties;
+
 @Mixin(LeavesBlock.class)
 public class MixinLeavesBlock extends Block {
 
@@ -15,11 +17,11 @@ public class MixinLeavesBlock extends Block {
     }
 
     @Override
-    public boolean isSideInvisible(BlockState state, BlockState adjacentBlockState, Direction side) {
+    public boolean skipRendering(BlockState state, BlockState adjacentBlockState, Direction side) {
         if (SodiumClientMod.options().advanced.useLeavesCulling) {
             return adjacentBlockState.getBlock() instanceof LeavesBlock;
         } else {
-            return super.isSideInvisible(state, adjacentBlockState, side);
+            return super.skipRendering(state, adjacentBlockState, side);
         }
     }
 }

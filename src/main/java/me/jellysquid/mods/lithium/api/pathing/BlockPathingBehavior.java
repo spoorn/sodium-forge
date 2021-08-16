@@ -12,7 +12,7 @@ public interface BlockPathingBehavior {
     /**
      * Controls how the given block state is seen in path-finding.
      * <p>
-     * If you were mixing into the method {@link WalkNodeProcessor#func_237238_b_(IBlockReader, BlockPos)},
+     * If you were mixing into the method {@link WalkNodeProcessor#getBlockPathTypeRaw(IBlockReader, BlockPos)},
      * you will want to implement this method with your logic instead.
      * <p>
      * The result of this method is cached in the block state and will only be called on block initialization.

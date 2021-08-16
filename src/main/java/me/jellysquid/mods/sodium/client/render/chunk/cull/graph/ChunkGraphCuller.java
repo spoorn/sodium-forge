@@ -84,12 +84,12 @@ public class ChunkGraphCuller implements ChunkCuller {
     private void initSearch(ActiveRenderInfo camera, FrustumExtended frustum, int frame, boolean spectator) {
         this.activeFrame = frame;
         this.frustum = frustum;
-        this.useOcclusionCulling = Minecraft.getInstance().renderChunksMany;
+        this.useOcclusionCulling = Minecraft.getInstance().smartCull;
 
         this.blockStateCache.clear();
         this.visible.clear();
 
-        BlockPos origin = camera.getBlockPos();
+        BlockPos origin = camera.getBlockPosition();
 
         int chunkX = origin.getX() >> 4;
         int chunkY = origin.getY() >> 4;
@@ -105,7 +105,7 @@ public class ChunkGraphCuller implements ChunkCuller {
             rootNode.resetCullingState();
             rootNode.setLastVisibleFrame(frame);
 
-            if (spectator && this.world.getBlockState(origin).isOpaqueCube(this.world, origin)) {
+            if (spectator && this.world.getBlockState(origin).isSolidRender(this.world, origin)) {
                 this.useOcclusionCulling = false;
             }
 
@@ -179,7 +179,7 @@ public class ChunkGraphCuller implements ChunkCuller {
     }
 
     private ChunkGraphNode findAdjacentNode(ChunkGraphNode node, Direction dir) {
-        return this.getNode(node.getChunkX() + dir.getXOffset(), node.getChunkY() + dir.getYOffset(), node.getChunkZ() + dir.getZOffset());
+        return this.getNode(node.getChunkX() + dir.getStepX(), node.getChunkY() + dir.getStepY(), node.getChunkZ() + dir.getStepZ());
     }
 
     private ChunkGraphNode getNode(int x, int y, int z) {

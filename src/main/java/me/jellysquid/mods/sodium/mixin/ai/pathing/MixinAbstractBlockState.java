@@ -16,7 +16,7 @@ public abstract class MixinAbstractBlockState implements BlockStatePathingCache 
     private PathNodeType pathNodeType = PathNodeType.OPEN;
     private PathNodeType pathNodeTypeNeighbor = PathNodeType.OPEN;
 
-    @Inject(method = "cacheState", at = @At("RETURN"))
+    @Inject(method = "initCache", at = @At("RETURN"))
     private void init(CallbackInfo ci) {
         // disable patch because it conflicts with forge baking
         //BlockState state = this.getSelf();
@@ -37,7 +37,7 @@ public abstract class MixinAbstractBlockState implements BlockStatePathingCache 
     }
 
     @Shadow
-    protected abstract BlockState getSelf();
+    protected abstract BlockState asState();
 
     @Shadow
     public abstract Block getBlock();

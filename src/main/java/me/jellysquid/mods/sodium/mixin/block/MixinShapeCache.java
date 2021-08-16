@@ -11,20 +11,20 @@ import org.spongepowered.asm.mixin.Shadow;
 public class MixinShapeCache implements BlockStateLightInfo {
     @Shadow
     @Final
-    private VoxelShape[] renderShapes;
+    private VoxelShape[] occlusionShapes;
 
     @Shadow
     @Final
-    private int opacity;
+    private int lightBlock;
 
     @Override
     public VoxelShape[] getExtrudedFaces() {
-        return this.renderShapes;
+        return this.occlusionShapes;
     }
 
     @Override
     public int getLightSubtracted() {
-        return this.opacity;
+        return this.lightBlock;
     }
 
 }

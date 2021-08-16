@@ -26,7 +26,7 @@ public class PalettedContainerMixin {
      * @author JellySquid
      */
     @Overwrite
-    public void lock() {
+    public void acquire() {
 
     }
 
@@ -35,7 +35,7 @@ public class PalettedContainerMixin {
      * @author JellySquid
      */
     @Overwrite
-    public void unlock() {
+    public void release() {
 
     }
 }

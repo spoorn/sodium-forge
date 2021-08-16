@@ -19,11 +19,11 @@ public class TypeFilterableListMixin<T> {
 
     @Shadow
     @Final
-    private Map<Class<?>, List<T>> map;
+    private Map<Class<?>, List<T>> byClass;
 
     @Shadow
     @Final
-    private List<T> values;
+    private List<T> allInstances;
 
     /**
      * @reason Only perform the slow Class#isAssignableFrom(Class) if a list doesn't exist for the type, otherwise
@@ -32,8 +32,8 @@ public class TypeFilterableListMixin<T> {
      */
     @SuppressWarnings("unchecked")
     @Overwrite
-    public <S> Collection<S> getByClass(Class<S> type) {
-        Collection<T> collection = this.map.get(type);
+    public <S> Collection<S> find(Class<S> type) {
+        Collection<T> collection = this.byClass.get(type);
 
         if (collection == null) {
             collection = this.createAllOfType(type);
@@ -49,13 +49,13 @@ public class TypeFilterableListMixin<T> {
 
         List<T> list = new ArrayList<>();
 
-        for (T allElement : this.values) {
+        for (T allElement : this.allInstances) {
             if (type.isInstance(allElement)) {
                 list.add(allElement);
             }
         }
 
-        this.map.put(type, list);
+        this.byClass.put(type, list);
 
         return list;
     }
@@ -65,7 +65,7 @@ public class TypeFilterableListMixin<T> {
      * @reason Do not copy the list every call to provide immutability, instead wrap with an unmodifiable type
      */
     @Overwrite
-    public List<T> func_241289_a_() {
-        return Collections.unmodifiableList(this.values);
+    public List<T> getAllInstances() {
+        return Collections.unmodifiableList(this.allInstances);
     }
 }

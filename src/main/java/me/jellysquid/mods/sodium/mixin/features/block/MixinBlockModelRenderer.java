@@ -85,13 +85,13 @@ public class MixinBlockModelRenderer {
         drain.ensureCapacity(list.size() * 4);
 
         for (BakedQuad bakedQuad : list) {
-            int color = bakedQuad.hasTintIndex() ? defaultColor : 0xFFFFFFFF;
+            int color = bakedQuad.isTinted() ? defaultColor : 0xFFFFFFFF;
 
             ModelQuadView quad = ((ModelQuadView) bakedQuad);
 
             for (int i = 0; i < 4; i++) {
                 drain.writeQuad(entry, quad.getX(i), quad.getY(i), quad.getZ(i), color, quad.getTexU(i), quad.getTexV(i),
-                        light, overlay, ModelQuadUtil.getFacingNormal(bakedQuad.getFace()));
+                        light, overlay, ModelQuadUtil.getFacingNormal(bakedQuad.getDirection()));
             }
 
             SpriteUtil.markSpriteActive(quad.getSprite());

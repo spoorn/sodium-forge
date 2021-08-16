@@ -13,7 +13,7 @@ public class LivingEntityMixin {
     /**
      * @reason Avoid cloning enum values
      */
-    @Redirect(method = "func_241354_r_", at = @At(value = "INVOKE", target = "Lnet/minecraft/inventory/EquipmentSlotType;values()[Lnet/minecraft/inventory/EquipmentSlotType;"))
+    @Redirect(method = "collectEquipmentChanges", at = @At(value = "INVOKE", target = "Lnet/minecraft/inventory/EquipmentSlotType;values()[Lnet/minecraft/inventory/EquipmentSlotType;"))
     private EquipmentSlotType[] redirectEquipmentSlotsClone() {
         return SLOTS;
     }

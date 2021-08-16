@@ -19,17 +19,17 @@ import java.util.function.Predicate;
 public abstract class AbstractDecorationEntityMixin extends Entity {
     @Shadow
     @Final
-    protected static Predicate<Entity> IS_HANGING_ENTITY; //entity instanceof AbstractDecorationEntity
+    protected static Predicate<Entity> HANGING_ENTITY; //entity instanceof AbstractDecorationEntity
 
     public AbstractDecorationEntityMixin(EntityType<?> type, World world) {
         super(type, world);
     }
 
-    @Redirect(method = "onValidSurface", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getEntitiesInAABBexcluding(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/AxisAlignedBB;Ljava/util/function/Predicate;)Ljava/util/List;"))
+    @Redirect(method = "survives", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/AxisAlignedBB;Ljava/util/function/Predicate;)Ljava/util/List;"))
     private List<Entity> getAbstractDecorationEntities(World world, Entity excluded, AxisAlignedBB box, Predicate<? super Entity> predicate) {
-        if (predicate == IS_HANGING_ENTITY) {
+        if (predicate == HANGING_ENTITY) {
             return WorldHelper.getEntitiesOfClass(world, excluded, HangingEntity.class, box);
         }
-        return world.getEntitiesInAABBexcluding(excluded, box, predicate);
+        return world.getEntities(excluded, box, predicate);
     }
 }

@@ -25,9 +25,9 @@ class AoFaceData {
         final int adjZ;
 
         if (offset) {
-            adjX = x + direction.getXOffset();
-            adjY = y + direction.getYOffset();
-            adjZ = z + direction.getZOffset();
+            adjX = x + direction.getStepX();
+            adjY = y + direction.getStepY();
+            adjZ = z + direction.getStepZ();
         } else {
             adjX = x;
             adjY = y;

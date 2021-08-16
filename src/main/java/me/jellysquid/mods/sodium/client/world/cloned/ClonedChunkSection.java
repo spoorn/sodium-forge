@@ -53,7 +53,7 @@ public class ClonedChunkSection {
         Chunk chunk = world.getChunk(pos.getX(), pos.getZ());
 
         if (chunk == null) {
-            throw new RuntimeException("Couldn't retrieve chunk at " + pos.asChunkPos());
+            throw new RuntimeException("Couldn't retrieve chunk at " + pos.chunk());
         }
 
         ChunkSection section = getChunkSection(chunk, pos);
@@ -64,35 +64,35 @@ public class ClonedChunkSection {
 
         this.pos = pos;
 
-        PalettedContainerExtended<BlockState> container = PalettedContainerExtended.cast(section.getData());;
+        PalettedContainerExtended<BlockState> container = PalettedContainerExtended.cast(section.getStates());;
 
         this.blockStateData = copyBlockData(container);
         this.blockStatePalette = copyPalette(container);
 
         for (LightType type : LIGHT_TYPES) {
-            this.lightDataArrays[type.ordinal()] = world.getLightManager()
-                    .getLightEngine(type)
-                    .getData(pos);
+            this.lightDataArrays[type.ordinal()] = world.getLightEngine()
+                    .getLayerListener(type)
+                    .getDataLayerData(pos);
         }
 
         this.biomeData = chunk.getBiomes();
 
-        MutableBoundingBox box = new MutableBoundingBox(pos.getWorldStartX(), pos.getWorldStartY(), pos.getWorldStartZ(),
-                pos.getWorldEndX(), pos.getWorldEndY(), pos.getWorldEndZ());
+        MutableBoundingBox box = new MutableBoundingBox(pos.minBlockX(), pos.minBlockY(), pos.minBlockZ(),
+                pos.maxBlockX(), pos.maxBlockY(), pos.maxBlockZ());
 
         this.blockEntities.clear();
 
-        for (Map.Entry<BlockPos, TileEntity> entry : chunk.getTileEntityMap().entrySet()) {
+        for (Map.Entry<BlockPos, TileEntity> entry : chunk.getBlockEntities().entrySet()) {
             BlockPos entityPos = entry.getKey();
 
-            if (box.isVecInside(entityPos)) {
-                this.blockEntities.put(BlockPos.pack(entityPos.getX() & 15, entityPos.getY() & 15, entityPos.getZ() & 15), entry.getValue());
+            if (box.isInside(entityPos)) {
+                this.blockEntities.put(BlockPos.asLong(entityPos.getX() & 15, entityPos.getY() & 15, entityPos.getZ() & 15), entry.getValue());
             }
         }
     }
 
     public BlockState getBlockState(int x, int y, int z) {
-        return this.blockStatePalette.get(this.blockStateData.getAt(y << 8 | z << 4 | x));
+        return this.blockStatePalette.get(this.blockStateData.get(y << 8 | z << 4 | x));
     }
 
     public int getLightLevel(LightType type, int x, int y, int z) {
@@ -110,7 +110,7 @@ public class ClonedChunkSection {
     }
 
     public TileEntity getBlockEntity(int x, int y, int z) {
-        return this.blockEntities.get(BlockPos.pack(x, y, z));
+        return this.blockEntities.get(BlockPos.asLong(x, y, z));
     }
 
     public BitArray getBlockData() {
@@ -130,13 +130,13 @@ public class ClonedChunkSection {
 
         if (palette instanceof IdentityPalette) {
             // TODO: Use GameRegistry
-            return new ClonedPaletteFallback<>(Block.BLOCK_STATE_IDS);
+            return new ClonedPaletteFallback<>(Block.BLOCK_STATE_REGISTRY);
         }
 
         BlockState[] array = new BlockState[1 << container.getPaletteSize()];
 
         for (int i = 0; i < array.length; i++) {
-            array[i] = palette.get(i);
+            array[i] = palette.valueFor(i);
 
             if (array[i] == null) {
                 break;
@@ -148,15 +148,15 @@ public class ClonedChunkSection {
 
     private static BitArray copyBlockData(PalettedContainerExtended<BlockState> container) {
         BitArray array = container.getDataArray();
-        long[] storage = array.getBackingLongArray();
+        long[] storage = array.getRaw();
 
-        return new BitArray(container.getPaletteSize(), array.size(), storage.clone());
+        return new BitArray(container.getPaletteSize(), array.getSize(), storage.clone());
     }
 
     private static ChunkSection getChunkSection(Chunk chunk, SectionPos pos) {
         ChunkSection section = null;
 
-        if (!World.isYOutOfBounds(SectionPos.toWorld(pos.getY()))) {
+        if (!World.isOutsideBuildHeight(SectionPos.sectionToBlockCoord(pos.getY()))) {
             section = chunk.getSections()[pos.getY()];
         }
 

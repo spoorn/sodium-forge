@@ -67,7 +67,7 @@ public class ChunkAwareBlockCollisionSweeper {
     public ChunkAwareBlockCollisionSweeper(ICollisionReader view, Entity entity, AxisAlignedBB box, BlockCollisionPredicate collisionPredicate) {
         this.box = box;
         this.shape = VoxelShapes.create(box);
-        this.context = entity == null ? ISelectionContext.dummy() : ISelectionContext.forEntity(entity);
+        this.context = entity == null ? ISelectionContext.empty() : ISelectionContext.of(entity);
         this.view = view;
         this.entity = entity;
         this.needEntityCollisionCheck = entity != null;
@@ -115,7 +115,7 @@ public class ChunkAwareBlockCollisionSweeper {
                     }
                     //Casting to Chunk is not checked, together with other mods this could cause a ClassCastException
                     try {
-                        this.cachedChunk = (IChunk) this.view.getBlockReader(this.chunkX, this.chunkZ);
+                        this.cachedChunk = (IChunk) this.view.getChunkForCollisions(this.chunkX, this.chunkZ);
                     } catch (ClassCastException ex) {
                         log.debug("Could not cast to IChunk, skipping chunk cache check", ex);
                         this.cachedChunk = null;
@@ -219,7 +219,7 @@ public class ChunkAwareBlockCollisionSweeper {
                 continue;
             }
 
-            this.pos.setPos(x, y, z);
+            this.pos.set(x, y, z);
 
             if (!this.collisionPredicate.test(this.view, this.pos, state)) {
                 continue;
@@ -240,7 +240,7 @@ public class ChunkAwareBlockCollisionSweeper {
 
     private VoxelShape getNextEntityCollision() {
         if (LithiumEntityCollisions.canEntityCollideWithWorldBorder(this.view, this.entity)) {
-            return this.view.getWorldBorder().getShape();
+            return this.view.getWorldBorder().getCollisionShape();
         }
 
         return null;
@@ -253,7 +253,7 @@ public class ChunkAwareBlockCollisionSweeper {
      * @return True if the shape can be interacted with at the given edge boundary
      */
     private static boolean canInteractWithBlock(BlockState state, int edgesHit) {
-        return (edgesHit != 1 || state.isCollisionShapeLargerThanFullBlock()) && (edgesHit != 2 || state.getBlock() == Blocks.MOVING_PISTON);
+        return (edgesHit != 1 || state.hasLargeCollisionShape()) && (edgesHit != 2 || state.getBlock() == Blocks.MOVING_PISTON);
     }
 
     /**
@@ -266,15 +266,15 @@ public class ChunkAwareBlockCollisionSweeper {
     private static VoxelShape getCollidedShape(AxisAlignedBB entityBox, VoxelShape entityShape, VoxelShape shape, int x, int y, int z) {
         if (shape instanceof VoxelShapeCaster) {
             if (((VoxelShapeCaster) shape).intersects(entityBox, x, y, z)) {
-                return shape.withOffset(x, y, z);
+                return shape.move(x, y, z);
             } else {
                 return null;
             }
         }
 
-        shape = shape.withOffset(x, y, z);
+        shape = shape.move(x, y, z);
 
-        if (VoxelShapes.compare(shape, entityShape, IBooleanFunction.AND)) {
+        if (VoxelShapes.joinIsNotEmpty(shape, entityShape, IBooleanFunction.AND)) {
             return shape;
         }
 

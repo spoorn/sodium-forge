@@ -64,19 +64,19 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
 
     @Override
     public void tick() {
-        this.world.getProfiler().startSection("cleaning");
+        this.world.getProfiler().push("cleaning");
 
-        this.selectTicks(this.world.getChunkProvider(), this.world.getGameTime());
+        this.selectTicks(this.world.getChunkSource(), this.world.getGameTime());
 
-        this.world.getProfiler().endStartSection("executing");
+        this.world.getProfiler().popPush("executing");
 
         this.executeTicks(this.tickConsumer);
 
-        this.world.getProfiler().endSection();
+        this.world.getProfiler().pop();
     }
 
     @Override
-    public boolean isTickPending(BlockPos pos, T obj) {
+    public boolean willTickThisTick(BlockPos pos, T obj) {
         TickEntry<T> entry = this.scheduledTicks.get(new NextTickListEntry<>(pos, obj));
 
         if (entry == null) {
@@ -87,7 +87,7 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
     }
 
     @Override
-    public boolean isTickScheduled(BlockPos pos, T obj) {
+    public boolean hasScheduledTick(BlockPos pos, T obj) {
         TickEntry<T> entry = this.scheduledTicks.get(new NextTickListEntry<>(pos, obj));
 
         if (entry == null) {
@@ -98,23 +98,23 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
     }
 
     @Override
-    public List<NextTickListEntry<T>> getPending(ChunkPos chunkPos, boolean mutates, boolean getStaleTicks) {
-        MutableBoundingBox box = new MutableBoundingBox(chunkPos.getXStart() - 2, chunkPos.getZStart() - 2, chunkPos.getXEnd() + 2, chunkPos.getZEnd() + 2);
+    public List<NextTickListEntry<T>> fetchTicksInChunk(ChunkPos chunkPos, boolean mutates, boolean getStaleTicks) {
+        MutableBoundingBox box = new MutableBoundingBox(chunkPos.getMinBlockX() - 2, chunkPos.getMinBlockZ() - 2, chunkPos.getMaxBlockX() + 2, chunkPos.getMaxBlockZ() + 2);
 
-        return this.getPending(box, mutates, getStaleTicks);
+        return this.fetchTicksInArea(box, mutates, getStaleTicks);
     }
 
     @Override
-    public List<NextTickListEntry<T>> getPending(MutableBoundingBox box, boolean remove, boolean getStaleTicks) {
+    public List<NextTickListEntry<T>> fetchTicksInArea(MutableBoundingBox box, boolean remove, boolean getStaleTicks) {
         return this.collectTicks(box, remove, getStaleTicks ? PREDICATE_ANY_TICK : PREDICATE_ACTIVE_TICKS);
     }
 
     @Override
-    public void copyTicks(MutableBoundingBox box, BlockPos pos) {
-        List<NextTickListEntry<T>> list = this.getPending(box, false, false);
+    public void copy(MutableBoundingBox box, BlockPos pos) {
+        List<NextTickListEntry<T>> list = this.fetchTicksInArea(box, false, false);
 
         for (NextTickListEntry<T> tick : list) {
-            this.addScheduledTick(new NextTickListEntry<>(tick.position.add(pos), tick.getTarget(), tick.field_235017_b_, tick.priority));
+            this.addScheduledTick(new NextTickListEntry<>(tick.pos.offset(pos), tick.getType(), tick.triggerTick, tick.priority));
         }
     }
 
@@ -129,7 +129,7 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
      * Returns the number of currently scheduled ticks.
      */
     @Override
-    public int getSize() {
+    public int size() {
         int count = 0;
 
         for (TickEntry<T> entry : this.scheduledTicks.values()) {
@@ -178,13 +178,13 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
                 // bucket and skip it. This deliberately introduces a bug where backlogged ticks will not be re-scheduled
                 // properly, re-producing the vanilla issue of tick suppression.
                 if (limit > 0) {
-                    long chunk = ChunkPos.asLong(tick.position.getX() >> 4, tick.position.getZ() >> 4);
+                    long chunk = ChunkPos.asLong(tick.pos.getX() >> 4, tick.pos.getZ() >> 4);
 
                     // Take advantage of the fact that if any position in a chunk can be updated, then all other positions
                     // in the same chunk can be updated. This avoids the more expensive check to the chunk manager.
                     if (prevChunk != chunk) {
                         prevChunk = chunk;
-                        canTick = chunkManager.canTick(tick.position);
+                        canTick = chunkManager.isTickingChunk(tick.pos);
                     }
 
                     // If the tick can be executed right now, then add it to the executing list and decrement our
@@ -231,9 +231,9 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
                     this.removeTickEntry(tick);
                 }
             } catch (Throwable e) {
-                CrashReport crash = CrashReport.makeCrashReport(e, "Exception while ticking");
-                CrashReportCategory section = crash.makeCategory("Block being ticked");
-                CrashReportCategory.addBlockInfo(section, tick.position, null);
+                CrashReport crash = CrashReport.forThrowable(e, "Exception while ticking");
+                CrashReportCategory section = crash.addCategory("Block being ticked");
+                CrashReportCategory.populateBlockDetails(section, tick.pos, null);
 
                 throw new ReportedException(crash);
             }
@@ -247,11 +247,11 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
     private List<NextTickListEntry<T>> collectTicks(MutableBoundingBox box, boolean remove, Predicate<TickEntry<?>> predicate) {
         List<NextTickListEntry<T>> ret = new ArrayList<>();
 
-        int minChunkX = box.minX >> 4;
-        int maxChunkX = box.maxX >> 4;
+        int minChunkX = box.x0 >> 4;
+        int maxChunkX = box.x1 >> 4;
 
-        int minChunkZ = box.minZ >> 4;
-        int maxChunkZ = box.maxZ >> 4;
+        int minChunkZ = box.z0 >> 4;
+        int maxChunkZ = box.z1 >> 4;
 
         // Iterate over all chunks encompassed by the block box
         for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
@@ -265,7 +265,7 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
                 }
 
                 for (TickEntry<T> tick : set) {
-                    if (!box.isVecInside(tick.position) || !predicate.test(tick)) {
+                    if (!box.isInside(tick.pos) || !predicate.test(tick)) {
                         continue;
                     }
 
@@ -293,7 +293,7 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
         TickEntry<T> entry = this.scheduledTicks.computeIfAbsent(tick, this::createTickEntry);
 
         if (!entry.scheduled) {
-            TickEntryQueue<T> timeIdx = this.scheduledTicksOrdered.computeIfAbsent(getBucketKey(tick.field_235017_b_, tick.priority), key -> new TickEntryQueue<>());
+            TickEntryQueue<T> timeIdx = this.scheduledTicksOrdered.computeIfAbsent(getBucketKey(tick.triggerTick, tick.priority), key -> new TickEntryQueue<>());
             timeIdx.push(entry);
 
             entry.scheduled = true;
@@ -301,7 +301,7 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
     }
 
     private TickEntry<T> createTickEntry(NextTickListEntry<T> tick) {
-        Set<TickEntry<T>> chunkIdx = this.scheduledTicksByChunk.computeIfAbsent(getChunkKey(tick.position), LithiumServerTickScheduler::createChunkIndex);
+        Set<TickEntry<T>> chunkIdx = this.scheduledTicksByChunk.computeIfAbsent(getChunkKey(tick.pos), LithiumServerTickScheduler::createChunkIndex);
 
         return new TickEntry<>(tick, chunkIdx);
     }
@@ -313,7 +313,7 @@ public class LithiumServerTickScheduler<T> extends ServerTickList<T> {
         tick.chunkIdx.remove(tick);
 
         if (tick.chunkIdx.isEmpty()) {
-            this.scheduledTicksByChunk.remove(getChunkKey(tick.position));
+            this.scheduledTicksByChunk.remove(getChunkKey(tick.pos));
         }
 
         this.scheduledTicks.remove(tick);

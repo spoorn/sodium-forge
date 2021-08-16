@@ -9,11 +9,11 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(EntityRendererManager.class)
 public class MixinEntityRenderDispatcher {
-    @Redirect(method = "shadowVertex", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/IVertexBuilder;pos(Lnet/minecraft/util/math/vector/Matrix4f;FFF)Lcom/mojang/blaze3d/vertex/IVertexBuilder;"))
+    @Redirect(method = "shadowVertex", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/IVertexBuilder;vertex(Lnet/minecraft/util/math/vector/Matrix4f;FFF)Lcom/mojang/blaze3d/vertex/IVertexBuilder;"))
     private static IVertexBuilder preWriteVertex(IVertexBuilder vertexConsumer, Matrix4f matrix, float x, float y, float z) {
         // FIX: Render the shadow slightly above the block to fix clipping issues
         // This happens in vanilla too, but is exacerbated by the Compact Vertex Format option.
-        return vertexConsumer.pos(matrix, x, y + 0.001f, z);
+        return vertexConsumer.vertex(matrix, x, y + 0.001f, z);
     }
 
 }

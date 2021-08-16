@@ -14,56 +14,56 @@ import org.spongepowered.asm.mixin.Shadow;
 public class PackedIntegerArrayMixin implements CompactingPackedIntegerArray {
     @Shadow
     @Final
-    private long[] longArray;
+    private long[] data;
 
     @Shadow
     @Final
-    private int arraySize;
+    private int size;
 
     @Shadow
     @Final
-    private int bitsPerEntry;
+    private int bits;
 
     @Shadow
     @Final
-    private long maxEntryValue;
+    private long mask;
 
     @Shadow
     @Final
-    private int field_232982_f_;
+    private int valuesPerLong;
 
     @Override
     public <T> void compact(IPalette<T> srcPalette, IPalette<T> dstPalette, short[] out) {
-        if (this.arraySize >= Short.MAX_VALUE) {
+        if (this.size >= Short.MAX_VALUE) {
             throw new IllegalStateException("Array too large");
         }
 
-        if (this.arraySize != out.length) {
+        if (this.size != out.length) {
             throw new IllegalStateException("Array size mismatch");
         }
 
-        short[] mappings = new short[(int) (this.maxEntryValue + 1)];
+        short[] mappings = new short[(int) (this.mask + 1)];
 
         int idx = 0;
 
-        for (long word : this.longArray) {
+        for (long word : this.data) {
             long bits = word;
 
-            for (int elementIdx = 0; elementIdx < this.field_232982_f_; ++elementIdx) {
-                int value = (int) (bits & this.maxEntryValue);
+            for (int elementIdx = 0; elementIdx < this.valuesPerLong; ++elementIdx) {
+                int value = (int) (bits & this.mask);
                 int remappedId = mappings[value];
 
                 if (remappedId == 0) {
-                    remappedId = dstPalette.idFor(srcPalette.get(value)) + 1;
+                    remappedId = dstPalette.idFor(srcPalette.valueFor(value)) + 1;
                     mappings[value] = (short) remappedId;
                 }
 
                 out[idx] = (short) (remappedId - 1);
-                bits >>= this.bitsPerEntry;
+                bits >>= this.bits;
 
                 ++idx;
 
-                if (idx >= this.arraySize) {
+                if (idx >= this.size) {
                     return;
                 }
             }

@@ -122,7 +122,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         this.initRenderer();
 
-        ((ChunkStatusListenerManager) world.getChunkProvider()).setListener(this);
+        ((ChunkStatusListenerManager) world.getChunkSource()).setListener(this);
     }
 
     private void unloadWorld() {
@@ -180,23 +180,23 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         this.chunkRenderManager.setProjection(projection);
 
-        if (this.client.gameSettings.renderDistanceChunks != this.renderDistance) {
+        if (this.client.options.renderDistance != this.renderDistance) {
             this.reload();
         }
 
         IProfiler profiler = this.client.getProfiler();
-        profiler.startSection("camera_setup");
+        profiler.push("camera_setup");
 
         if (this.client.player == null) {
             throw new IllegalStateException("Client instance has no active player entity");
         }
 
-        Vector3d pos = camera.getProjectedView();
+        Vector3d pos = camera.getPosition();
 
         this.chunkRenderManager.setCameraPosition(pos.x, pos.y, pos.z);
 
-        float pitch = camera.getPitch();
-        float yaw = camera.getYaw();
+        float pitch = camera.getXRot();
+        float yaw = camera.getYRot();
 
         boolean dirty = pos.x != this.lastCameraX || pos.y != this.lastCameraY || pos.z != this.lastCameraZ ||
                 pitch != this.lastCameraPitch || yaw != this.lastCameraYaw;
@@ -206,7 +206,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
             this.chunkRenderManager.markDirty();
         }
 
-        BlockPos camBlockPos = camera.getBlockPos();
+        BlockPos camBlockPos = camera.getBlockPosition();
         if (camBlockPos.getX() != this.lastCamPosX || camBlockPos.getY() != this.lastCamPosY || camBlockPos.getZ() != this.lastCamPosZ) {
             this.chunkRenderManager.markCameraPosChanged();
         }
@@ -221,22 +221,22 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
         this.lastCamPosY = camBlockPos.getY();
         this.lastCamPosZ = camBlockPos.getZ();
 
-        profiler.endStartSection("chunk_update");
+        profiler.popPush("chunk_update");
 
         this.chunkRenderManager.updateChunks();
 
         if (!hasForcedFrustum && this.chunkRenderManager.isDirty()) {
-            profiler.endStartSection("chunk_graph_rebuild");
+            profiler.popPush("chunk_graph_rebuild");
             this.chunkRenderManager.update(camera, (FrustumExtended) frustum, frame, spectator);
         }
 
-        profiler.endStartSection("visible_chunk_tick");
+        profiler.popPush("visible_chunk_tick");
 
         this.chunkRenderManager.tickVisibleRenders();
 
-        profiler.endSection();
+        profiler.pop();
 
-        Entity.setRenderDistanceWeight(MathHelper.clamp((double) this.client.gameSettings.renderDistanceChunks / 8.0D, 1.0D, 2.5D) * (double) this.client.gameSettings.entityDistanceScaling);
+        Entity.setViewScale(MathHelper.clamp((double) this.client.options.renderDistance / 8.0D, 1.0D, 2.5D) * (double) this.client.options.entityDistanceScaling);
     }
 
 
@@ -280,7 +280,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
         RenderDevice device = RenderDevice.INSTANCE;
 
-        this.renderDistance = this.client.gameSettings.renderDistanceChunks;
+        this.renderDistance = this.client.options.renderDistance;
 
         SodiumGameOptions opts = SodiumClientMod.options();
 
@@ -315,46 +315,46 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
 
     public void renderTileEntities(MatrixStack matrices, RenderTypeBuffers bufferBuilders, Long2ObjectMap<SortedSet<DestroyBlockProgress>> blockBreakingProgressions,
                                    ActiveRenderInfo camera, float tickDelta) {
-        IRenderTypeBuffer.Impl immediate = bufferBuilders.getBufferSource();
+        IRenderTypeBuffer.Impl immediate = bufferBuilders.bufferSource();
 
-        Vector3d cameraPos = camera.getProjectedView();
-        double x = cameraPos.getX();
-        double y = cameraPos.getY();
-        double z = cameraPos.getZ();
+        Vector3d cameraPos = camera.getPosition();
+        double x = cameraPos.x();
+        double y = cameraPos.y();
+        double z = cameraPos.z();
 
         for (TileEntity blockEntity : this.chunkRenderManager.getVisibleBlockEntities()) {
-            BlockPos pos = blockEntity.getPos();
+            BlockPos pos = blockEntity.getBlockPos();
 
-            matrices.push();
+            matrices.pushPose();
             matrices.translate((double) pos.getX() - x, (double) pos.getY() - y, (double) pos.getZ() - z);
 
             IRenderTypeBuffer consumer = immediate;
-            SortedSet<DestroyBlockProgress> breakingInfos = blockBreakingProgressions.get(pos.toLong());
+            SortedSet<DestroyBlockProgress> breakingInfos = blockBreakingProgressions.get(pos.asLong());
 
             if (breakingInfos != null && !breakingInfos.isEmpty()) {
-                int stage = breakingInfos.last().getPartialBlockDamage();
+                int stage = breakingInfos.last().getProgress();
 
                 if (stage >= 0) {
-                    MatrixStack.Entry entry = matrices.getLast();
-                        IVertexBuilder transformer = new MatrixApplyingVertexBuilder(bufferBuilders.getCrumblingBufferSource().getBuffer(ModelBakery.DESTROY_RENDER_TYPES.get(stage)), entry.getMatrix(), entry.getNormal());
-                    consumer = (layer) -> layer.isUseDelegate() ? VertexBuilderUtils.newDelegate(transformer, immediate.getBuffer(layer)) : immediate.getBuffer(layer);
+                    MatrixStack.Entry entry = matrices.last();
+                        IVertexBuilder transformer = new MatrixApplyingVertexBuilder(bufferBuilders.crumblingBufferSource().getBuffer(ModelBakery.DESTROY_TYPES.get(stage)), entry.pose(), entry.normal());
+                    consumer = (layer) -> layer.affectsCrumbling() ? VertexBuilderUtils.create(transformer, immediate.getBuffer(layer)) : immediate.getBuffer(layer);
                 }
             }
 
-            TileEntityRendererDispatcher.instance.renderTileEntity(blockEntity, tickDelta, matrices, consumer);
+            TileEntityRendererDispatcher.instance.render(blockEntity, tickDelta, matrices, consumer);
 
-            matrices.pop();
+            matrices.popPose();
         }
 
         for (TileEntity blockEntity : this.globalBlockEntities) {
-            BlockPos pos = blockEntity.getPos();
+            BlockPos pos = blockEntity.getBlockPos();
 
-            matrices.push();
+            matrices.pushPose();
             matrices.translate((double) pos.getX() - x, (double) pos.getY() - y, (double) pos.getZ() - z);
 
-            TileEntityRendererDispatcher.instance.renderTileEntity(blockEntity, tickDelta, matrices, immediate);
+            TileEntityRendererDispatcher.instance.render(blockEntity, tickDelta, matrices, immediate);
 
-            matrices.pop();
+            matrices.popPose();
         }
     }
 
@@ -388,7 +388,7 @@ public class SodiumWorldRenderer implements ChunkStatusListener {
             return true;
         }
 
-        AxisAlignedBB box = entity.getRenderBoundingBox();
+        AxisAlignedBB box = entity.getBoundingBoxForCulling();
 
         // Entities outside the valid world height will never map to a rendered chunk
         // Always render these entities or they'll be culled incorrectly!

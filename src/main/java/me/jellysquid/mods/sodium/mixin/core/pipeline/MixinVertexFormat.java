@@ -8,10 +8,10 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(VertexFormat.class)
 public abstract class MixinVertexFormat implements BufferVertexFormat {
     @Shadow
-    public abstract int getSize();
+    public abstract int getVertexSize();
 
     @Override
     public int getStride() {
-        return this.getSize();
+        return this.getVertexSize();
     }
 }

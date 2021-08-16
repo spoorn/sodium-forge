@@ -119,7 +119,7 @@ public class ChunkRenderData {
          * @param TextureAtlasSprite The TextureAtlasSprite
          */
         public void addSprite(TextureAtlasSprite TextureAtlasSprite) {
-            if (TextureAtlasSprite.hasAnimationMetadata()) {
+            if (TextureAtlasSprite.isAnimation()) {
                 this.animatedSprites.add(TextureAtlasSprite);
             }
         }
@@ -172,7 +172,7 @@ public class ChunkRenderData {
 
     private static ChunkRenderData createEmptyData() {
         SetVisibility occlusionData = new SetVisibility();
-        occlusionData.setManyVisible(EnumSet.allOf(Direction.class));
+        occlusionData.add(EnumSet.allOf(Direction.class));
 
         ChunkRenderData.Builder meshInfo = new ChunkRenderData.Builder();
         meshInfo.setOcclusionData(occlusionData);

@@ -12,10 +12,10 @@ import org.spongepowered.asm.mixin.Shadow;
 public class PlayerChunkWatchingManagerMixin implements PlayerChunkWatchingManagerIterable {
     @Shadow
     @Final
-    private Object2BooleanMap<ServerPlayerEntity> generatingPlayers;
+    private Object2BooleanMap<ServerPlayerEntity> players;
 
     @Override
     public Iterable<ServerPlayerEntity> getPlayers() {
-        return this.generatingPlayers.keySet();
+        return this.players.keySet();
     }
 }

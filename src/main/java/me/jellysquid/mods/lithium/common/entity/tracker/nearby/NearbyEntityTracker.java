@@ -64,17 +64,17 @@ public class NearbyEntityTracker<T extends LivingEntity> implements NearbyEntity
      * @return the closest Entity that meets all requirements (distance, box intersection, predicate, type T)
      */
     public T getClosestEntity(AxisAlignedBB box, EntityPredicate targetPredicate) {
-        double x = this.self.getPosX();
-        double y = this.self.getPosY();
-        double z = this.self.getPosZ();
+        double x = this.self.getX();
+        double y = this.self.getY();
+        double z = this.self.getZ();
 
         T nearest = null;
         double nearestDistance = Double.POSITIVE_INFINITY;
 
         for (T entity : this.nearby) {
-            double distance = entity.getDistanceSq(x, y, z);
+            double distance = entity.distanceToSqr(x, y, z);
 
-            if (distance < nearestDistance && (box == null || box.intersects(entity.getBoundingBox())) && targetPredicate.canTarget(this.self, entity)) {
+            if (distance < nearestDistance && (box == null || box.intersects(entity.getBoundingBox())) && targetPredicate.test(this.self, entity)) {
                 nearest = entity;
                 nearestDistance = distance;
             }
@@ -89,6 +89,6 @@ public class NearbyEntityTracker<T extends LivingEntity> implements NearbyEntity
 
     @Override
     public String toString() {
-        return super.toString() + " for entity class: " + this.clazz.getName() + ", in rangeSq: " + this.rangeSq + ", around entity: " + this.self.toString() + " with NBT: " + this.self.writeWithoutTypeId(new CompoundNBT());
+        return super.toString() + " for entity class: " + this.clazz.getName() + ", in rangeSq: " + this.rangeSq + ", around entity: " + this.self.toString() + " with NBT: " + this.self.saveWithoutId(new CompoundNBT());
     }
 }

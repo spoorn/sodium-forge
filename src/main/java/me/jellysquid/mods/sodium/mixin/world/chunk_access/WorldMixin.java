@@ -47,12 +47,12 @@ public abstract class WorldMixin implements IWorld {
     }
 
     @Override
-    public IBlockReader getBlockReader(int chunkX, int chunkZ) {
+    public IBlockReader getChunkForCollisions(int chunkX, int chunkZ) {
         return this.getChunkLithium(chunkX, chunkZ, ChunkStatus.FULL, false);
     }
 
     private IChunk getChunkLithium(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
-        IChunk chunk = this.getChunkProvider().getChunk(chunkX, chunkZ, leastStatus, create);
+        IChunk chunk = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
 
         if (chunk == null && create) {
             throw new IllegalStateException("Should always be able to create a chunk!");

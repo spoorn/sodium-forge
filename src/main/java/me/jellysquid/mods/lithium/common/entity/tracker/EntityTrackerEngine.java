@@ -138,17 +138,17 @@ public class EntityTrackerEngine {
         MutableBoundingBox after = new MutableBoundingBox(aX - radius, aY - radius, aZ - radius, bX + radius, bY + radius, bZ + radius);
 
         MutableBoundingBox merged = new MutableBoundingBox(before);
-        merged.expandTo(after);
+        merged.expand(after);
 
         BlockPos.Mutable pos = new BlockPos.Mutable();
 
-        for (int x = merged.minX; x <= merged.maxX; x++) {
-            for (int y = merged.minY; y <= merged.maxY; y++) {
-                for (int z = merged.minZ; z <= merged.maxZ; z++) {
-                    pos.setPos(x, y, z);
+        for (int x = merged.x0; x <= merged.x1; x++) {
+            for (int y = merged.y0; y <= merged.y1; y++) {
+                for (int z = merged.z0; z <= merged.z1; z++) {
+                    pos.set(x, y, z);
 
-                    boolean leaving = before.isVecInside(pos);
-                    boolean entering = after.isVecInside(pos);
+                    boolean leaving = before.isInside(pos);
+                    boolean entering = after.isInside(pos);
 
                     // Nothing to change
                     if (leaving == entering) {
@@ -187,7 +187,7 @@ public class EntityTrackerEngine {
     }
 
     private static SectionPos decode(long xyz) {
-        return SectionPos.from(xyz);
+        return SectionPos.of(xyz);
     }
 
     private class TrackedEntityList {

@@ -66,7 +66,7 @@ public class SmoothLightPipeline implements LightPipeline {
 
     @Override
     public void calculate(ModelQuadView quad, BlockPos pos, QuadLightData out, Direction face, boolean shade) {
-        this.updateCachedData(pos.toLong());
+        this.updateCachedData(pos.asLong());
 
         int flags = quad.getFlags();
 
@@ -85,7 +85,7 @@ public class SmoothLightPipeline implements LightPipeline {
     }
 
     private void applySidedBrightness(QuadLightData out, Direction face, boolean shade) {
-        float brightness = this.lightCache.getWorld().func_230487_a_(face, shade);
+        float brightness = this.lightCache.getWorld().getShade(face, shade);
         float[] br = out.br;
 
         for (int i = 0; i < br.length; i++) {
@@ -110,9 +110,9 @@ public class SmoothLightPipeline implements LightPipeline {
             float depth = neighborInfo.getDepth(cx, cy, cz);
 
             // If the quad is approximately grid-aligned (not inset), avoid unnecessary computation by treating it is as aligned
-            if (MathHelper.epsilonEquals(depth, 0.0F)) {
+            if (MathHelper.equal(depth, 0.0F)) {
                 this.applyAlignedPartialFace(pos, dir, weights, i, out, offset);
-            } else if (MathHelper.epsilonEquals(depth, 1.0F)) {
+            } else if (MathHelper.equal(depth, 1.0F)) {
                 this.applyAlignedPartialFace(pos, dir, weights, i, out, offset);
             } else {
                 // Blend the occlusion factor between the blocks directly beside this face and the blocks above it

@@ -28,7 +28,7 @@ public class ModelQuadFlags {
      */
     public static int getQuadFlags(BakedQuad bakedQuad) {
         ModelQuadView quad = (ModelQuadView) bakedQuad;
-        Direction face = bakedQuad.getFace();
+        Direction face = bakedQuad.getDirection();
 
         float minX = 32.0F;
         float minY = 32.0F;

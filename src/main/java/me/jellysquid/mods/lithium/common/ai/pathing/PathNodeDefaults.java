@@ -15,13 +15,13 @@ public class PathNodeDefaults {
 
         // [VanillaCopy] LandPathNodeMaker#getNodeTypeFromNeighbors
         // Determine what kind of obstacle type this neighbor is
-        if (state.matchesBlock(Blocks.CACTUS)) {
+        if (state.is(Blocks.CACTUS)) {
             return PathNodeType.DANGER_CACTUS;
-        } else if (state.matchesBlock(Blocks.SWEET_BERRY_BUSH)) {
+        } else if (state.is(Blocks.SWEET_BERRY_BUSH)) {
             return PathNodeType.DANGER_OTHER;
         } else if (isFireDangerSource(state)) {
             return PathNodeType.DANGER_FIRE;
-        } else if (state.getFluidState().isTagged(FluidTags.WATER)) {
+        } else if (state.getFluidState().is(FluidTags.WATER)) {
             return PathNodeType.WATER_BORDER;
         } else {
             return PathNodeType.OPEN;
@@ -36,23 +36,23 @@ public class PathNodeDefaults {
         Block block = state.getBlock();
         Material material = state.getMaterial();
 
-        if (state.isIn(BlockTags.TRAPDOORS) || state.matchesBlock(Blocks.LILY_PAD)) {
+        if (state.is(BlockTags.TRAPDOORS) || state.is(Blocks.LILY_PAD)) {
             return PathNodeType.TRAPDOOR;
         }
 
-        if (state.matchesBlock(Blocks.CACTUS)) {
+        if (state.is(Blocks.CACTUS)) {
             return PathNodeType.DAMAGE_CACTUS;
         }
 
-        if (state.matchesBlock(Blocks.SWEET_BERRY_BUSH)) {
+        if (state.is(Blocks.SWEET_BERRY_BUSH)) {
             return PathNodeType.DAMAGE_OTHER;
         }
 
-        if (state.matchesBlock(Blocks.HONEY_BLOCK)) {
+        if (state.is(Blocks.HONEY_BLOCK)) {
             return PathNodeType.STICKY_HONEY;
         }
 
-        if (state.matchesBlock(Blocks.COCOA)) {
+        if (state.is(Blocks.COCOA)) {
             return PathNodeType.COCOA;
         }
 
@@ -60,15 +60,15 @@ public class PathNodeDefaults {
             return PathNodeType.DAMAGE_FIRE;
         }
 
-        if (DoorBlock.isWooden(state) && !state.get(DoorBlock.OPEN)) {
+        if (DoorBlock.isWoodenDoor(state) && !state.getValue(DoorBlock.OPEN)) {
             return PathNodeType.DOOR_WOOD_CLOSED;
         }
 
-        if ((block instanceof DoorBlock) && (material == Material.IRON) && !state.get(DoorBlock.OPEN)) {
+        if ((block instanceof DoorBlock) && (material == Material.METAL) && !state.getValue(DoorBlock.OPEN)) {
             return PathNodeType.DOOR_IRON_CLOSED;
         }
 
-        if ((block instanceof DoorBlock) && state.get(DoorBlock.OPEN)) {
+        if ((block instanceof DoorBlock) && state.getValue(DoorBlock.OPEN)) {
             return PathNodeType.DOOR_OPEN;
         }
 
@@ -80,16 +80,16 @@ public class PathNodeDefaults {
             return PathNodeType.LEAVES;
         }
 
-        if (block.isIn(BlockTags.FENCES) || block.isIn(BlockTags.WALLS) || ((block instanceof FenceGateBlock) && !state.get(FenceGateBlock.OPEN))) {
+        if (block.is(BlockTags.FENCES) || block.is(BlockTags.WALLS) || ((block instanceof FenceGateBlock) && !state.getValue(FenceGateBlock.OPEN))) {
             return PathNodeType.FENCE;
         }
 
         // Retrieve the fluid state from the block state to avoid a second lookup
         FluidState fluid = state.getFluidState();
 
-        if (fluid.isTagged(FluidTags.WATER)) {
+        if (fluid.is(FluidTags.WATER)) {
             return PathNodeType.WATER;
-        } else if (fluid.isTagged(FluidTags.LAVA)) {
+        } else if (fluid.is(FluidTags.LAVA)) {
             return PathNodeType.LAVA;
         }
 
@@ -97,6 +97,6 @@ public class PathNodeDefaults {
     }
 
     private static boolean isFireDangerSource(BlockState blockState) {
-        return blockState.isIn(BlockTags.FIRE) || blockState.matchesBlock(Blocks.LAVA) || blockState.matchesBlock(Blocks.MAGMA_BLOCK) || CampfireBlock.isLit(blockState);
+        return blockState.is(BlockTags.FIRE) || blockState.is(Blocks.LAVA) || blockState.is(Blocks.MAGMA_BLOCK) || CampfireBlock.isLitCampfire(blockState);
     }
 }

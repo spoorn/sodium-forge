@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(Entity.class)
 public abstract class EntityMixin {
     @Shadow
-    public World world;
+    public World level;
 
     @Shadow
     public abstract AxisAlignedBB getBoundingBox();
@@ -31,14 +31,14 @@ public abstract class EntityMixin {
      * @return True if no collision resolution will be performed against the world border, which removes it from the
      * stream of shapes to consider in entity collision code.
      */
-    @Redirect(method = "getAllowedMovement(Lnet/minecraft/util/math/vector/Vector3d;)Lnet/minecraft/util/math/vector/Vector3d;", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/shapes/VoxelShapes;compare(Lnet/minecraft/util/math/shapes/VoxelShape;Lnet/minecraft/util/math/shapes/VoxelShape;Lnet/minecraft/util/math/shapes/IBooleanFunction;)Z"))
+    @Redirect(method = "collide(Lnet/minecraft/util/math/vector/Vector3d;)Lnet/minecraft/util/math/vector/Vector3d;", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/shapes/VoxelShapes;joinIsNotEmpty(Lnet/minecraft/util/math/shapes/VoxelShape;Lnet/minecraft/util/math/shapes/VoxelShape;Lnet/minecraft/util/math/shapes/IBooleanFunction;)Z"))
     private boolean redirectWorldBorderMatchesAnywhere(VoxelShape borderShape, VoxelShape entityShape, IBooleanFunction func, Vector3d motion) {
-        boolean isWithinWorldBorder = LithiumEntityCollisions.isWithinWorldBorder(this.world.getWorldBorder(), this.getBoundingBox().shrink(1.0E-7D));
+        boolean isWithinWorldBorder = LithiumEntityCollisions.isWithinWorldBorder(this.level.getWorldBorder(), this.getBoundingBox().deflate(1.0E-7D));
 
         // If the entity is within the world border (enabling collisions against it), check that the player will cross the
         // border this physics step.
         if (isWithinWorldBorder) {
-            return LithiumEntityCollisions.isWithinWorldBorder(this.world.getWorldBorder(), this.getBoundingBox().expand(motion));
+            return LithiumEntityCollisions.isWithinWorldBorder(this.level.getWorldBorder(), this.getBoundingBox().expandTowards(motion));
         }
 
         return true;

@@ -15,14 +15,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(FluidState.class)
 public abstract class FluidStateMixin {
     @Shadow
-    public abstract Fluid getFluid();
+    public abstract Fluid getType();
 
     private boolean isEmptyCache;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initFluidCache(Fluid fluid, ImmutableMap<Property<?>, Comparable<?>> propertyMap,
                                 MapCodec<FluidState> codec, CallbackInfo ci) {
-        this.isEmptyCache = ((FluidStateAccessorMixin)this.getFluid()).iisEmpty();
+        this.isEmptyCache = ((FluidStateAccessorMixin)this.getType()).iisEmpty();
     }
 
     /**

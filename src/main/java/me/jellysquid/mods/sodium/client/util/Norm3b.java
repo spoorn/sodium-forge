@@ -29,7 +29,7 @@ public class Norm3b {
     }
 
     public static int pack(Vector3f dir) {
-        return pack(dir.getX(), dir.getY(), dir.getZ());
+        return pack(dir.x(), dir.y(), dir.z());
     }
 
     /**

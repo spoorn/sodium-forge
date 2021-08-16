@@ -23,8 +23,8 @@ public abstract class BiomeLayerSamplerMixin {
      * @author gegy1000
      * original implementation by gegy1000, 2No2Name replaced @Overwrite with @Redirect
      */
-    @Redirect(method = "func_242936_a", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/area/LazyArea;getValue(II)I"))
+    @Redirect(method = "get", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/area/LazyArea;get(II)I"))
     private int sampleThreadLocal(LazyArea cachingLayerSampler, int i, int j) {
-        return this.tlSampler.get().getValue(i, j);
+        return this.tlSampler.get().get(i, j);
     }
 }

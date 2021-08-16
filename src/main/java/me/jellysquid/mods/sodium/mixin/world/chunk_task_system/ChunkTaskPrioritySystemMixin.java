@@ -24,7 +24,7 @@ public class ChunkTaskPrioritySystemMixin {
     @Mutable
     @Shadow
     @Final
-    private DelegatedTaskExecutor<ITaskQueue.RunnableWithPriority> sorter;
+    private DelegatedTaskExecutor<ITaskQueue.RunnableWithPriority> mailbox;
 
     /**
      * Re-initialize the task executor with our optimized task queue type. This is a safe operation that happens only
@@ -33,6 +33,6 @@ public class ChunkTaskPrioritySystemMixin {
      */
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(List<ITaskExecutor<?>> listeners, Executor executor, int maxQueues, CallbackInfo ci) {
-        this.sorter = new DelegatedTaskExecutor<>(new ArrayPrioritizedTaskQueue(4), executor, "sorter");
+        this.mailbox = new DelegatedTaskExecutor<>(new ArrayPrioritizedTaskQueue(4), executor, "sorter");
     }
 }

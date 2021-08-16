@@ -81,7 +81,7 @@ public class LithiumEntityCollisions {
             return false;
         }
 
-        return getEntityCollisionProducer(view, entity, box.grow(EPSILON), predicate).computeNext(null);
+        return getEntityCollisionProducer(view, entity, box.inflate(EPSILON), predicate).computeNext(null);
     }
 
     /**
@@ -92,7 +92,7 @@ public class LithiumEntityCollisions {
             return Stream.empty();
         }
 
-        return Producer.asStream(getEntityCollisionProducer(view, entity, box.grow(EPSILON), predicate));
+        return Producer.asStream(getEntityCollisionProducer(view, entity, box.inflate(EPSILON), predicate));
     }
 
     /**
@@ -129,10 +129,10 @@ public class LithiumEntityCollisions {
                      * otherEntity as a vehicle.
                      */
                     if (entity == null) {
-                        if (!otherEntity.canBeCollidedWith()) {
+                        if (!otherEntity.isPickable()) {
                             continue;
                         }
-                    } else if (!entity.canCollide(otherEntity)) {
+                    } else if (!entity.canCollideWith(otherEntity)) {
                         continue;
                     }
 
@@ -154,11 +154,11 @@ public class LithiumEntityCollisions {
      * @return True if the {@param box} is fully within the {@param border}, otherwise false.
      */
     public static boolean isWithinWorldBorder(WorldBorder border, AxisAlignedBB box) {
-        double wboxMinX = Math.floor(border.minX());
-        double wboxMinZ = Math.floor(border.minZ());
+        double wboxMinX = Math.floor(border.getMinX());
+        double wboxMinZ = Math.floor(border.getMinZ());
 
-        double wboxMaxX = Math.ceil(border.maxX());
-        double wboxMaxZ = Math.ceil(border.maxZ());
+        double wboxMaxX = Math.ceil(border.getMaxX());
+        double wboxMaxZ = Math.ceil(border.getMaxZ());
 
         return box.minX >= wboxMinX && box.minX < wboxMaxX && box.minZ >= wboxMinZ && box.minZ < wboxMaxZ &&
                 box.maxX >= wboxMinX && box.maxX < wboxMaxX && box.maxZ >= wboxMinZ && box.maxZ < wboxMaxZ;
@@ -167,13 +167,13 @@ public class LithiumEntityCollisions {
     public static boolean canEntityCollideWithWorldBorder(ICollisionReader world, Entity entity) {
         WorldBorder border = world.getWorldBorder();
 
-        boolean isInsideBorder = isWithinWorldBorder(border, entity.getBoundingBox().shrink(EPSILON));
-        boolean isCrossingBorder = isWithinWorldBorder(border, entity.getBoundingBox().grow(EPSILON));
+        boolean isInsideBorder = isWithinWorldBorder(border, entity.getBoundingBox().deflate(EPSILON));
+        boolean isCrossingBorder = isWithinWorldBorder(border, entity.getBoundingBox().inflate(EPSILON));
 
         return !isInsideBorder && isCrossingBorder;
     }
 
     private static boolean isBoxEmpty(AxisAlignedBB box) {
-        return box.getAverageEdgeLength() <= EPSILON;
+        return box.getSize() <= EPSILON;
     }
 }

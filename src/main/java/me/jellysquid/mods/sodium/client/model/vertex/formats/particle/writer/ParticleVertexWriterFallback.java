@@ -13,10 +13,10 @@ public class ParticleVertexWriterFallback extends VertexWriterFallback implement
     @Override
     public void writeParticle(float x, float y, float z, float u, float v, int color, int light) {
         IVertexBuilder consumer = this.consumer;
-        consumer.pos(x, y, z);
-        consumer.tex(u, v);
+        consumer.vertex(x, y, z);
+        consumer.uv(u, v);
         consumer.color(ColorABGR.unpackRed(color), ColorABGR.unpackGreen(color), ColorABGR.unpackBlue(color), ColorABGR.unpackAlpha(color));
-        consumer.lightmap(light);
+        consumer.uv2(light);
         consumer.endVertex();
     }
 }

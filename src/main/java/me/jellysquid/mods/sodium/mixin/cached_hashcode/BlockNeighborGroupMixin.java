@@ -15,15 +15,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class BlockNeighborGroupMixin {
     @Shadow
     @Final
-    private BlockState state;
+    private BlockState first;
 
     @Shadow
     @Final
-    private BlockState adjacentState;
+    private BlockState second;
 
     @Shadow
     @Final
-    private Direction side;
+    private Direction direction;
 
     private int hash;
 
@@ -32,9 +32,9 @@ public class BlockNeighborGroupMixin {
      */
     @Inject(method = "<init>", at = @At("RETURN"))
     private void generateHash(BlockState blockState_1, BlockState blockState_2, Direction direction_1, CallbackInfo ci) {
-        int hash = this.state.hashCode();
-        hash = 31 * hash + this.adjacentState.hashCode();
-        hash = 31 * hash + this.side.hashCode();
+        int hash = this.first.hashCode();
+        hash = 31 * hash + this.second.hashCode();
+        hash = 31 * hash + this.direction.hashCode();
 
         this.hash = hash;
     }

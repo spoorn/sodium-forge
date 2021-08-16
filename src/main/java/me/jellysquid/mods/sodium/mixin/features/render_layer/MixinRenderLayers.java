@@ -17,16 +17,16 @@ public class MixinRenderLayers {
     @Mutable
     @Shadow
     @Final
-    private static Map<Block, RenderType> TYPES_BY_BLOCK;
+    private static Map<Block, RenderType> TYPE_BY_BLOCK;
 
     @Mutable
     @Shadow
     @Final
-    private static Map<Fluid, RenderType> TYPES_BY_FLUID;
+    private static Map<Fluid, RenderType> TYPE_BY_FLUID;
 
     static {
         // Replace the backing collection types with something a bit faster, since this is a hot spot in chunk rendering.
-        TYPES_BY_BLOCK = new Reference2ReferenceOpenHashMap<>(TYPES_BY_BLOCK);
-        TYPES_BY_FLUID = new Reference2ReferenceOpenHashMap<>(TYPES_BY_FLUID);
+        TYPE_BY_BLOCK = new Reference2ReferenceOpenHashMap<>(TYPE_BY_BLOCK);
+        TYPE_BY_FLUID = new Reference2ReferenceOpenHashMap<>(TYPE_BY_FLUID);
     }
 }

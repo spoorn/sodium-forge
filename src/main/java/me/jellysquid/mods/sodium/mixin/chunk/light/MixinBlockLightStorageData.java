@@ -37,7 +37,7 @@ public abstract class MixinBlockLightStorageData extends LightDataMap<BlockLight
             this.initialize();
         }
 
-        BlockLightStorage.StorageMap data = new BlockLightStorage.StorageMap(this.arrays);
+        BlockLightStorage.StorageMap data = new BlockLightStorage.StorageMap(this.map);
         ((SharedNibbleArrayMap) (Object) data).makeSharedCopy((SharedNibbleArrayMap) this);
         ((SharedBlockLightData) (Object) data).makeSharedCopy();
 

@@ -17,27 +17,27 @@ import java.util.function.Supplier;
 public class MultiNoiseBiomeSourceMixin {
     @Shadow
     @Final
-    private boolean useHeightForNoise;
+    private boolean useY;
 
     @Shadow
     @Final
-    private MaxMinNoiseMixer temperatureNoiseMixer;
+    private MaxMinNoiseMixer temperatureNoise;
 
     @Shadow
     @Final
-    private MaxMinNoiseMixer humidityNoiseMixer;
+    private MaxMinNoiseMixer humidityNoise;
 
     @Shadow
     @Final
-    private MaxMinNoiseMixer weirdnessNoiseMixer;
+    private MaxMinNoiseMixer weirdnessNoise;
 
     @Shadow
     @Final
-    private MaxMinNoiseMixer altitudeNoiseMixer;
+    private MaxMinNoiseMixer altitudeNoise;
 
     @Shadow
     @Final
-    private List<Pair<Biome.Attributes, Supplier<Biome>>> biomeAttributes;
+    private List<Pair<Biome.Attributes, Supplier<Biome>>> parameters;
 
     /**
      * @reason Remove stream based code in favor of regular collections.
@@ -48,22 +48,22 @@ public class MultiNoiseBiomeSourceMixin {
         // [VanillaCopy] MultiNoiseBiomeSource#getBiomeForNoiseGen
 
         // Get the y value for perlin noise sampling. This field is always set to false in vanilla code.
-        int y = this.useHeightForNoise ? biomeY : 0;
+        int y = this.useY ? biomeY : 0;
 
         // Calculate the noise point based using 4 perlin noise samplers.
         Biome.Attributes mixedNoisePoint = new Biome.Attributes(
-                (float) this.temperatureNoiseMixer.func_237211_a_(biomeX, y, biomeZ),
-                (float) this.humidityNoiseMixer.func_237211_a_(biomeX, y, biomeZ),
-                (float) this.altitudeNoiseMixer.func_237211_a_(biomeX, y, biomeZ),
-                (float) this.weirdnessNoiseMixer.func_237211_a_(biomeX, y, biomeZ),
+                (float) this.temperatureNoise.getValue(biomeX, y, biomeZ),
+                (float) this.humidityNoise.getValue(biomeX, y, biomeZ),
+                (float) this.altitudeNoise.getValue(biomeX, y, biomeZ),
+                (float) this.weirdnessNoise.getValue(biomeX, y, biomeZ),
                 0.0F);
 
         int idx = -1;
         float min = Float.POSITIVE_INFINITY;
 
         // Iterate through the biome points and calculate the distance to the current noise point.
-        for (int i = 0; i < this.biomeAttributes.size(); i++) {
-            float distance = this.biomeAttributes.get(i).getFirst().getAttributeDifference(mixedNoisePoint);
+        for (int i = 0; i < this.parameters.size(); i++) {
+            float distance = this.parameters.get(i).getFirst().fitness(mixedNoisePoint);
 
             // If the distance is less than the recorded minimum, update the minimum and set the current index.
             if (min > distance) {
@@ -73,6 +73,6 @@ public class MultiNoiseBiomeSourceMixin {
         }
 
         // Return the biome with the noise point closest to the evaluated one.
-        return this.biomeAttributes.get(idx).getSecond().get() == null ? BiomeRegistry.THE_VOID : this.biomeAttributes.get(idx).getSecond().get();
+        return this.parameters.get(idx).getSecond().get() == null ? BiomeRegistry.THE_VOID : this.parameters.get(idx).getSecond().get();
     }
 }

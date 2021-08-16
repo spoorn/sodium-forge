@@ -13,7 +13,7 @@ public class EntityMixin {
     /**
      * Redirect to try to collide with world border first, so the entity stream doesn't have to be used when other collisions cancel the whole movement already.
      */
-    @Redirect(method = "getAllowedMovement(Lnet/minecraft/util/math/vector/Vector3d;)Lnet/minecraft/util/math/vector/Vector3d;",
+    @Redirect(method = "collide(Lnet/minecraft/util/math/vector/Vector3d;)Lnet/minecraft/util/math/vector/Vector3d;",
             at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;concat(Ljava/util/stream/Stream;Ljava/util/stream/Stream;)Ljava/util/stream/Stream;"))
     private Stream<VoxelShape> reorderStreams_WorldBorderCollisionsFirst(Stream<? extends VoxelShape> entityShapes, Stream<? extends VoxelShape> blockShapes) {
         return Stream.concat(blockShapes, entityShapes);

@@ -23,30 +23,30 @@ import java.util.Optional;
 public class PortalForcerMixin {
     @Shadow
     @Final
-    protected ServerWorld world;
+    protected ServerWorld level;
 
     /**
      * @author JellySquid
      * @reason Use optimized search for nearby points, avoid slow filtering, check for valid locations first
      */
     @Overwrite
-    public Optional<TeleportationRepositioner.Result> getExistingPortal(BlockPos centerPos, boolean shrink) {
+    public Optional<TeleportationRepositioner.Result> findPortalAround(BlockPos centerPos, boolean shrink) {
         int searchRadius = shrink ? 16 : 128;
 
-        PointOfInterestManager poiStorage = this.world.getPointOfInterestManager();
-        poiStorage.ensureLoadedAndValid(this.world, centerPos, searchRadius);
+        PointOfInterestManager poiStorage = this.level.getPoiManager();
+        poiStorage.ensureLoadedAndValid(this.level, centerPos, searchRadius);
         Optional<BlockPos> ret = ((PointOfInterestDataExtended) poiStorage).findNearestInSquare(centerPos, searchRadius,
                 PointOfInterestType.NETHER_PORTAL, PointOfInterestManager.Status.ANY,
-                (poi) -> this.world.getBlockState(poi.getPos()).hasProperty(BlockStateProperties.HORIZONTAL_AXIS)
+                (poi) -> this.level.getBlockState(poi.getPos()).hasProperty(BlockStateProperties.HORIZONTAL_AXIS)
         );
 
         return ret.flatMap((pos) -> {
-            BlockState state = this.world.getBlockState(pos);
+            BlockState state = this.level.getBlockState(pos);
 
-            this.world.getChunkProvider().registerTicket(TicketType.PORTAL, new ChunkPos(pos), 3, pos);
+            this.level.getChunkSource().addRegionTicket(TicketType.PORTAL, new ChunkPos(pos), 3, pos);
 
-            return Optional.of(TeleportationRepositioner.findLargestRectangle(pos, state.get(BlockStateProperties.HORIZONTAL_AXIS), 21, Direction.Axis.Y, 21, (searchPos) ->
-                    this.world.getBlockState(searchPos) == state));
+            return Optional.of(TeleportationRepositioner.getLargestRectangleAround(pos, state.getValue(BlockStateProperties.HORIZONTAL_AXIS), 21, Direction.Axis.Y, 21, (searchPos) ->
+                    this.level.getBlockState(searchPos) == state));
         });
     }
 }

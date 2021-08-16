@@ -13,18 +13,18 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(LightDataMap.class)
 public abstract class MixinChunkToNibbleArrayMap implements SharedNibbleArrayMap {
     @Shadow
-    private boolean useCaching;
+    private boolean cacheEnabled;
 
     @Shadow
     @Final
-    private long[] recentPositions;
+    private long[] lastSectionKeys;
 
     @Shadow
     @Final
-    private NibbleArray[] recentArrays;
+    private NibbleArray[] lastSections;
 
     @Shadow
-    public abstract void invalidateCaches();
+    public abstract void disableCache();
 
     private DoubleBufferedLong2ObjectHashMap<NibbleArray> queue;
     private boolean isShared;
@@ -34,12 +34,12 @@ public abstract class MixinChunkToNibbleArrayMap implements SharedNibbleArrayMap
      * @author JellySquid
      */
     @Overwrite
-    public void copyArray(long pos) {
+    public void copyDataLayer(long pos) {
         this.checkExclusiveOwner();
 
         this.queue.putSync(pos, this.queue.getSync(pos).copy());
 
-        this.invalidateCaches();
+        this.disableCache();
     }
 
     /**
@@ -47,14 +47,14 @@ public abstract class MixinChunkToNibbleArrayMap implements SharedNibbleArrayMap
      * @author JellySquid
      */
     @Overwrite
-    public NibbleArray getArray(long pos) {
-        if (this.useCaching) {
+    public NibbleArray getLayer(long pos) {
+        if (this.cacheEnabled) {
             // Hoist array field access out of the loop to allow the JVM to drop bounds checks
-            long[] cachePositions = this.recentPositions;
+            long[] cachePositions = this.lastSectionKeys;
 
             for(int i = 0; i < cachePositions.length; ++i) {
                 if (pos == cachePositions[i]) {
-                    return this.recentArrays[i];
+                    return this.lastSections[i];
                 }
             }
         }
@@ -76,9 +76,9 @@ public abstract class MixinChunkToNibbleArrayMap implements SharedNibbleArrayMap
             return null;
         }
 
-        if (this.useCaching) {
-            long[] cachePositions = this.recentPositions;
-            NibbleArray[] cacheArrays = this.recentArrays;
+        if (this.cacheEnabled) {
+            long[] cachePositions = this.lastSectionKeys;
+            NibbleArray[] cacheArrays = this.lastSections;
 
             for(int i = cacheArrays.length - 1; i > 0; --i) {
                 cachePositions[i] = cachePositions[i - 1];
@@ -97,7 +97,7 @@ public abstract class MixinChunkToNibbleArrayMap implements SharedNibbleArrayMap
      * @author JellySquid
      */
     @Overwrite
-    public void setArray(long pos, NibbleArray data) {
+    public void setLayer(long pos, NibbleArray data) {
         this.checkExclusiveOwner();
 
         this.queue.putSync(pos, data);
@@ -108,7 +108,7 @@ public abstract class MixinChunkToNibbleArrayMap implements SharedNibbleArrayMap
      * @author JellySquid
      */
     @Overwrite
-    public NibbleArray removeArray(long chunkPos) {
+    public NibbleArray removeLayer(long chunkPos) {
         this.checkExclusiveOwner();
 
         return this.queue.removeSync(chunkPos);
@@ -119,7 +119,7 @@ public abstract class MixinChunkToNibbleArrayMap implements SharedNibbleArrayMap
      * @author JellySquid
      */
     @Overwrite
-    public boolean hasArray(long chunkPos) {
+    public boolean hasLayer(long chunkPos) {
         if (this.isShared) {
             return this.queue.getAsync(chunkPos) != null;
         } else {

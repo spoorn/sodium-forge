@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public abstract class MixinWorldChunk {
     @Shadow
     @Final
-    private ChunkPos pos;
+    private ChunkPos chunkPos;
 
     @Shadow
     @Final
@@ -33,11 +33,11 @@ public abstract class MixinWorldChunk {
      * @author JellySquid
      */
     @Overwrite
-    public Stream<BlockPos> getLightSources() {
+    public Stream<BlockPos> getLights() {
         List<BlockPos> list = new ArrayList<>();
 
-        int startX = this.pos.getXStart();
-        int startZ = this.pos.getZStart();
+        int startX = this.chunkPos.getMinBlockX();
+        int startZ = this.chunkPos.getMinBlockZ();
 
         ChunkSection[] chunkSections = this.sections;
 
@@ -46,14 +46,14 @@ public abstract class MixinWorldChunk {
                 continue;
             }
 
-            int startY = section.getYLocation();
+            int startY = section.bottomBlockY();
 
             for (int x = 0; x < 16; x++) {
                 for (int y = 0; y < 16; y++) {
                     for (int z = 0; z < 16; z++) {
                         BlockState state = section.getBlockState(x, y, z);
 
-                        if (state.getLightValue() != 0) {
+                        if (state.getLightEmission() != 0) {
                             list.add(new BlockPos(startX + x, startY + y, startZ + z));
                         }
                     }

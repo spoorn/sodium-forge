@@ -13,10 +13,10 @@ public class GlyphVertexWriterFallback extends VertexWriterFallback implements G
     @Override
     public void writeGlyph(float x, float y, float z, int color, float u, float v, int light) {
         IVertexBuilder consumer = this.consumer;
-        consumer.pos(x, y, z);
+        consumer.vertex(x, y, z);
         consumer.color(ColorABGR.unpackRed(color), ColorABGR.unpackGreen(color), ColorABGR.unpackBlue(color), ColorABGR.unpackAlpha(color));
-        consumer.tex(u, v);
-        consumer.lightmap(light);
+        consumer.uv(u, v);
+        consumer.uv2(light);
         consumer.endVertex();
     }
 }

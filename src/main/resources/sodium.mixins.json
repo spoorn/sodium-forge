@@ -179,7 +179,6 @@
     "features.item.MixinItemRenderer",
     "features.matrix_stack.MixinMatrixStack",
     "features.matrix_stack.MixinVertexConsumer",
-    "features.model.MixinMultipartBakedModel",
     "features.options.MixinGameOptions",
     "features.options.MixinInGameHud",
     "features.options.MixinMinecraftClient",

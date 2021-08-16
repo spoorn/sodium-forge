@@ -29,12 +29,12 @@ public class FlatLightPipeline implements LightPipeline {
     @Override
     public void calculate(ModelQuadView quad, BlockPos pos, QuadLightData out, Direction face, boolean shade) {
         // If the face is aligned, use the light data above it
-        if ((quad.getFlags() & ModelQuadFlags.IS_ALIGNED) != 0 && !this.lightCache.getWorld().getBlockState(pos).isEmissiveRendering(this.lightCache.getWorld(), pos)) {
+        if ((quad.getFlags() & ModelQuadFlags.IS_ALIGNED) != 0 && !this.lightCache.getWorld().getBlockState(pos).emissiveRendering(this.lightCache.getWorld(), pos)) {
             Arrays.fill(out.lm, unpackLM(this.lightCache.get(pos, face)));
         } else {
             Arrays.fill(out.lm, unpackLM(this.lightCache.get(pos)));
         }
 
-        Arrays.fill(out.br, this.lightCache.getWorld().func_230487_a_(face, shade));
+        Arrays.fill(out.br, this.lightCache.getWorld().getShade(face, shade));
     }
 }

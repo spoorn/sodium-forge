@@ -30,7 +30,7 @@ public class ArrayPrioritizedTaskQueue implements ITaskQueue<ITaskQueue.Runnable
     }
 
     @Override
-    public Runnable poll() {
+    public Runnable pop() {
         for (Queue<Runnable> queue : this.queues) {
             Runnable task = queue.poll();
 
@@ -45,7 +45,7 @@ public class ArrayPrioritizedTaskQueue implements ITaskQueue<ITaskQueue.Runnable
     }
 
     @Override
-    public boolean enqueue(ITaskQueue.RunnableWithPriority task) {
+    public boolean push(ITaskQueue.RunnableWithPriority task) {
         this.size.incrementAndGet();
 
         Queue<Runnable> queue = this.queues[task.getPriority()];

@@ -15,18 +15,18 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 public class ChunkHolderMixin implements ChunkHolderExtended {
     @Shadow
     @Final
-    private AtomicReferenceArray<CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>>> field_219312_g;
+    private AtomicReferenceArray<CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>>> futures;
 
     private long lastRequestTime;
 
     @Override
     public CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> getFutureByStatus(int index) {
-        return this.field_219312_g.get(index);
+        return this.futures.get(index);
     }
 
     @Override
     public void setFutureForStatus(int index, CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> future) {
-        this.field_219312_g.set(index, future);
+        this.futures.set(index, future);
     }
 
     @Override

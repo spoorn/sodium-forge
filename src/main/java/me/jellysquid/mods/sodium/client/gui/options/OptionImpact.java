@@ -19,6 +19,6 @@ public enum OptionImpact {
     }
 
     public String toDisplayString() {
-        return this.color + I18n.format(this.text);
+        return this.color + I18n.get(this.text);
     }
 }

@@ -66,7 +66,7 @@ public class ChunkGraphNode {
 
         for (Direction from : DirectionUtil.ALL_DIRECTIONS) {
             for (Direction to : DirectionUtil.ALL_DIRECTIONS) {
-                if (occlusionData == null || occlusionData.isVisible(from, to)) {
+                if (occlusionData == null || occlusionData.visibilityBetween(from, to)) {
                     visibilityData |= (1L << ((from.ordinal() << 3) + to.ordinal()));
                 }
             }

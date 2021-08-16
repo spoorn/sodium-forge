@@ -21,23 +21,23 @@ public abstract class VoxelShapeMixin {
 
     @Shadow
     @Final
-    protected VoxelShapePart part;
+    protected VoxelShapePart shape;
 
     @Shadow
     public abstract boolean isEmpty();
 
     @Shadow
-    protected abstract double getValueUnchecked(Direction.Axis axis, int index);
+    protected abstract double get(Direction.Axis axis, int index);
 
     @Shadow
-    protected abstract DoubleList getValues(Direction.Axis axis);
+    protected abstract DoubleList getCoords(Direction.Axis axis);
 
     /**
      * @reason Use optimized implementation which delays searching for coordinates as long as possible
      * @author JellySquid
      */
     @Overwrite
-    public double getAllowedOffset(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
+    public double collideX(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
         if (this.isEmpty()) {
             return maxDist;
         }
@@ -46,11 +46,11 @@ public abstract class VoxelShapeMixin {
             return 0.0D;
         }
 
-        AxisRotation cycle = cycleDirection.reverse();
+        AxisRotation cycle = cycleDirection.inverse();
 
-        Direction.Axis axisX = cycle.rotate(Direction.Axis.X);
-        Direction.Axis axisY = cycle.rotate(Direction.Axis.Y);
-        Direction.Axis axisZ = cycle.rotate(Direction.Axis.Z);
+        Direction.Axis axisX = cycle.cycle(Direction.Axis.X);
+        Direction.Axis axisY = cycle.cycle(Direction.Axis.Y);
+        Direction.Axis axisZ = cycle.cycle(Direction.Axis.Z);
 
         int minY = Integer.MIN_VALUE;
         int maxY = Integer.MIN_VALUE;
@@ -62,22 +62,22 @@ public abstract class VoxelShapeMixin {
         double dist;
 
         if (maxDist > 0.0D) {
-            double max = box.getMax(axisX);
-            int maxIdx = this.getClosestIndex(axisX, max - POSITIVE_EPSILON);
+            double max = box.max(axisX);
+            int maxIdx = this.findIndex(axisX, max - POSITIVE_EPSILON);
 
-            int maxX = this.part.getSize(axisX);
+            int maxX = this.shape.getSize(axisX);
 
             for (x = maxIdx + 1; x < maxX; ++x) {
-                minY = minY == Integer.MIN_VALUE ? Math.max(0, this.getClosestIndex(axisY, box.getMin(axisY) + POSITIVE_EPSILON)) : minY;
-                maxY = maxY == Integer.MIN_VALUE ? Math.min(this.part.getSize(axisY), this.getClosestIndex(axisY, box.getMax(axisY) - POSITIVE_EPSILON) + 1) : maxY;
+                minY = minY == Integer.MIN_VALUE ? Math.max(0, this.findIndex(axisY, box.min(axisY) + POSITIVE_EPSILON)) : minY;
+                maxY = maxY == Integer.MIN_VALUE ? Math.min(this.shape.getSize(axisY), this.findIndex(axisY, box.max(axisY) - POSITIVE_EPSILON) + 1) : maxY;
 
                 for (y = minY; y < maxY; ++y) {
-                    minZ = minZ == Integer.MIN_VALUE ? Math.max(0, this.getClosestIndex(axisZ, box.getMin(axisZ) + POSITIVE_EPSILON)) : minZ;
-                    maxZ = maxZ == Integer.MIN_VALUE ? Math.min(this.part.getSize(axisZ), this.getClosestIndex(axisZ, box.getMax(axisZ) - POSITIVE_EPSILON) + 1) : maxZ;
+                    minZ = minZ == Integer.MIN_VALUE ? Math.max(0, this.findIndex(axisZ, box.min(axisZ) + POSITIVE_EPSILON)) : minZ;
+                    maxZ = maxZ == Integer.MIN_VALUE ? Math.min(this.shape.getSize(axisZ), this.findIndex(axisZ, box.max(axisZ) - POSITIVE_EPSILON) + 1) : maxZ;
 
                     for (z = minZ; z < maxZ; ++z) {
-                        if (this.part.containsWithRotation(cycle, x, y, z)) {
-                            dist = this.getValueUnchecked(axisX, x) - max;
+                        if (this.shape.isFullWide(cycle, x, y, z)) {
+                            dist = this.get(axisX, x) - max;
 
                             if (dist >= NEGATIVE_EPSILON) {
                                 maxDist = Math.min(maxDist, dist);
@@ -89,20 +89,20 @@ public abstract class VoxelShapeMixin {
                 }
             }
         } else if (maxDist < 0.0D) {
-            double min = box.getMin(axisX);
-            int minIdx = this.getClosestIndex(axisX, min + POSITIVE_EPSILON);
+            double min = box.min(axisX);
+            int minIdx = this.findIndex(axisX, min + POSITIVE_EPSILON);
 
             for (x = minIdx - 1; x >= 0; --x) {
-                minY = minY == Integer.MIN_VALUE ? Math.max(0, this.getClosestIndex(axisY, box.getMin(axisY) + POSITIVE_EPSILON)) : minY;
-                maxY = maxY == Integer.MIN_VALUE ? Math.min(this.part.getSize(axisY), this.getClosestIndex(axisY, box.getMax(axisY) - POSITIVE_EPSILON) + 1) : maxY;
+                minY = minY == Integer.MIN_VALUE ? Math.max(0, this.findIndex(axisY, box.min(axisY) + POSITIVE_EPSILON)) : minY;
+                maxY = maxY == Integer.MIN_VALUE ? Math.min(this.shape.getSize(axisY), this.findIndex(axisY, box.max(axisY) - POSITIVE_EPSILON) + 1) : maxY;
 
                 for (y = minY; y < maxY; ++y) {
-                    minZ = minZ == Integer.MIN_VALUE ? Math.max(0, this.getClosestIndex(axisZ, box.getMin(axisZ) + POSITIVE_EPSILON)) : minZ;
-                    maxZ = maxZ == Integer.MIN_VALUE ? Math.min(this.part.getSize(axisZ), this.getClosestIndex(axisZ, box.getMax(axisZ) - POSITIVE_EPSILON) + 1) : maxZ;
+                    minZ = minZ == Integer.MIN_VALUE ? Math.max(0, this.findIndex(axisZ, box.min(axisZ) + POSITIVE_EPSILON)) : minZ;
+                    maxZ = maxZ == Integer.MIN_VALUE ? Math.min(this.shape.getSize(axisZ), this.findIndex(axisZ, box.max(axisZ) - POSITIVE_EPSILON) + 1) : maxZ;
 
                     for (z = minZ; z < maxZ; ++z) {
-                        if (this.part.containsWithRotation(cycle, x, y, z)) {
-                            dist = this.getValueUnchecked(axisX, x + 1) - min;
+                        if (this.shape.isFullWide(cycle, x, y, z)) {
+                            dist = this.get(axisX, x + 1) - min;
 
                             if (dist <= POSITIVE_EPSILON) {
                                 maxDist = Math.max(maxDist, dist);
@@ -126,10 +126,10 @@ public abstract class VoxelShapeMixin {
      * @author JellySquid
      */
     @Overwrite
-    public int getClosestIndex(Direction.Axis axis, double coord) {
-        DoubleList list = this.getValues(axis);
+    public int findIndex(Direction.Axis axis, double coord) {
+        DoubleList list = this.getCoords(axis);
 
-        int size = this.part.getSize(axis);
+        int size = this.shape.getSize(axis);
 
         int start = 0;
         int end = size + 1 - start;

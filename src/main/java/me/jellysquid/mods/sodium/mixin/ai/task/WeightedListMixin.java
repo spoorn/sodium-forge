@@ -13,10 +13,10 @@ import java.util.List;
 public class WeightedListMixin<U> implements WeightedListIterable<U> {
     @Shadow
     @Final
-    protected List<WeightedList.Entry<? extends U>> weightedEntries;
+    protected List<WeightedList.Entry<? extends U>> entries;
 
     @Override
     public Iterator<U> iterator() {
-        return new WeightedListIterable.ListIterator<>(this.weightedEntries.iterator());
+        return new WeightedListIterable.ListIterator<>(this.entries.iterator());
     }
 }

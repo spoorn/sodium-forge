@@ -16,24 +16,24 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class MixinSpriteTexturedVertexConsumer implements VertexDrain {
     @Shadow
     @Final
-    private TextureAtlasSprite atlasSprite;
+    private TextureAtlasSprite sprite;
 
     @Shadow
     @Final
-    private IVertexBuilder vertexBuilder;
+    private IVertexBuilder delegate;
 
     @SuppressWarnings("unchecked")
     @Override
     public <T extends VertexSink> T createSink(VertexType<T> type) {
         if (type == VanillaVertexTypes.QUADS) {
-            return (T) new SpriteTexturedVertexTransformer.Quad(VertexDrain.of(this.vertexBuilder)
-                    .createSink(VanillaVertexTypes.QUADS), this.atlasSprite);
+            return (T) new SpriteTexturedVertexTransformer.Quad(VertexDrain.of(this.delegate)
+                    .createSink(VanillaVertexTypes.QUADS), this.sprite);
         } else if (type == VanillaVertexTypes.PARTICLES) {
-            return (T) new SpriteTexturedVertexTransformer.Particle(VertexDrain.of(this.vertexBuilder)
-                    .createSink(VanillaVertexTypes.PARTICLES), this.atlasSprite);
+            return (T) new SpriteTexturedVertexTransformer.Particle(VertexDrain.of(this.delegate)
+                    .createSink(VanillaVertexTypes.PARTICLES), this.sprite);
         } else if (type == VanillaVertexTypes.GLYPHS) {
-            return (T) new SpriteTexturedVertexTransformer.Glyph(VertexDrain.of(this.vertexBuilder)
-                    .createSink(VanillaVertexTypes.GLYPHS), this.atlasSprite);
+            return (T) new SpriteTexturedVertexTransformer.Glyph(VertexDrain.of(this.delegate)
+                    .createSink(VanillaVertexTypes.GLYPHS), this.sprite);
         }
 
         return type.createFallbackWriter((IVertexBuilder) this);

@@ -39,7 +39,7 @@ public class BlockCollisionSweeper {
     public BlockCollisionSweeper(ICollisionReader view, Entity entity, AxisAlignedBB box) {
         this.box = box;
         this.shape = VoxelShapes.create(box);
-        this.context = entity == null ? ISelectionContext.dummy() : ISelectionContext.forEntity(entity);
+        this.context = entity == null ? ISelectionContext.empty() : ISelectionContext.of(entity);
         this.view = view;
         this.cuboidIt = createVolumeIteratorForCollision(box);
     }
@@ -55,28 +55,28 @@ public class BlockCollisionSweeper {
 
         final CubeCoordinateIterator cuboidIt = this.cuboidIt;
 
-        if (!cuboidIt.hasNext()) {
+        if (!cuboidIt.advance()) {
             return false;
         }
 
-        final int edgesHit = cuboidIt.numBoundariesTouched();
+        final int edgesHit = cuboidIt.getNextType();
 
         if (edgesHit == 3) {
             return true;
         }
 
-        final int x = cuboidIt.getX();
-        final int y = cuboidIt.getY();
-        final int z = cuboidIt.getZ();
+        final int x = cuboidIt.nextX();
+        final int y = cuboidIt.nextY();
+        final int z = cuboidIt.nextZ();
 
-        final IBlockReader chunk = this.view.getBlockReader(x >> 4, z >> 4);
+        final IBlockReader chunk = this.view.getChunkForCollisions(x >> 4, z >> 4);
 
         if (chunk == null) {
             return true;
         }
 
         final BlockPos.Mutable mpos = this.mpos;
-        mpos.setPos(x, y, z);
+        mpos.set(x, y, z);
 
         final BlockState state = chunk.getBlockState(mpos);
 
@@ -121,7 +121,7 @@ public class BlockCollisionSweeper {
      * @return True if the shape can be interacted with at the given edge boundary
      */
     private static boolean canInteractWithBlock(BlockState state, int edgesHit) {
-        return (edgesHit != 1 || state.isCollisionShapeLargerThanFullBlock()) && (edgesHit != 2 || state.getBlock() == Blocks.MOVING_PISTON);
+        return (edgesHit != 1 || state.hasLargeCollisionShape()) && (edgesHit != 2 || state.getBlock() == Blocks.MOVING_PISTON);
     }
 
     /**
@@ -134,15 +134,15 @@ public class BlockCollisionSweeper {
     private static VoxelShape getCollidedShape(AxisAlignedBB entityBox, VoxelShape entityShape, VoxelShape shape, int x, int y, int z) {
         if (shape instanceof VoxelShapeCaster) {
             if (((VoxelShapeCaster) shape).intersects(entityBox, x, y, z)) {
-                return shape.withOffset(x, y, z);
+                return shape.move(x, y, z);
             } else {
                 return null;
             }
         }
 
-        shape = shape.withOffset(x, y, z);
+        shape = shape.move(x, y, z);
 
-        if (VoxelShapes.compare(shape, entityShape, IBooleanFunction.AND)) {
+        if (VoxelShapes.joinIsNotEmpty(shape, entityShape, IBooleanFunction.AND)) {
             return shape;
         }
 

@@ -34,17 +34,17 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
 
     @Shadow
     @Final
-    protected M cachedLightData;
+    protected M updatingSectionData;
 
     @Mutable
     @Shadow
     @Final
-    protected LongSet dirtyCachedSections;
+    protected LongSet changedSections;
 
     @Mutable
     @Shadow
     @Final
-    protected LongSet changedLightPositions;
+    protected LongSet sectionsAffectedByLightUpdates;
 
     @Shadow
     protected abstract int getLevel(long id);
@@ -52,74 +52,74 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
     @Mutable
     @Shadow
     @Final
-    protected LongSet activeLightSections;
+    protected LongSet dataSectionSet;
 
     @Mutable
     @Shadow
     @Final
-    protected LongSet addedActiveLightSections;
+    protected LongSet toMarkData;
 
     @Mutable
     @Shadow
     @Final
-    protected LongSet addedEmptySections;
+    protected LongSet toMarkNoData;
 
     @Mutable
     @Shadow
     @Final
-    private LongSet noLightSections;
+    private LongSet toRemove;
 
     @Shadow
-    protected abstract void addSection(long blockPos);
+    protected abstract void onNodeAdded(long blockPos);
 
     @SuppressWarnings("unused")
     @Shadow
-    protected volatile boolean hasSectionsToUpdate;
+    protected volatile boolean hasToRemove;
 
     @Shadow
-    protected volatile M uncachedLightData;
+    protected volatile M visibleSectionData;
 
     @Shadow
-    protected abstract NibbleArray getOrCreateArray(long pos);
+    protected abstract NibbleArray createDataLayer(long pos);
 
     @Shadow
     @Final
-    protected Long2ObjectMap<NibbleArray> newArrays;
+    protected Long2ObjectMap<NibbleArray> queuedSections;
 
     @Shadow
-    protected abstract boolean hasSectionsToUpdate();
+    protected abstract boolean hasInconsistencies();
 
     @Shadow
-    protected abstract void removeSection(long l);
+    protected abstract void onNodeRemoved(long l);
 
     @Shadow
     @Final
     private static Direction[] DIRECTIONS;
 
     @Shadow
-    protected abstract void cancelSectionUpdates(LightEngine<?, ?> storage, long blockChunkPos);
+    protected abstract void clearQueuedSectionBlocks(LightEngine<?, ?> storage, long blockChunkPos);
 
     @Shadow
-    protected abstract NibbleArray getArray(long sectionPos, boolean cached);
-
-    @Shadow
-    @Final
-    private IChunkLightProvider chunkProvider;
+    protected abstract NibbleArray getDataLayer(long sectionPos, boolean cached);
 
     @Shadow
     @Final
-    private LightType type;
+    private IChunkLightProvider chunkSource;
 
     @Shadow
     @Final
-    private LongSet field_241536_n_;
+    private LightType layer;
+
+    @Shadow
+    @Final
+    private LongSet untrustedSections;
 
     @Override
-    @Invoker("getArray")
+    @Invoker("getDataLayer")
     public abstract NibbleArray callGetLightSection(final long sectionPos, final boolean cached);
 
     @Shadow
-    protected int getSourceLevel(long id) {
+    protected int getLevelFromSource(long id) {
         return 0;
     }
 
@@ -135,20 +135,20 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @author JellySquid
      */
     @Overwrite
-    public int getLight(long blockPos) {
-        int x = BlockPos.unpackX(blockPos);
-        int y = BlockPos.unpackY(blockPos);
-        int z = BlockPos.unpackZ(blockPos);
+    public int getStoredLevel(long blockPos) {
+        int x = BlockPos.getX(blockPos);
+        int y = BlockPos.getY(blockPos);
+        int z = BlockPos.getZ(blockPos);
 
-        long chunk = SectionPos.asLong(SectionPos.toChunk(x), SectionPos.toChunk(y), SectionPos.toChunk(z));
+        long chunk = SectionPos.asLong(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(y), SectionPos.blockToSectionCoord(z));
 
-        NibbleArray array = this.getArray(chunk, true);
+        NibbleArray array = this.getDataLayer(chunk, true);
 
         if (array == null) {
             return this.getLightWithoutLightmap(blockPos);
         }
 
-        return array.get(SectionPos.mask(x), SectionPos.mask(y),SectionPos.mask(z));
+        return array.get(SectionPos.sectionRelative(x), SectionPos.sectionRelative(y),SectionPos.sectionRelative(z));
     }
 
     /**
@@ -163,10 +163,10 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @author JellySquid
      */
     @Overwrite
-    public void setLight(long blockPos, int value) {
-        int x = BlockPos.unpackX(blockPos);
-        int y = BlockPos.unpackY(blockPos);
-        int z = BlockPos.unpackZ(blockPos);
+    public void setStoredLevel(long blockPos, int value) {
+        int x = BlockPos.getX(blockPos);
+        int y = BlockPos.getY(blockPos);
+        int z = BlockPos.getZ(blockPos);
 
         long chunkPos = SectionPos.asLong(x >> 4, y >> 4, z >> 4);
 
@@ -176,17 +176,17 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
         this.beforeLightChange(blockPos, oldVal, value, lightmap);
         this.changeLightmapComplexity(chunkPos, this.getLightmapComplexityChange(blockPos, oldVal, value, lightmap));
 
-        if (this.dirtyCachedSections.add(chunkPos)) {
-            this.cachedLightData.copyArray(chunkPos);
+        if (this.changedSections.add(chunkPos)) {
+            this.updatingSectionData.copyDataLayer(chunkPos);
         }
 
-        NibbleArray nibble = this.getArray(chunkPos, true);
+        NibbleArray nibble = this.getDataLayer(chunkPos, true);
         nibble.set(x & 15, y & 15, z & 15, value);
 
         for (int z2 = (z - 1) >> 4; z2 <= (z + 1) >> 4; ++z2) {
             for (int x2 = (x - 1) >> 4; x2 <= (x + 1) >> 4; ++x2) {
                 for (int y2 = (y - 1) >> 4; y2 <= (y + 1) >> 4; ++y2) {
-                    this.changedLightPositions.add(SectionPos.asLong(x2, y2, z2));
+                    this.sectionsAffectedByLightUpdates.add(SectionPos.asLong(x2, y2, z2));
                 }
             }
         }
@@ -201,22 +201,22 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
         int oldLevel = this.getLevel(id);
 
         if (oldLevel != 0 && level == 0) {
-            this.activeLightSections.add(id);
-            this.addedActiveLightSections.remove(id);
+            this.dataSectionSet.add(id);
+            this.toMarkData.remove(id);
         }
 
         if (oldLevel == 0 && level != 0) {
-            this.activeLightSections.remove(id);
-            this.addedEmptySections.remove(id);
+            this.dataSectionSet.remove(id);
+            this.toMarkNoData.remove(id);
         }
 
         if (oldLevel >= 2 && level < 2) {
             this.nonOptimizableSections.add(id);
 
-            if (this.enabledChunks.contains(SectionPos.toSectionColumnPos(id)) && !this.vanillaLightmapsToRemove.remove(id) && this.getArray(id, true) == null) {
-                this.cachedLightData.setArray(id, this.createTrivialVanillaLightmap(id));
-                this.dirtyCachedSections.add(id);
-                this.cachedLightData.invalidateCaches();
+            if (this.enabledChunks.contains(SectionPos.getZeroNode(id)) && !this.vanillaLightmapsToRemove.remove(id) && this.getDataLayer(id, true) == null) {
+                this.updatingSectionData.setLayer(id, this.createTrivialVanillaLightmap(id));
+                this.changedSections.add(id);
+                this.updatingSectionData.clearCache();
             }
         }
 
@@ -224,7 +224,7 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
             this.nonOptimizableSections.remove(id);
 
             if (this.enabledChunks.contains(id)) {
-                final NibbleArray lightmap = this.getArray(id, true);
+                final NibbleArray lightmap = this.getDataLayer(id, true);
 
                 if (lightmap != null && ((IReadonly) lightmap).isReadonly()) {
                     this.vanillaLightmapsToRemove.add(id);
@@ -237,7 +237,7 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @reason Drastically improve efficiency by making removals O(n) instead of O(16*16*16)
      * @author JellySquid
      */
-    @Inject(method = "cancelSectionUpdates", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "clearQueuedSectionBlocks", at = @At("HEAD"), cancellable = true)
     protected void preRemoveSection(LightEngine<?, ?> provider, long pos, CallbackInfo ci) {
         if (provider instanceof LightProviderUpdateTracker) {
             ((LightProviderUpdateTracker) provider).cancelUpdatesForChunk(pos);
@@ -251,8 +251,8 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @reason Re-implement completely
      */
     @Overwrite
-    public void updateSections(LightEngine<M, ?> chunkLightProvider, boolean doSkylight, boolean skipEdgeLightPropagation) {
-        if (!this.hasSectionsToUpdate()) {
+    public void markNewInconsistencies(LightEngine<M, ?> chunkLightProvider, boolean doSkylight, boolean skipEdgeLightPropagation) {
+        if (!this.hasInconsistencies()) {
             return;
         }
 
@@ -265,22 +265,22 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
         final LongIterator it;
 
         if (!skipEdgeLightPropagation) {
-            it = this.newArrays.keySet().iterator();
+            it = this.queuedSections.keySet().iterator();
         } else {
-            it = this.field_241536_n_.iterator();
+            it = this.untrustedSections.iterator();
         }
         
         while (it.hasNext()) {
-            func_241538_b_(chunkLightProvider, it.nextLong());
+            checkEdgesForSection(chunkLightProvider, it.nextLong());
         }
 
-        this.field_241536_n_.clear();
-        this.newArrays.clear();
+        this.untrustedSections.clear();
+        this.queuedSections.clear();
 
         // Vanilla would normally iterate back over the map of light arrays to remove those we worked on, but
         // that is unneeded now because we removed them earlier.
 
-        this.hasSectionsToUpdate = false;
+        this.hasToRemove = false;
     }
 
     /**
@@ -288,22 +288,22 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @author JellySquid
      */
     @Overwrite
-    private void func_241538_b_(LightEngine<M, ?> chunkLightProvider, long pos) {
-        if (this.hasSection(pos)) {
-            int x = SectionPos.toWorld(SectionPos.extractX(pos));
-            int y = SectionPos.toWorld(SectionPos.extractX(pos));
-            int z = SectionPos.toWorld(SectionPos.extractX(pos));
+    private void checkEdgesForSection(LightEngine<M, ?> chunkLightProvider, long pos) {
+        if (this.storingLightForSection(pos)) {
+            int x = SectionPos.sectionToBlockCoord(SectionPos.x(pos));
+            int y = SectionPos.sectionToBlockCoord(SectionPos.x(pos));
+            int z = SectionPos.sectionToBlockCoord(SectionPos.x(pos));
 
             for (Direction dir : DIRECTIONS) {
-                long adjPos = SectionPos.withOffset(pos, dir);
+                long adjPos = SectionPos.offset(pos, dir);
 
                 // Avoid updating initializing chunks unnecessarily
-                if (this.newArrays.containsKey(adjPos)) {
+                if (this.queuedSections.containsKey(adjPos)) {
                     continue;
                 }
 
                 // If there is no light data for this section yet, skip it
-                if (!this.hasSection(adjPos)) {
+                if (!this.storingLightForSection(adjPos)) {
                     continue;
                 }
 
@@ -314,28 +314,28 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
 
                         switch (dir) {
                             case DOWN:
-                                a = BlockPos.pack(x + u2, y, z + u1);
-                                b = BlockPos.pack(x + u2, y - 1, z + u1);
+                                a = BlockPos.asLong(x + u2, y, z + u1);
+                                b = BlockPos.asLong(x + u2, y - 1, z + u1);
                                 break;
                             case UP:
-                                a = BlockPos.pack(x + u2, y + 15, z + u1);
-                                b = BlockPos.pack(x + u2, y + 16, z + u1);
+                                a = BlockPos.asLong(x + u2, y + 15, z + u1);
+                                b = BlockPos.asLong(x + u2, y + 16, z + u1);
                                 break;
                             case NORTH:
-                                a = BlockPos.pack(x + u1, y + u2, z);
-                                b = BlockPos.pack(x + u1, y + u2, z - 1);
+                                a = BlockPos.asLong(x + u1, y + u2, z);
+                                b = BlockPos.asLong(x + u1, y + u2, z - 1);
                                 break;
                             case SOUTH:
-                                a = BlockPos.pack(x + u1, y + u2, z + 15);
-                                b = BlockPos.pack(x + u1, y + u2, z + 16);
+                                a = BlockPos.asLong(x + u1, y + u2, z + 15);
+                                b = BlockPos.asLong(x + u1, y + u2, z + 16);
                                 break;
                             case WEST:
-                                a = BlockPos.pack(x, y + u1, z + u2);
-                                b = BlockPos.pack(x - 1, y + u1, z + u2);
+                                a = BlockPos.asLong(x, y + u1, z + u2);
+                                b = BlockPos.asLong(x - 1, y + u1, z + u2);
                                 break;
                             case EAST:
-                                a = BlockPos.pack(x + 15, y + u1, z + u2);
-                                b = BlockPos.pack(x + 16, y + u1, z + u2);
+                                a = BlockPos.asLong(x + 15, y + u1, z + u2);
+                                b = BlockPos.asLong(x + 16, y + u1, z + u2);
                                 break;
                             default:
                                 continue;
@@ -353,40 +353,40 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @author JellySquid
      */
     @Overwrite
-    public void updateAndNotify() {
-        if (!this.dirtyCachedSections.isEmpty()) {
+    public void swapSectionMap() {
+        if (!this.changedSections.isEmpty()) {
             // This could result in changes being flushed to various arrays, so write lock.
             long stamp = this.uncachedLightArraysLock.writeLock();
 
             try {
                 // This only performs a shallow copy compared to before
-                M map = this.cachedLightData.copy();
-                map.disableCaching();
+                M map = this.updatingSectionData.copy();
+                map.disableCache();
 
-                this.uncachedLightData = map;
+                this.visibleSectionData = map;
             } finally {
                 this.uncachedLightArraysLock.unlockWrite(stamp);
             }
 
-            this.dirtyCachedSections.clear();
+            this.changedSections.clear();
         }
 
-        if (!this.changedLightPositions.isEmpty()) {
-            LongIterator it = this.changedLightPositions.iterator();
+        if (!this.sectionsAffectedByLightUpdates.isEmpty()) {
+            LongIterator it = this.sectionsAffectedByLightUpdates.iterator();
 
             while(it.hasNext()) {
                 long pos = it.nextLong();
 
-                this.chunkProvider.markLightChanged(this.type, SectionPos.from(pos));
+                this.chunkSource.onLightUpdate(this.layer, SectionPos.of(pos));
             }
 
-            this.changedLightPositions.clear();
+            this.sectionsAffectedByLightUpdates.clear();
         }
     }
 
     @Override
     public M getStorage() {
-        return this.uncachedLightData;
+        return this.visibleSectionData;
     }
 
     @Override
@@ -433,10 +433,10 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
 
     @Unique
     protected NibbleArray getOrAddLightmap(final long sectionPos) {
-        NibbleArray lightmap = this.getArray(sectionPos, true);
+        NibbleArray lightmap = this.getDataLayer(sectionPos, true);
 
         if (lightmap == null) {
-            lightmap = this.getOrCreateArray(sectionPos);
+            lightmap = this.createDataLayer(sectionPos);
         } else {
             if (((IReadonly) lightmap).isReadonly()) {
                 lightmap = lightmap.copy();
@@ -446,11 +446,11 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
             }
         }
 
-        this.cachedLightData.setArray(sectionPos, lightmap);
-        this.cachedLightData.invalidateCaches();
-        this.dirtyCachedSections.add(sectionPos);
+        this.updatingSectionData.setLayer(sectionPos, lightmap);
+        this.updatingSectionData.clearCache();
+        this.changedSections.add(sectionPos);
 
-        this.addSection(sectionPos);
+        this.onNodeAdded(sectionPos);
         this.setLightmapComplexity(sectionPos, 0);
 
         return lightmap;
@@ -473,8 +473,8 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
     @Unique
     private void markForLightUpdates() {
         // Avoid volatile writes
-        if (!this.hasSectionsToUpdate) {
-            this.hasSectionsToUpdate = true;
+        if (!this.hasToRemove) {
+            this.hasToRemove = true;
         }
     }
 
@@ -497,7 +497,7 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
 
     @Unique
     protected NibbleArray getLightmap(final long sectionPos) {
-        final NibbleArray lightmap = this.getArray(sectionPos, true);
+        final NibbleArray lightmap = this.getDataLayer(sectionPos, true);
         return lightmap == null || ((IReadonly) lightmap).isReadonly() ? null : lightmap;
     }
 
@@ -538,15 +538,15 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @reason Method completely changed. Allow child mixins to properly extend this.
      */
     @Overwrite
-    public boolean hasSection(final long sectionPos) {
-        return this.enabledChunks.contains(SectionPos.toSectionColumnPos(sectionPos));
+    public boolean storingLightForSection(final long sectionPos) {
+        return this.enabledChunks.contains(SectionPos.getZeroNode(sectionPos));
     }
 
     @Shadow
-    protected abstract void setColumnEnabled(long columnPos, boolean enabled);
+    protected abstract void enableLightSources(long columnPos, boolean enabled);
 
     @Override
-    @Invoker("setColumnEnabled")
+    @Invoker("enableLightSources")
     public abstract void invokeSetColumnEnabled(final long chunkPos, final boolean enabled);
 
     @Override
@@ -561,14 +561,14 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
         } else {
             if (this.markedEnabledChunks.remove(chunkPos) || !this.enabledChunks.contains(chunkPos)) {
                 for (int i = -1; i < 17; ++i) {
-                    final long sectionPos = SectionPos.asLong(SectionPos.extractX(chunkPos), i, SectionPos.extractZ(chunkPos));
+                    final long sectionPos = SectionPos.asLong(SectionPos.x(chunkPos), i, SectionPos.z(chunkPos));
 
-                    if (this.cachedLightData.removeArray(sectionPos) != null) {
-                        this.dirtyCachedSections.add(sectionPos);
+                    if (this.updatingSectionData.removeLayer(sectionPos) != null) {
+                        this.changedSections.add(sectionPos);
                     }
                 }
 
-                this.setColumnEnabled(chunkPos, false);
+                this.enableLightSources(chunkPos, false);
             } else {
                 this.markedDisabledChunks.add(chunkPos);
                 this.markForLightUpdates();
@@ -578,7 +578,7 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
 
     @Unique
     private void initializeChunks() {
-        this.cachedLightData.invalidateCaches();
+        this.updatingSectionData.clearCache();
 
         for (final LongIterator it = this.markedEnabledChunks.iterator(); it.hasNext(); ) {
             final long chunkPos = it.nextLong();
@@ -588,38 +588,38 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
             // First need to register all lightmaps via onLoadSection() as this data is needed for calculating the initial complexity
 
             for (int i = -1; i < 17; ++i) {
-                final long sectionPos = SectionPos.asLong(SectionPos.extractX(chunkPos), i, SectionPos.extractZ(chunkPos));
+                final long sectionPos = SectionPos.asLong(SectionPos.x(chunkPos), i, SectionPos.z(chunkPos));
 
                 if (this.hasLightmap(sectionPos)) {
-                    this.addSection(sectionPos);
+                    this.onNodeAdded(sectionPos);
                 }
             }
 
             // Now the initial complexities can be computed
 
             for (int i = -1; i < 17; ++i) {
-                final long sectionPos = SectionPos.asLong(SectionPos.extractX(chunkPos), i, SectionPos.extractZ(chunkPos));
+                final long sectionPos = SectionPos.asLong(SectionPos.x(chunkPos), i, SectionPos.z(chunkPos));
 
                 if (this.hasLightmap(sectionPos)) {
-                    this.setLightmapComplexity(sectionPos, this.getInitialLightmapComplexity(sectionPos, this.getArray(sectionPos, true)));
+                    this.setLightmapComplexity(sectionPos, this.getInitialLightmapComplexity(sectionPos, this.getDataLayer(sectionPos, true)));
                 }
             }
 
             // Add lightmaps for vanilla compatibility and try to recover stripped data from vanilla saves
 
             for (int i = -1; i < 17; ++i) {
-                final long sectionPos = SectionPos.asLong(SectionPos.extractX(chunkPos), i, SectionPos.extractZ(chunkPos));
+                final long sectionPos = SectionPos.asLong(SectionPos.x(chunkPos), i, SectionPos.z(chunkPos));
 
-                if (this.nonOptimizableSections.contains(sectionPos) && this.getArray(sectionPos, true) == null) {
-                    this.cachedLightData.setArray(sectionPos, this.createInitialVanillaLightmap(sectionPos));
-                    this.dirtyCachedSections.add(sectionPos);
+                if (this.nonOptimizableSections.contains(sectionPos) && this.getDataLayer(sectionPos, true) == null) {
+                    this.updatingSectionData.setLayer(sectionPos, this.createInitialVanillaLightmap(sectionPos));
+                    this.changedSections.add(sectionPos);
                 }
             }
 
             this.enabledChunks.add(chunkPos);
         }
 
-        this.cachedLightData.invalidateCaches();
+        this.updatingSectionData.clearCache();
 
         this.markedEnabledChunks.clear();
     }
@@ -642,10 +642,10 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
             // First need to remove all pending light updates before changing any light value
 
             for (int i = -1; i < 17; ++i) {
-                final long sectionPos = SectionPos.asLong(SectionPos.extractX(chunkPos), i, SectionPos.extractZ(chunkPos));
+                final long sectionPos = SectionPos.asLong(SectionPos.x(chunkPos), i, SectionPos.z(chunkPos));
 
-                if (this.hasSection(sectionPos)) {
-                    this.cancelSectionUpdates(lightProvider, sectionPos);
+                if (this.storingLightForSection(sectionPos)) {
+                    this.clearQueuedSectionBlocks(lightProvider, sectionPos);
                 }
             }
 
@@ -658,9 +658,9 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
             int sections = 0;
 
             for (int i = -1; i < 17; ++i) {
-                final long sectionPos = SectionPos.asLong(SectionPos.extractX(chunkPos), i, SectionPos.extractZ(chunkPos));
+                final long sectionPos = SectionPos.asLong(SectionPos.x(chunkPos), i, SectionPos.z(chunkPos));
 
-                this.newArrays.remove(sectionPos);
+                this.queuedSections.remove(sectionPos);
 
                 if (this.removeLightmap(sectionPos)) {
                     sections |= 1 << (i + 1);
@@ -669,15 +669,15 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
 
             // Calling onUnloadSection() after removing all the lightmaps is slightly more efficient
 
-            this.cachedLightData.invalidateCaches();
+            this.updatingSectionData.clearCache();
 
             for (int i = -1; i < 17; ++i) {
                 if ((sections & (1 << (i + 1))) != 0) {
-                    this.removeSection(SectionPos.asLong(SectionPos.extractX(chunkPos), i, SectionPos.extractZ(chunkPos)));
+                    this.onNodeRemoved(SectionPos.asLong(SectionPos.x(chunkPos), i, SectionPos.z(chunkPos)));
                 }
             }
 
-            this.setColumnEnabled(chunkPos, false);
+            this.enableLightSources(chunkPos, false);
             this.afterChunkDisabled(chunkPos);
         }
 
@@ -685,16 +685,16 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
     }
 
     /**
-     * Removes the lightmap associated to the provided <code>sectionPos</code>, but does not call {@link #removeSection(long)} or {@link LightDataMap#invalidateCaches()}
+     * Removes the lightmap associated to the provided <code>sectionPos</code>, but does not call {@link #onNodeRemoved(long)} or {@link LightDataMap#invalidateCaches()}
      * @return Whether a lightmap was removed
      */
     @Unique
     protected boolean removeLightmap(final long sectionPos) {
-        if (this.cachedLightData.removeArray(sectionPos) == null) {
+        if (this.updatingSectionData.removeLayer(sectionPos) == null) {
             return false;
         }
 
-        this.dirtyCachedSections.add(sectionPos);
+        this.changedSections.add(sectionPos);
 
         if (this.lightmapComplexities.remove(sectionPos) == -1) {
             this.vanillaLightmapsToRemove.remove(sectionPos);
@@ -710,17 +710,17 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
         for (final LongIterator it = this.trivialLightmaps.iterator(); it.hasNext(); ) {
             final long sectionPos = it.nextLong();
 
-            this.cachedLightData.removeArray(sectionPos);
+            this.updatingSectionData.removeLayer(sectionPos);
             this.lightmapComplexities.remove(sectionPos);
-            this.dirtyCachedSections.add(sectionPos);
+            this.changedSections.add(sectionPos);
         }
 
-        this.cachedLightData.invalidateCaches();
+        this.updatingSectionData.clearCache();
 
         // Calling onUnloadSection() after removing all the lightmaps is slightly more efficient
 
         for (final LongIterator it = this.trivialLightmaps.iterator(); it.hasNext(); ) {
-            this.removeSection(it.nextLong());
+            this.onNodeRemoved(it.nextLong());
         }
 
         // Add trivial lightmaps for vanilla compatibility
@@ -729,19 +729,19 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
             final long sectionPos = it.nextLong();
 
             if (this.nonOptimizableSections.contains(sectionPos)) {
-                this.cachedLightData.setArray(sectionPos, this.createTrivialVanillaLightmap(sectionPos));
+                this.updatingSectionData.setLayer(sectionPos, this.createTrivialVanillaLightmap(sectionPos));
             }
         }
 
-        this.cachedLightData.invalidateCaches();
+        this.updatingSectionData.clearCache();
 
         // Remove pending light updates for sections that no longer support light propagations
 
         for (final LongIterator it = this.trivialLightmaps.iterator(); it.hasNext(); ) {
             final long sectionPos = it.nextLong();
 
-            if (!this.hasSection(sectionPos)) {
-                this.cancelSectionUpdates(lightProvider, sectionPos);
+            if (!this.storingLightForSection(sectionPos)) {
+                this.clearQueuedSectionBlocks(lightProvider, sectionPos);
             }
         }
 
@@ -753,19 +753,19 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
         for (final LongIterator it = this.vanillaLightmapsToRemove.iterator(); it.hasNext(); ) {
             final long sectionPos = it.nextLong();
 
-            this.cachedLightData.removeArray(sectionPos);
-            this.dirtyCachedSections.add(sectionPos);
+            this.updatingSectionData.removeLayer(sectionPos);
+            this.changedSections.add(sectionPos);
         }
 
-        this.cachedLightData.invalidateCaches();
+        this.updatingSectionData.clearCache();
 
         // Remove pending light updates for sections that no longer support light propagations
 
         for (final LongIterator it = this.vanillaLightmapsToRemove.iterator(); it.hasNext(); ) {
             final long sectionPos = it.nextLong();
 
-            if (!this.hasSection(sectionPos)) {
-                this.cancelSectionUpdates(lightProvider, sectionPos);
+            if (!this.storingLightForSection(sectionPos)) {
+                this.clearQueuedSectionBlocks(lightProvider, sectionPos);
             }
         }
 
@@ -774,7 +774,7 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
 
     @Unique
     private void addQueuedLightmaps(final LightEngine<?, ?> lightProvider) {
-        for (final ObjectIterator<Long2ObjectMap.Entry<NibbleArray>> it = Long2ObjectMaps.fastIterator(this.newArrays); it.hasNext(); ) {
+        for (final ObjectIterator<Long2ObjectMap.Entry<NibbleArray>> it = Long2ObjectMaps.fastIterator(this.queuedSections); it.hasNext(); ) {
             final Long2ObjectMap.Entry<NibbleArray> entry = it.next();
 
             final long sectionPos = entry.getLongKey();
@@ -783,16 +783,16 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
             final NibbleArray oldLightmap = this.getLightmap(sectionPos);
 
             if (lightmap != oldLightmap) {
-                this.cancelSectionUpdates(lightProvider, sectionPos);
+                this.clearQueuedSectionBlocks(lightProvider, sectionPos);
 
                 this.beforeLightmapChange(sectionPos, oldLightmap, lightmap);
 
-                this.cachedLightData.setArray(sectionPos, lightmap);
-                this.cachedLightData.invalidateCaches();
-                this.dirtyCachedSections.add(sectionPos);
+                this.updatingSectionData.setLayer(sectionPos, lightmap);
+                this.updatingSectionData.clearCache();
+                this.changedSections.add(sectionPos);
 
                 if (oldLightmap == null) {
-                    this.addSection(sectionPos);
+                    this.onNodeAdded(sectionPos);
                 }
 
                 this.vanillaLightmapsToRemove.remove(sectionPos);
@@ -806,38 +806,38 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
      * @reason Add lightmaps for disabled chunks directly to the world
      */
     @Overwrite
-    public void setData(final long sectionPos, final NibbleArray array, final boolean bl) {
-        final boolean chunkEnabled = this.enabledChunks.contains(SectionPos.toSectionColumnPos(sectionPos));
+    public void queueSectionData(final long sectionPos, final NibbleArray array, final boolean bl) {
+        final boolean chunkEnabled = this.enabledChunks.contains(SectionPos.getZeroNode(sectionPos));
 
         if (array != null) {
             if (chunkEnabled) {
-                this.newArrays.put(sectionPos, array);
+                this.queuedSections.put(sectionPos, array);
                 this.markForLightUpdates();
             } else {
-                this.cachedLightData.setArray(sectionPos, array);
-                this.dirtyCachedSections.add(sectionPos);
+                this.updatingSectionData.setLayer(sectionPos, array);
+                this.changedSections.add(sectionPos);
             }
 
             if (!bl) {
-                this.field_241536_n_.add(sectionPos);
+                this.untrustedSections.add(sectionPos);
             }
         } else {
             if (chunkEnabled) {
-                this.newArrays.remove(sectionPos);
+                this.queuedSections.remove(sectionPos);
             } else {
-                this.cachedLightData.removeArray(sectionPos);
-                this.dirtyCachedSections.add(sectionPos);
+                this.updatingSectionData.removeLayer(sectionPos);
+                this.changedSections.add(sectionPos);
             }
         }
     }
 
     // Queued lightmaps are only added to the world via updateLightmaps()
     @Redirect(
-        method = "getOrCreateArray(J)Lnet/minecraft/world/chunk/NibbleArray;",
+        method = "createDataLayer(J)Lnet/minecraft/world/chunk/NibbleArray;",
         slice = @Slice(
             from = @At(
                 value = "FIELD",
-                target = "Lnet/minecraft/world/lighting/SectionLightStorage;newArrays:Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;",
+                target = "Lnet/minecraft/world/lighting/SectionLightStorage;queuedSections:Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;",
                 opcode = Opcodes.GETFIELD
             )
         ),
@@ -857,13 +857,13 @@ public abstract class MixinLightStorage<M extends LightDataMap<M>> extends Secti
         slice = @Slice(
             from = @At(
                 value = "FIELD",
-                target = "Lnet/minecraft/world/lighting/SectionLightStorage;cachedLightData:Lnet/minecraft/world/lighting/LightDataMap;",
+                target = "Lnet/minecraft/world/lighting/SectionLightStorage;updatingSectionData:Lnet/minecraft/world/lighting/LightDataMap;",
                 opcode = Opcodes.GETFIELD
             )
         ),
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/lighting/LightDataMap;hasArray(J)Z",
+            target = "Lnet/minecraft/world/lighting/LightDataMap;hasLayer(J)Z",
             ordinal = 0
         )
     )

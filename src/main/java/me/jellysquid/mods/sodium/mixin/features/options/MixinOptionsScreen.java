@@ -21,15 +21,15 @@ public class MixinOptionsScreen extends Screen {
     }
 
     @Dynamic
-    @Redirect(method = "*(Lnet/minecraft/client/gui/widget/button/Button;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;displayGuiScreen(Lnet/minecraft/client/gui/screen/Screen;)V"))
+    @Redirect(method = "*(Lnet/minecraft/client/gui/widget/button/Button;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;setScreen(Lnet/minecraft/client/gui/screen/Screen;)V"))
     //@Inject(method = "*(Lnet/minecraft/client/gui/widget/button/Button;)V", at = @At("HEAD"), cancellable = true)
-    //@Inject(method = "func_213059_g(Lnet/minecraft/client/gui/widget/button/Button;)V", at = @At("HEAD"), cancellable = true, remap = false)
+    //@Inject(method = "lambda$init$5(Lnet/minecraft/client/gui/widget/button/Button;)V", at = @At("HEAD"), cancellable = true, remap = false)
     private void open(Minecraft mc, Screen guiScreenIn) {
         if (guiScreenIn instanceof VideoSettingsScreen) {
-            this.minecraft.displayGuiScreen(new SodiumOptionsGUI(this));
+            this.minecraft.setScreen(new SodiumOptionsGUI(this));
         }
         else {
-            this.minecraft.displayGuiScreen(guiScreenIn);
+            this.minecraft.setScreen(guiScreenIn);
         }
     }
 //    private void open(Button widget, CallbackInfo ci) {

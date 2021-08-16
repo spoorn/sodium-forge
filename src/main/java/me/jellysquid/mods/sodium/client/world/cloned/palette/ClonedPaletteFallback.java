@@ -11,6 +11,6 @@ public class ClonedPaletteFallback<K> implements ClonedPalette<K> {
 
     @Override
     public K get(int id) {
-        return this.idList.getByValue(id);
+        return this.idList.byId(id);
     }
 }

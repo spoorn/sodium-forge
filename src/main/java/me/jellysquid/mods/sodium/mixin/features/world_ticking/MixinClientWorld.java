@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 @Mixin(ClientWorld.class)
 public abstract class MixinClientWorld extends World {
     @Shadow
-    protected abstract void spawnFluidParticle(BlockPos pos, BlockState state, IParticleData parameters, boolean bl);
+    protected abstract void trySpawnDripParticles(BlockPos pos, BlockState state, IParticleData parameters, boolean bl);
 
     protected MixinClientWorld(ISpawnWorldInfo mutableWorldProperties, RegistryKey<World> registryKey,
                                DimensionType dimensionType,
@@ -45,12 +45,12 @@ public abstract class MixinClientWorld extends World {
      * @author JellySquid
      */
     @Overwrite
-    public void animateTick(int xCenter, int yCenter, int zCenter, int radius, Random random, boolean spawnBarrierParticles, BlockPos.Mutable pos) {
+    public void doAnimateTick(int xCenter, int yCenter, int zCenter, int radius, Random random, boolean spawnBarrierParticles, BlockPos.Mutable pos) {
         int x = xCenter + (random.nextInt(radius) - random.nextInt(radius));
         int y = yCenter + (random.nextInt(radius) - random.nextInt(radius));
         int z = zCenter + (random.nextInt(radius) - random.nextInt(radius));
 
-        pos.setPos(x, y, z);
+        pos.set(x, y, z);
 
         BlockState blockState = this.getBlockState(pos);
 
@@ -58,7 +58,7 @@ public abstract class MixinClientWorld extends World {
             this.performBlockDisplayTick(blockState, pos, random, spawnBarrierParticles);
         }
 
-        if (!blockState.isOpaqueCube(this, pos)) {
+        if (!blockState.isSolidRender(this, pos)) {
             this.performBiomeParticleDisplayTick(pos, random);
         }
 
@@ -72,7 +72,7 @@ public abstract class MixinClientWorld extends World {
     private void performBlockDisplayTick(BlockState blockState, BlockPos pos, Random random, boolean spawnBarrierParticles) {
         blockState.getBlock().animateTick(blockState, this, pos, random);
 
-        if (spawnBarrierParticles && blockState.matchesBlock(Blocks.BARRIER)) {
+        if (spawnBarrierParticles && blockState.is(Blocks.BARRIER)) {
             this.performBarrierDisplayTick(pos);
         }
     }
@@ -87,8 +87,8 @@ public abstract class MixinClientWorld extends World {
                 .getAmbientParticle()
                 .orElse(null);
 
-        if (config != null && config.shouldParticleSpawn(random)) {
-            this.addParticle(config.getParticleOptions(),
+        if (config != null && config.canSpawn(random)) {
+            this.addParticle(config.getOptions(),
                     pos.getX() + random.nextDouble(),
                     pos.getY() + random.nextDouble(),
                     pos.getZ() + random.nextDouble(),
@@ -99,14 +99,14 @@ public abstract class MixinClientWorld extends World {
     private void performFluidDisplayTick(BlockState blockState, FluidState fluidState, BlockPos pos, Random random) {
         fluidState.animateTick(this, pos, random);
 
-        IParticleData particleEffect = fluidState.getDripParticleData();
+        IParticleData particleEffect = fluidState.getDripParticle();
 
         if (particleEffect != null && random.nextInt(10) == 0) {
-            boolean solid = blockState.isSolidSide(this, pos, Direction.DOWN);
+            boolean solid = blockState.isFaceSturdy(this, pos, Direction.DOWN);
 
             // FIXME: don't allocate here
-            BlockPos blockPos = pos.down();
-            this.spawnFluidParticle(blockPos, this.getBlockState(blockPos), particleEffect, solid);
+            BlockPos blockPos = pos.below();
+            this.trySpawnDripParticles(blockPos, this.getBlockState(blockPos), particleEffect, solid);
         }
     }
 }

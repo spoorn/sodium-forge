@@ -10,10 +10,10 @@ import org.spongepowered.asm.mixin.Shadow;
 public class MixinCuboid implements ModelCuboidAccessor {
     @Shadow
     @Final
-    private ModelRenderer.TexturedQuad[] quads;
+    private ModelRenderer.TexturedQuad[] polygons;
 
     @Override
     public ModelRenderer.TexturedQuad[] getQuads() {
-        return this.quads;
+        return this.polygons;
     }
 }

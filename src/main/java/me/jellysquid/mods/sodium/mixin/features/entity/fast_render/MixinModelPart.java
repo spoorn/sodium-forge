@@ -25,23 +25,23 @@ public class MixinModelPart {
 
     @Shadow
     @Final
-    private ObjectList<ModelRenderer.ModelBox> cubeList;
+    private ObjectList<ModelRenderer.ModelBox> cubes;
 
     /**
      * @author JellySquid
      * @reason Use optimized vertex writer, avoid allocations, use quick matrix transformations
      */
     @Overwrite
-    private void doRender(MatrixStack.Entry matrices, IVertexBuilder vertexConsumer, int light, int overlay, float red, float green, float blue, float alpha) {
-        Matrix3fExtended normalExt = MatrixUtil.getExtendedMatrix(matrices.getNormal());
-        Matrix4fExtended modelExt = MatrixUtil.getExtendedMatrix(matrices.getMatrix());
+    private void compile(MatrixStack.Entry matrices, IVertexBuilder vertexConsumer, int light, int overlay, float red, float green, float blue, float alpha) {
+        Matrix3fExtended normalExt = MatrixUtil.getExtendedMatrix(matrices.normal());
+        Matrix4fExtended modelExt = MatrixUtil.getExtendedMatrix(matrices.pose());
 
         QuadVertexSink drain = VertexDrain.of(vertexConsumer).createSink(VanillaVertexTypes.QUADS);
-        drain.ensureCapacity(this.cubeList.size() * 6 * 4);
+        drain.ensureCapacity(this.cubes.size() * 6 * 4);
 
         int color = ColorABGR.pack(red, green, blue, alpha);
 
-        for (ModelRenderer.ModelBox cuboid : this.cubeList) {
+        for (ModelRenderer.ModelBox cuboid : this.cubes) {
             for (ModelRenderer.TexturedQuad quad : ((ModelCuboidAccessor) cuboid).getQuads()) {
                 float normX = normalExt.transformVecX(quad.normal);
                 float normY = normalExt.transformVecY(quad.normal);
@@ -49,18 +49,18 @@ public class MixinModelPart {
 
                 int norm = Norm3b.pack(normX, normY, normZ);
 
-                for (ModelRenderer.PositionTextureVertex vertex : quad.vertexPositions) {
-                    Vector3f pos = vertex.position;
+                for (ModelRenderer.PositionTextureVertex vertex : quad.vertices) {
+                    Vector3f pos = vertex.pos;
 
-                    float x1 = pos.getX() * NORM;
-                    float y1 = pos.getY() * NORM;
-                    float z1 = pos.getZ() * NORM;
+                    float x1 = pos.x() * NORM;
+                    float y1 = pos.y() * NORM;
+                    float z1 = pos.z() * NORM;
 
                     float x2 = modelExt.transformVecX(x1, y1, z1);
                     float y2 = modelExt.transformVecY(x1, y1, z1);
                     float z2 = modelExt.transformVecZ(x1, y1, z1);
 
-                    drain.writeQuad(x2, y2, z2, color, vertex.textureU, vertex.textureV, light, overlay, norm);
+                    drain.writeQuad(x2, y2, z2, color, vertex.u, vertex.v, light, overlay, norm);
                 }
             }
         }

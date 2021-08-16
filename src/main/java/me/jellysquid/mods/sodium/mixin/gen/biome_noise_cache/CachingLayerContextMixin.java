@@ -23,7 +23,7 @@ public class CachingLayerContextMixin implements CloneableContext<LazyArea> {
     @Shadow
     @Final
     @Mutable
-    private ImprovedNoiseGenerator noise;
+    private ImprovedNoiseGenerator biomeNoise;
 
     @Shadow
     @Final
@@ -41,7 +41,7 @@ public class CachingLayerContextMixin implements CloneableContext<LazyArea> {
      * @author gegy1000
      */
     @Overwrite
-    public LazyArea makeArea(IPixelTransformer operator) {
+    public LazyArea createResult(IPixelTransformer operator) {
         return new FastCachingLayerSampler(128, operator);
     }
 
@@ -50,7 +50,7 @@ public class CachingLayerContextMixin implements CloneableContext<LazyArea> {
      * @author gegy1000
      */
     @Overwrite
-    public LazyArea makeArea(IPixelTransformer operator, LazyArea sampler) {
+    public LazyArea createResult(IPixelTransformer operator, LazyArea sampler) {
         return new FastCachingLayerSampler(512, operator);
     }
 
@@ -59,7 +59,7 @@ public class CachingLayerContextMixin implements CloneableContext<LazyArea> {
      * @author gegy1000
      */
     @Overwrite
-    public LazyArea makeArea(IPixelTransformer operator, LazyArea left, LazyArea right) {
+    public LazyArea createResult(IPixelTransformer operator, LazyArea left, LazyArea right) {
         return new FastCachingLayerSampler(512, operator);
     }
 
@@ -69,7 +69,7 @@ public class CachingLayerContextMixin implements CloneableContext<LazyArea> {
 
         CachingLayerContextMixin access = (CachingLayerContextMixin) (Object) context;
         access.seed = this.seed;
-        access.noise = this.noise;
+        access.biomeNoise = this.biomeNoise;
 
         return context;
     }

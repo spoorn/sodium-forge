@@ -21,7 +21,7 @@ public interface EntityViewMixin {
      * @author JellySquid
      */
     @Overwrite
-    default Stream<VoxelShape> func_230318_c_(Entity entity, AxisAlignedBB box, Predicate<Entity> predicate) {
+    default Stream<VoxelShape> getEntityCollisions(Entity entity, AxisAlignedBB box, Predicate<Entity> predicate) {
         return LithiumEntityCollisions.getEntityCollisions((IEntityReader) this, entity, box, predicate);
     }
 }

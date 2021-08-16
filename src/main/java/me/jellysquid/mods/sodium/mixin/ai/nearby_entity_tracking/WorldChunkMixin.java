@@ -18,23 +18,23 @@ public class WorldChunkMixin {
 
     @Shadow
     @Final
-    private World world;
+    private World level;
 
     @Shadow
     @Final
-    private ChunkPos pos;
+    private ChunkPos chunkPos;
 
     @Inject(method = "addEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ClassInheritanceMultiMap;add(Ljava/lang/Object;)Z"))
     private void onEntityAdded(Entity entity, CallbackInfo ci) {
         if (entity instanceof LivingEntity) {
-            EntityTrackerEngineProvider.getEntityTracker(this.world).onEntityAdded(entity.chunkCoordX, entity.chunkCoordY, entity.chunkCoordZ, (LivingEntity) entity);
+            EntityTrackerEngineProvider.getEntityTracker(this.level).onEntityAdded(entity.xChunk, entity.yChunk, entity.zChunk, (LivingEntity) entity);
         }
     }
 
-    @Inject(method = "removeEntityAtIndex", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ClassInheritanceMultiMap;remove(Ljava/lang/Object;)Z"))
+    @Inject(method = "removeEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ClassInheritanceMultiMap;remove(Ljava/lang/Object;)Z"))
     private void onEntityRemoved(Entity entity, int section, CallbackInfo ci) {
         if (entity instanceof LivingEntity) {
-            EntityTrackerEngineProvider.getEntityTracker(this.world).onEntityRemoved(this.pos.x, section, this.pos.z, (LivingEntity) entity);
+            EntityTrackerEngineProvider.getEntityTracker(this.level).onEntityRemoved(this.chunkPos.x, section, this.chunkPos.z, (LivingEntity) entity);
         }
     }
 }

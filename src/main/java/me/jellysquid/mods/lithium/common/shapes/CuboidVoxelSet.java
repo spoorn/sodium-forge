@@ -18,25 +18,25 @@ public class CuboidVoxelSet extends VoxelShapePart {
     }
 
     @Override
-    public boolean isFilled(int x, int y, int z) {
+    public boolean isFull(int x, int y, int z) {
         return x >= this.minX && x < this.maxX &&
                 y >= this.minY && y < this.maxY &&
                 z >= this.minZ && z < this.maxZ;
     }
 
     @Override
-    public void setFilled(int x, int y, int z, boolean resize, boolean included) {
+    public void setFull(int x, int y, int z, boolean resize, boolean included) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int getStart(Direction.Axis axis) {
-        return axis.getCoordinate(this.minX, this.minY, this.minZ);
+    public int firstFull(Direction.Axis axis) {
+        return axis.choose(this.minX, this.minY, this.minZ);
     }
 
     @Override
-    public int getEnd(Direction.Axis axis) {
-        return axis.getCoordinate(this.maxX, this.maxY, this.maxZ);
+    public int lastFull(Direction.Axis axis) {
+        return axis.choose(this.maxX, this.maxY, this.maxZ);
     }
 
 
@@ -46,14 +46,14 @@ public class CuboidVoxelSet extends VoxelShapePart {
     }
 
     @Override
-    protected boolean isZAxisLineFull(int minZ, int maxZ, int x, int y) {
+    protected boolean isZStripFull(int minZ, int maxZ, int x, int y) {
         return x >= this.minX && x < this.maxX &&
                 y >= this.minY && y < this.maxY &&
                 minZ >= this.minZ && maxZ <= this.maxZ; // arg maxZ is exclusive
     }
 
     @Override
-    protected void setZAxisLine(int minZ, int maxZ, int x, int y, boolean included) {
+    protected void setZStrip(int minZ, int maxZ, int x, int y, boolean included) {
         throw new UnsupportedOperationException();
     }
 }

@@ -35,11 +35,11 @@ public abstract class PalettedContainerMixin<T> {
 
     @Shadow
     @Final
-    private Function<CompoundNBT, T> deserializer;
+    private Function<CompoundNBT, T> reader;
 
     @Shadow
     @Final
-    private Function<T, CompoundNBT> serializer;
+    private Function<T, CompoundNBT> writer;
 
     @Shadow
     @Final
@@ -47,11 +47,11 @@ public abstract class PalettedContainerMixin<T> {
 
     @Shadow
     @Final
-    private IPalette<T> registryPalette;
+    private IPalette<T> globalPalette;
 
     @Shadow
     @Final
-    private T defaultState;
+    private T defaultValue;
 
     @Shadow
     protected abstract T get(int int_1);
@@ -71,15 +71,15 @@ public abstract class PalettedContainerMixin<T> {
 
             if (this.bits <= 2) {
                 this.bits = 2;
-                this.palette = new ArrayPalette<>(this.registry, this.bits, (PalettedContainer<T>) (Object) this, this.deserializer);
+                this.palette = new ArrayPalette<>(this.registry, this.bits, (PalettedContainer<T>) (Object) this, this.reader);
             } else if (this.bits <= 8) {
-                this.palette = new LithiumHashPalette<>(this.registry, this.bits, (IResizeCallback<T>) this, this.deserializer, this.serializer);
+                this.palette = new LithiumHashPalette<>(this.registry, this.bits, (IResizeCallback<T>) this, this.reader, this.writer);
             } else {
-                this.bits = MathHelper.log2DeBruijn(this.registry.size());
-                this.palette = this.registryPalette;
+                this.bits = MathHelper.ceillog2(this.registry.size());
+                this.palette = this.globalPalette;
             }
 
-            this.palette.idFor(this.defaultState);
+            this.palette.idFor(this.defaultValue);
             this.storage = new BitArray(this.bits, 4096);
         }
     }

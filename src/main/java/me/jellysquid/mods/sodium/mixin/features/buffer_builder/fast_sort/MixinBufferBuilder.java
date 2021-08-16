@@ -17,32 +17,32 @@ import java.util.BitSet;
 @Mixin(BufferBuilder.class)
 public class MixinBufferBuilder {
     @Shadow
-    private ByteBuffer byteBuffer;
+    private ByteBuffer buffer;
 
     @Shadow
-    private int vertexCount;
+    private int vertices;
 
     @Shadow
-    private VertexFormat vertexFormat;
+    private VertexFormat format;
 
     @Shadow
-    private int renderedBytes;
+    private int totalRenderedBytes;
 
     /**
      * @reason Reduce allocations, use stack allocations, avoid unnecessary math and pointer bumping, inline comparators
      * @author JellySquid
      */
     @Overwrite
-    public void sortVertexData(float cameraX, float cameraY, float cameraZ) {
-        ((Buffer)this.byteBuffer).clear();
-        FloatBuffer floatBuffer = this.byteBuffer.asFloatBuffer();
+    public void sortQuads(float cameraX, float cameraY, float cameraZ) {
+        ((Buffer)this.buffer).clear();
+        FloatBuffer floatBuffer = this.buffer.asFloatBuffer();
 
-        int vertexStride = this.vertexFormat.getSize();
-        int quadStride = this.vertexFormat.getIntegerSize() * 4;
+        int vertexStride = this.format.getVertexSize();
+        int quadStride = this.format.getIntegerSize() * 4;
 
-        int quadStart = this.renderedBytes / 4;
-        int quadCount = this.vertexCount / 4;
-        int vertexSizeInteger = this.vertexFormat.getIntegerSize();
+        int quadStart = this.totalRenderedBytes / 4;
+        int quadCount = this.vertices / 4;
+        int vertexSizeInteger = this.format.getIntegerSize();
 
         float[] distanceArray = new float[quadCount];
         int[] indicesArray = new int[quadCount];

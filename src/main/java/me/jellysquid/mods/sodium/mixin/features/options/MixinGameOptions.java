@@ -12,23 +12,23 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(GameSettings.class)
 public class MixinGameOptions {
     @Shadow
-    public int renderDistanceChunks;
+    public int renderDistance;
 
     @Shadow
-    public GraphicsFanciness graphicFanciness;
+    public GraphicsFanciness graphicsMode;
 
     /**
      * @author JellySquid
      * @reason Make the cloud render mode user-configurable
      */
     @Overwrite
-    public CloudOption getCloudOption() {
+    public CloudOption getCloudsType() {
         SodiumGameOptions options = SodiumClientMod.options();
 
-        if (this.renderDistanceChunks < 4 || !options.quality.enableClouds) {
+        if (this.renderDistance < 4 || !options.quality.enableClouds) {
             return CloudOption.OFF;
         }
 
-        return options.quality.cloudQuality.isFancy(this.graphicFanciness) ? CloudOption.FANCY : CloudOption.FAST;
+        return options.quality.cloudQuality.isFancy(this.graphicsMode) ? CloudOption.FANCY : CloudOption.FAST;
     }
 }

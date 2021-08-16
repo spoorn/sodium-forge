@@ -95,7 +95,7 @@ public class LithiumHashPalette<T> implements IPalette<T> {
     }
 
     @Override
-    public boolean func_230341_a_(Predicate<T> predicate) {
+    public boolean maybeHas(Predicate<T> predicate) {
         for (int i = 0; i < this.size; ++i) {
             if (predicate.test(this.entries[i])) {
                 return true;
@@ -106,7 +106,7 @@ public class LithiumHashPalette<T> implements IPalette<T> {
     }
 
     @Override
-    public T get(int id) {
+    public T valueFor(int id) {
         T[] entries = this.entries;
 
         if (id >= 0 && id < entries.length) {
@@ -124,7 +124,7 @@ public class LithiumHashPalette<T> implements IPalette<T> {
         int entryCount = buf.readVarInt();
 
         for (int i = 0; i < entryCount; ++i) {
-            this.addEntry(this.idList.getByValue(buf.readVarInt()));
+            this.addEntry(this.idList.byId(buf.readVarInt()));
         }
     }
 
@@ -134,7 +134,7 @@ public class LithiumHashPalette<T> implements IPalette<T> {
         buf.writeVarInt(size);
 
         for (int i = 0; i < size; ++i) {
-            buf.writeVarInt(this.idList.getId(this.get(i)));
+            buf.writeVarInt(this.idList.getId(this.valueFor(i)));
         }
     }
 
@@ -143,7 +143,7 @@ public class LithiumHashPalette<T> implements IPalette<T> {
         int size = PacketBuffer.getVarIntSize(this.size);
 
         for (int i = 0; i < this.size; ++i) {
-            size += PacketBuffer.getVarIntSize(this.idList.getId(this.get(i)));
+            size += PacketBuffer.getVarIntSize(this.idList.getId(this.valueFor(i)));
         }
 
         return size;
@@ -160,7 +160,7 @@ public class LithiumHashPalette<T> implements IPalette<T> {
 
     public void toTag(ListNBT list) {
         for (int i = 0; i < this.size; ++i) {
-            list.add(this.elementSerializer.apply(this.get(i)));
+            list.add(this.elementSerializer.apply(this.valueFor(i)));
         }
     }
 

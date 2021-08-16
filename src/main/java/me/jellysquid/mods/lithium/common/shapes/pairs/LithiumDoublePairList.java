@@ -97,7 +97,7 @@ public final class LithiumDoublePairList implements IDoubleListMerger {
     }
 
     @Override
-    public DoubleList func_212435_a() {
+    public DoubleList getList() {
         return this.pairs;
     }
 

@@ -27,7 +27,7 @@ public abstract class GoalSelectorMixin {
     @Mutable
     @Shadow
     @Final
-    private Set<PrioritizedGoal> goals;
+    private Set<PrioritizedGoal> availableGoals;
 
     @Shadow
     @Final
@@ -35,14 +35,14 @@ public abstract class GoalSelectorMixin {
 
     @Shadow
     @Final
-    private Map<Goal.Flag, PrioritizedGoal> flagGoals;
+    private Map<Goal.Flag, PrioritizedGoal> lockedFlags;
 
     /**
      * Replace the goal set with an optimized collection type which performs better for iteration.
      */
     @Inject(method = "<init>", at = @At("RETURN"))
     private void reinit(Supplier<Profiler> supplier, CallbackInfo ci) {
-        this.goals = new ObjectLinkedOpenHashSet<>(this.goals);
+        this.availableGoals = new ObjectLinkedOpenHashSet<>(this.availableGoals);
     }
 
     /**
@@ -62,7 +62,7 @@ public abstract class GoalSelectorMixin {
      * has been disabled, the controls are no longer available or have been reassigned, etc.)
      */
     private void updateGoalStates() {
-        this.profiler.get().startSection("goalUpdate");
+        this.profiler.get().push("goalUpdate");
 
         // Stop any goals which are disabled or shouldn't continue executing
         this.stopGoals();
@@ -73,22 +73,22 @@ public abstract class GoalSelectorMixin {
         // Try to start new goals where possible
         this.startGoals();
 
-        this.profiler.get().endSection();
+        this.profiler.get().pop();
     }
 
     /**
      * Attempts to stop all goals which are running and either shouldn't continue or no longer have available controls.
      */
     private void stopGoals() {
-        for (PrioritizedGoal goal : this.goals) {
+        for (PrioritizedGoal goal : this.availableGoals) {
             // Filter out goals which are not running
             if (!goal.isRunning()) {
                 continue;
             }
 
             // If the goal shouldn't continue or any of its controls have been disabled, then stop the goal
-            if (!goal.shouldContinueExecuting() || this.areControlsDisabled(goal)) {
-                goal.resetTask();
+            if (!goal.canContinueToUse() || this.areControlsDisabled(goal)) {
+                goal.stop();
             }
         }
     }
@@ -98,12 +98,12 @@ public abstract class GoalSelectorMixin {
      */
     private void cleanupControls() {
         for (Goal.Flag control : CONTROLS) {
-            PrioritizedGoal goal = this.flagGoals.get(control);
+            PrioritizedGoal goal = this.lockedFlags.get(control);
 
             // If the control has been acquired by a goal, check if the goal should still be running
             // If the goal should not be running anymore, release the control held by it
             if (goal != null && !goal.isRunning()) {
-                this.flagGoals.remove(control);
+                this.lockedFlags.remove(control);
             }
         }
     }
@@ -112,9 +112,9 @@ public abstract class GoalSelectorMixin {
      * Attempts to start all goals which are not-already running, can be started, and have their controls available.
      */
     private void startGoals() {
-        for (PrioritizedGoal goal : this.goals) {
+        for (PrioritizedGoal goal : this.availableGoals) {
             // Filter out goals which are already running or can't be started
-            if (goal.isRunning() || !goal.shouldExecute()) {
+            if (goal.isRunning() || !goal.canUse()) {
                 continue;
             }
 
@@ -124,17 +124,17 @@ public abstract class GoalSelectorMixin {
             }
 
             // Hand over controls to this goal and stop any goals which depended on those controls
-            for (Goal.Flag control : goal.getMutexFlags()) {
+            for (Goal.Flag control : goal.getFlags()) {
                 PrioritizedGoal otherGoal = this.getGoalOccupyingControl(control);
 
                 if (otherGoal != null) {
-                    otherGoal.resetTask();
+                    otherGoal.stop();
                 }
 
                 this.setGoalOccupyingControl(control, goal);
             }
 
-            goal.startExecuting();
+            goal.start();
         }
     }
 
@@ -142,23 +142,23 @@ public abstract class GoalSelectorMixin {
      * Ticks all running AI goals.
      */
     private void tickGoals() {
-        this.profiler.get().startSection("goalTick");
+        this.profiler.get().push("goalTick");
 
         // Tick all currently running goals
-        for (PrioritizedGoal goal : this.goals) {
+        for (PrioritizedGoal goal : this.availableGoals) {
             if (goal.isRunning()) {
                 goal.tick();
             }
         }
 
-        this.profiler.get().endSection();
+        this.profiler.get().pop();
     }
 
     /**
      * Returns true if any controls of the specified goal are disabled.
      */
     private boolean areControlsDisabled(PrioritizedGoal goal) {
-        for (Goal.Flag control : goal.getMutexFlags()) {
+        for (Goal.Flag control : goal.getFlags()) {
             if (this.isControlDisabled(control)) {
                 return true;
             }
@@ -172,14 +172,14 @@ public abstract class GoalSelectorMixin {
      * (acquired by another goal, but eligible for replacement) and not disabled for the entity.
      */
     private boolean areGoalControlsAvailable(PrioritizedGoal goal) {
-        for (Goal.Flag control : goal.getMutexFlags()) {
+        for (Goal.Flag control : goal.getFlags()) {
             if (this.isControlDisabled(control)) {
                 return false;
             }
 
             PrioritizedGoal occupied = this.getGoalOccupyingControl(control);
 
-            if (occupied != null && !occupied.isPreemptedBy(goal)) {
+            if (occupied != null && !occupied.canBeReplacedBy(goal)) {
                 return false;
             }
         }
@@ -198,14 +198,14 @@ public abstract class GoalSelectorMixin {
      * Returns the goal which is currently holding the specified control, or null if no goal is.
      */
     private PrioritizedGoal getGoalOccupyingControl(Goal.Flag control) {
-        return this.flagGoals.get(control);
+        return this.lockedFlags.get(control);
     }
 
     /**
      * Changes the goal which is currently holding onto a control.
      */
     private void setGoalOccupyingControl(Goal.Flag control, PrioritizedGoal goal) {
-        this.flagGoals.put(control, goal);
+        this.lockedFlags.put(control, goal);
     }
 
 }

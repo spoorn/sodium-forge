@@ -38,10 +38,10 @@ public class WorldHelper {
     public static List<Entity> getEntitiesWithCollisionBoxForEntity(IEntityReader entityView, AxisAlignedBB box, Entity collidingEntity) {
         if (CUSTOM_TYPE_FILTERABLE_LIST_DISABLED || collidingEntity != null && EntityClassGroup.MINECART_BOAT_LIKE_COLLISION.contains(collidingEntity.getClass()) || !(entityView instanceof World)) {
             //use vanilla code when method_30949 (previously getHardCollisionBox(Entity other)) is overwritten, as every entity could be relevant as argument of getHardCollisionBox
-            return entityView.getEntitiesWithinAABBExcludingEntity(collidingEntity, box);
+            return entityView.getEntities(collidingEntity, box);
         } else {
             //only get entities that overwrite method_30948 (previously getCollisionBox)
-            return getEntitiesOfClassGroup((World) entityView, collidingEntity, EntityClassGroup.BOAT_SHULKER_LIKE_COLLISION, box, EntityPredicates.NOT_SPECTATING);
+            return getEntitiesOfClassGroup((World) entityView, collidingEntity, EntityClassGroup.BOAT_SHULKER_LIKE_COLLISION, box, EntityPredicates.NO_SPECTATORS);
         }
     }
 
@@ -50,7 +50,7 @@ public class WorldHelper {
      * [VanillaCopy] but custom combination of: get class filtered entities together with excluding one entity
      */
     public static List<Entity> getEntitiesOfClassGroup(World world, Entity excluded, EntityClassGroup type, AxisAlignedBB box, Predicate<Entity> predicate) {
-        world.getProfiler().func_230035_c_("getEntities");
+        world.getProfiler().incrementCounter("getEntities");
 
         int minChunkX = MathHelper.floor((box.minX - 2.0D) / 16.0D);
         int maxChunkX = MathHelper.ceil((box.maxX + 2.0D) / 16.0D);
@@ -58,7 +58,7 @@ public class WorldHelper {
         int maxChunkZ = MathHelper.ceil((box.maxZ + 2.0D) / 16.0D);
 
         List<Entity> entities = Lists.newArrayList();
-        AbstractChunkProvider chunkManager = world.getChunkProvider();
+        AbstractChunkProvider chunkManager = world.getChunkSource();
 
         for (int chunkX = minChunkX; chunkX < maxChunkX; chunkX++) {
             for (int chunkZ = minChunkZ; chunkZ < maxChunkZ; chunkZ++) {
@@ -78,7 +78,7 @@ public class WorldHelper {
      * [VanillaCopy] but custom combination of: get class filtered entities together with excluding one entity
      */
     public static void getEntitiesOfClassGroup(Chunk worldChunk, Entity excluded, EntityClassGroup type, AxisAlignedBB box, List<Entity> out, Predicate<Entity> predicate) {
-        ClassInheritanceMultiMap<Entity>[] entitySections = worldChunk.getEntityLists();
+        ClassInheritanceMultiMap<Entity>[] entitySections = worldChunk.getEntitySections();
         int minSectionY = MathHelper.floor((box.minY - 2.0D) / 16.0D);
         int maxSectionY = MathHelper.floor((box.maxY + 2.0D) / 16.0D);
 
@@ -100,7 +100,7 @@ public class WorldHelper {
      * [VanillaCopy] Method for getting entities by class but also exclude one entity
      */
     public static List<Entity> getEntitiesOfClass(World world, Entity except, Class<? extends Entity> entityClass, AxisAlignedBB box) {
-        world.getProfiler().func_230035_c_("getEntities");
+        world.getProfiler().incrementCounter("getEntities");
 
         int minChunkX = MathHelper.floor((box.minX - 2.0D) / 16.0D);
         int maxChunkX = MathHelper.ceil((box.maxX + 2.0D) / 16.0D);
@@ -108,7 +108,7 @@ public class WorldHelper {
         int maxChunkZ = MathHelper.ceil((box.maxZ + 2.0D) / 16.0D);
 
         List<Entity> entities = Lists.newArrayList();
-        AbstractChunkProvider chunkManager = world.getChunkProvider();
+        AbstractChunkProvider chunkManager = world.getChunkSource();
 
         for (int chunkX = minChunkX; chunkX < maxChunkX; ++chunkX) {
             for (int chunkZ = minChunkZ; chunkZ < maxChunkZ; ++chunkZ) {
@@ -127,14 +127,14 @@ public class WorldHelper {
      * [VanillaCopy] Method for getting entities by class but also exclude one entity
      */
     private static void getEntitiesOfClass(Chunk worldChunk, Entity excluded, Class<? extends Entity> entityClass, AxisAlignedBB box, List<Entity> out) {
-        ClassInheritanceMultiMap<Entity>[] entitySections = worldChunk.getEntityLists();
+        ClassInheritanceMultiMap<Entity>[] entitySections = worldChunk.getEntitySections();
         int minChunkY = MathHelper.floor((box.minY - 2.0D) / 16.0D);
         int maxChunkY = MathHelper.floor((box.maxY + 2.0D) / 16.0D);
         minChunkY = MathHelper.clamp(minChunkY, 0, entitySections.length - 1);
         maxChunkY = MathHelper.clamp(maxChunkY, 0, entitySections.length - 1);
 
         for (int chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-            for (Entity entity : entitySections[chunkY].getByClass(entityClass)) {
+            for (Entity entity : entitySections[chunkY].find(entityClass)) {
                 if (entity != excluded && entity.getBoundingBox().intersects(box)) {
                     out.add(entity);
                 }

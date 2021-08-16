@@ -11,36 +11,36 @@ import org.spongepowered.asm.mixin.Shadow;
 public class MixinPackedIntegerArray implements PackedIntegerArrayExtended {
     @Shadow
     @Final
-    private long[] longArray;
+    private long[] data;
 
     @Shadow
     @Final
-    private int field_232982_f_;
+    private int valuesPerLong;
 
     @Shadow
     @Final
-    private long maxEntryValue;
+    private long mask;
 
     @Shadow
     @Final
-    private int bitsPerEntry;
+    private int bits;
 
     @Shadow
     @Final
-    private int arraySize;
+    private int size;
 
     @Override
     public <T> void copyUsingPalette(T[] out, ClonedPalette<T> palette) {
         int idx = 0;
 
-        for (long word : this.longArray) {
+        for (long word : this.data) {
             long l = word;
 
-            for (int j = 0; j < this.field_232982_f_; ++j) {
-                out[idx] = palette.get((int) (l & this.maxEntryValue));
-                l >>= this.bitsPerEntry;
+            for (int j = 0; j < this.valuesPerLong; ++j) {
+                out[idx] = palette.get((int) (l & this.mask));
+                l >>= this.bits;
 
-                if (++idx >= this.arraySize) {
+                if (++idx >= this.size) {
                     return;
                 }
             }

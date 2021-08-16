@@ -17,11 +17,11 @@ public class MixinMinecraftClient {
      * @reason Make ambient occlusion user configurable
      */
     @Overwrite
-    public static boolean isAmbientOcclusionEnabled() {
+    public static boolean useAmbientOcclusion() {
         return SodiumClientMod.options().quality.smoothLighting != SodiumGameOptions.LightingQuality.OFF;
     }
 
-    @Inject(method = "shutdown", at = @At(value = "TAIL"))
+    @Inject(method = "stop", at = @At(value = "TAIL"))
     public void logMetrics(CallbackInfo ci) {
         MetricsUtil.logMetrics();
     }

@@ -39,7 +39,7 @@ public interface WeightedListIterable<U> extends Iterable<U> {
 
         @Override
         public U next() {
-            return this.inner.next().getValue();
+            return this.inner.next().getData();
         }
     }
 }

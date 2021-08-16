@@ -23,7 +23,7 @@ public interface CollisionViewMixin {
      * @author JellySquid
      */
     @Overwrite
-    default Stream<VoxelShape> getBlockCollisionShapes(final Entity entity, AxisAlignedBB box) {
+    default Stream<VoxelShape> getBlockCollisions(final Entity entity, AxisAlignedBB box) {
         return LithiumEntityCollisions.getBlockCollisions((ICollisionReader) this, entity, box, BlockCollisionPredicate.ANY);
     }
 
@@ -32,7 +32,7 @@ public interface CollisionViewMixin {
      * @author JellySquid
      */
     @Overwrite
-    default boolean hasNoCollisions(Entity entity, AxisAlignedBB box, Predicate<Entity> predicate) {
+    default boolean noCollision(Entity entity, AxisAlignedBB box, Predicate<Entity> predicate) {
         boolean ret = !LithiumEntityCollisions.doesBoxCollideWithBlocks((ICollisionReader) this, entity, box, BlockCollisionPredicate.ANY);
 
         // If no blocks were collided with, try to check for entity collisions if we can read entities

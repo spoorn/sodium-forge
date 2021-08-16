@@ -20,7 +20,7 @@ public abstract class MixinChunkNibbleArray implements IReadonly {
      * @author JellySquid
      */
     @Overwrite
-    private int getFromIndex(int idx) {
+    private int get(int idx) {
         byte[] arr = this.data;
 
         if (arr == null) {
@@ -38,7 +38,7 @@ public abstract class MixinChunkNibbleArray implements IReadonly {
      * @author JellySquid
      */
     @Overwrite
-    private void setIndex(int idx, int value) {
+    private void set(int idx, int value) {
         if (this.isReadonly()) {
             throw new UnsupportedOperationException("Cannot modify readonly ChunkNibbleArray");
         }

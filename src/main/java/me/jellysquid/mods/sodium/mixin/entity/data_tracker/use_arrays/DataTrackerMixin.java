@@ -28,7 +28,7 @@ public abstract class DataTrackerMixin {
     @Mutable
     @Shadow
     @Final
-    private Map<Integer, EntityDataManager.DataEntry<?>> entries;
+    private Map<Integer, EntityDataManager.DataEntry<?>> itemsById;
 
     @Shadow
     @Final
@@ -45,7 +45,7 @@ public abstract class DataTrackerMixin {
      */
     @Inject(method = "<init>", at = @At(value = "RETURN"))
     private void reinit(Entity trackedEntity, CallbackInfo ci) {
-        this.entries = new Int2ObjectOpenHashMap<>(this.entries);
+        this.itemsById = new Int2ObjectOpenHashMap<>(this.itemsById);
     }
 
     /**
@@ -53,7 +53,7 @@ public abstract class DataTrackerMixin {
      * should only ever occur during entity initialization. Type-erasure is a bit of a pain here since we must redirect
      * a calls to the generic Map interface.
      */
-    @Redirect(method = "setEntry", at = @At(value = "INVOKE", target = "Ljava/util/Map;put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"))
+    @Redirect(method = "createDataItem", at = @At(value = "INVOKE", target = "Ljava/util/Map;put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"))
     private Object onAddTrackedDataInsertMap(Map<Class<? extends Entity>, Integer> map, /* Integer */ Object keyRaw, /* DataTracker.Entry<?> */ Object valueRaw) {
         int k = (int) keyRaw;
         EntityDataManager.DataEntry<?> v = (EntityDataManager.DataEntry<?>) valueRaw;
@@ -73,7 +73,7 @@ public abstract class DataTrackerMixin {
         storage[k] = v;
 
         // Ensure that the vanilla backing storage is still updated appropriately
-        return this.entries.put(k, v);
+        return this.itemsById.put(k, v);
     }
 
     /**
@@ -81,7 +81,7 @@ public abstract class DataTrackerMixin {
      * @author JellySquid
      */
     @Overwrite
-    private <T> EntityDataManager.DataEntry<T> getEntry(DataParameter<T> data) {
+    private <T> EntityDataManager.DataEntry<T> getItem(DataParameter<T> data) {
         this.lock.readLock().lock();
 
         try {
@@ -110,10 +110,10 @@ public abstract class DataTrackerMixin {
     }
 
     private static <T> ReportedException onGetException(Throwable cause, DataParameter<T> data) {
-        CrashReport report = CrashReport.makeCrashReport(cause, "Getting synced entity data");
+        CrashReport report = CrashReport.forThrowable(cause, "Getting synced entity data");
 
-        CrashReportCategory section = report.makeCategory("Synced entity data");
-        section.addDetail("Data ID", data);
+        CrashReportCategory section = report.addCategory("Synced entity data");
+        section.setDetail("Data ID", data);
 
         return new ReportedException(report);
     }

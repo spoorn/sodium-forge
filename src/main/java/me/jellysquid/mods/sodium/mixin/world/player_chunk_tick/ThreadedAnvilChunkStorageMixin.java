@@ -23,46 +23,46 @@ public abstract class ThreadedAnvilChunkStorageMixin {
      * @reason Defer sending chunks to the player so that we can batch them together
      */
     @Overwrite
-    public void updatePlayerPosition(ServerPlayerEntity player) {
-        for (ChunkManager.EntityTracker tracker : this.entities.values()) {
+    public void move(ServerPlayerEntity player) {
+        for (ChunkManager.EntityTracker tracker : this.entityMap.values()) {
             if (tracker.entity == player) {
-                tracker.updateTrackingState(this.world.getPlayers());
+                tracker.updatePlayers(this.level.players());
             } else {
-                tracker.updateTrackingState(player);
+                tracker.updatePlayer(player);
             }
         }
 
-        SectionPos oldPos = player.getManagedSectionPos();
-        SectionPos newPos = SectionPos.from(player);
+        SectionPos oldPos = player.getLastSectionPos();
+        SectionPos newPos = SectionPos.of(player);
 
-        boolean isWatchingWorld = this.playerGenerationTracker.canGeneratePlayer(player);
-        boolean doesNotGenerateChunks = this.cannotGenerateChunks(player);
+        boolean isWatchingWorld = this.playerMap.ignored(player);
+        boolean doesNotGenerateChunks = this.skipPlayer(player);
         boolean movedSections = !newPos.equals(oldPos);
 
         if (movedSections || isWatchingWorld != doesNotGenerateChunks) {
             // Notify the client that the chunk map origin has changed. This must happen before any chunk payloads are sent.
-            this.func_223489_c(player);
+            this.updatePlayerPos(player);
 
             if (!isWatchingWorld) {
-                this.ticketManager.removePlayer(oldPos, player);
+                this.distanceManager.removePlayer(oldPos, player);
             }
 
             if (!doesNotGenerateChunks) {
-                this.ticketManager.updatePlayerPosition(newPos, player);
+                this.distanceManager.addPlayer(newPos, player);
             }
 
             if (!isWatchingWorld && doesNotGenerateChunks) {
-                this.playerGenerationTracker.disableGeneration(player);
+                this.playerMap.ignorePlayer(player);
             }
 
             if (isWatchingWorld && !doesNotGenerateChunks) {
-                this.playerGenerationTracker.enableGeneration(player);
+                this.playerMap.unIgnorePlayer(player);
             }
 
             long oldChunkPos = ChunkPos.asLong(oldPos.getX(), oldPos.getZ());
             long newChunkPos = ChunkPos.asLong(newPos.getX(), newPos.getZ());
 
-            this.playerGenerationTracker.updatePlayerPosition(oldChunkPos, newChunkPos, player);
+            this.playerMap.updatePlayer(oldChunkPos, newChunkPos, player);
         } else {
             // The player hasn't changed locations and isn't changing dimensions
             return;
@@ -70,17 +70,17 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
         // We can only send chunks if the world matches. This hoists a check that
         // would otherwise be performed every time we try to send a chunk over.
-        if (player.world == this.world) {
+        if (player.level == this.level) {
             this.sendChunks(oldPos, player);
         }
     }
 
     private void sendChunks(SectionPos oldPos, ServerPlayerEntity player) {
-        int newCenterX = MathHelper.floor(player.getPosX()) >> 4;
-        int newCenterZ = MathHelper.floor(player.getPosZ()) >> 4;
+        int newCenterX = MathHelper.floor(player.getX()) >> 4;
+        int newCenterZ = MathHelper.floor(player.getZ()) >> 4;
 
-        int oldCenterX = oldPos.getSectionX();
-        int oldCenterZ = oldPos.getSectionZ();
+        int oldCenterX = oldPos.x();
+        int oldCenterZ = oldPos.z();
 
         int watchRadius = this.viewDistance;
         int watchDiameter = watchRadius * 2;
@@ -121,19 +121,19 @@ public abstract class ThreadedAnvilChunkStorageMixin {
     }
 
     protected void startWatchingChunk(ServerPlayerEntity player, int x, int z) {
-        ChunkHolder holder = this.func_219219_b(ChunkPos.asLong(x, z));
+        ChunkHolder holder = this.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
 
         if (holder != null) {
-            Chunk chunk = holder.getChunkIfComplete();
+            Chunk chunk = holder.getTickingChunk();
 
             if (chunk != null) {
-                this.sendChunkData(player, new IPacket[2], chunk);
+                this.playerLoadedChunk(player, new IPacket[2], chunk);
             }
         }
     }
 
     protected void stopWatchingChunk(ServerPlayerEntity player, int x, int z) {
-        player.sendChunkUnload(new ChunkPos(x, z));
+        player.untrackChunk(new ChunkPos(x, z));
     }
 
     private static int getChunkDistance(int x, int z, int centerX, int centerZ) {
@@ -142,32 +142,32 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @Shadow
     @Final
-    private Int2ObjectMap<ChunkManager.EntityTracker> entities;
+    private Int2ObjectMap<ChunkManager.EntityTracker> entityMap;
 
     @Shadow
     @Final
-    private ServerWorld world;
+    private ServerWorld level;
 
     @Shadow
     @Final
-    private PlayerGenerationTracker playerGenerationTracker;
+    private PlayerGenerationTracker playerMap;
 
     @Shadow
     @Final
-    private ChunkManager.ProxyTicketManager ticketManager;
+    private ChunkManager.ProxyTicketManager distanceManager;
 
     @Shadow
     private int viewDistance;
 
     @Shadow
-    protected abstract boolean cannotGenerateChunks(ServerPlayerEntity player);
+    protected abstract boolean skipPlayer(ServerPlayerEntity player);
 
     @Shadow
-    protected abstract SectionPos func_223489_c(ServerPlayerEntity serverPlayerEntity);
+    protected abstract SectionPos updatePlayerPos(ServerPlayerEntity serverPlayerEntity);
 
     @Shadow
-    protected abstract ChunkHolder func_219219_b(long pos);
+    protected abstract ChunkHolder getVisibleChunkIfPresent(long pos);
 
     @Shadow
-    protected abstract void sendChunkData(ServerPlayerEntity player, IPacket<?>[] packets, Chunk chunk);
+    protected abstract void playerLoadedChunk(ServerPlayerEntity player, IPacket<?>[] packets, Chunk chunk);
 }

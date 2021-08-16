@@ -23,7 +23,7 @@ public abstract class MixinChunkSerializer {
         method = "read(Lnet/minecraft/world/server/ServerWorld;Lnet/minecraft/world/gen/feature/template/TemplateManager;Lnet/minecraft/village/PointOfInterestManager;Lnet/minecraft/util/math/ChunkPos;Lnet/minecraft/nbt/CompoundNBT;)Lnet/minecraft/world/chunk/ChunkPrimer;",
         at = @At(
             value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/world/chunk/AbstractChunkProvider;getLightManager()Lnet/minecraft/world/lighting/WorldLightManager;",
+            target = "Lnet/minecraft/world/chunk/AbstractChunkProvider;getLightEngine()Lnet/minecraft/world/lighting/WorldLightManager;",
             ordinal = 0
         )
     )
@@ -36,8 +36,8 @@ public abstract class MixinChunkSerializer {
         }
 
         final ListNBT sections = levelTag.getList("Sections", 10);
-        final WorldLightManager lightingProvider = world.getChunkProvider().getLightManager();
-        final boolean hasSkyLight = world.getDimensionType().hasSkyLight();
+        final WorldLightManager lightingProvider = world.getChunkSource().getLightEngine();
+        final boolean hasSkyLight = world.dimensionType().hasSkyLight();
 
         lightingProvider.retainData(pos, true);
 
@@ -46,11 +46,11 @@ public abstract class MixinChunkSerializer {
             final int y = section.getByte("Y");
 
             if (section.contains("BlockLight", 7)) {
-                lightingProvider.setData(LightType.BLOCK, SectionPos.from(pos, y), new NibbleArray(section.getByteArray("BlockLight")), true);
+                lightingProvider.queueSectionData(LightType.BLOCK, SectionPos.of(pos, y), new NibbleArray(section.getByteArray("BlockLight")), true);
             }
 
             if (hasSkyLight && section.contains("SkyLight", 7)) {
-                lightingProvider.setData(LightType.SKY, SectionPos.from(pos, y), new NibbleArray(section.getByteArray("SkyLight")), true);
+                lightingProvider.queueSectionData(LightType.SKY, SectionPos.of(pos, y), new NibbleArray(section.getByteArray("SkyLight")), true);
             }
         }
     }

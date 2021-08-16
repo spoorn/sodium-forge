@@ -20,10 +20,10 @@ public class MixinWorldRenderer {
      * @reason Use intrinsics where possible to speed up vertex writing
      */
     @Overwrite
-    public static void drawBoundingBox(MatrixStack matrices, IVertexBuilder vertexConsumer, double x1, double y1, double z1,
-                               double x2, double y2, double z2, float red, float green, float blue, float alpha,
-                               float xAxisRed, float yAxisGreen, float zAxisBlue) {
-        Matrix4f model = matrices.getLast().getMatrix();
+    public static void renderLineBox(MatrixStack matrices, IVertexBuilder vertexConsumer, double x1, double y1, double z1,
+                                     double x2, double y2, double z2, float red, float green, float blue, float alpha,
+                                     float xAxisRed, float yAxisGreen, float zAxisBlue) {
+        Matrix4f model = matrices.last().pose();
 
         float x1f = (float) x1;
         float y1f = (float) y1;

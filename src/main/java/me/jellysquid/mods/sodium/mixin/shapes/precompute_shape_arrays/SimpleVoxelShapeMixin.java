@@ -31,7 +31,7 @@ public class SimpleVoxelShapeMixin {
      * @author JellySquid
      */
     @Overwrite
-    public DoubleList getValues(Direction.Axis axis) {
+    public DoubleList getCoords(Direction.Axis axis) {
         return this.list[axis.ordinal()];
     }
 

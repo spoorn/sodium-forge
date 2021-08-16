@@ -40,21 +40,21 @@ public class MixinItemRenderer {
      * @author JellySquid
      */
     @Overwrite
-    public void renderModel(IBakedModel model, ItemStack stack, int light, int overlay, MatrixStack matrices, IVertexBuilder vertices) {
+    public void renderModelLists(IBakedModel model, ItemStack stack, int light, int overlay, MatrixStack matrices, IVertexBuilder vertices) {
         XoRoShiRoRandom random = this.random;
 
         for (Direction direction : DirectionUtil.ALL_DIRECTIONS) {
             List<BakedQuad> quads = model.getQuads(null, direction, random.setSeedAndReturn(42L));
 
             if (!quads.isEmpty()) {
-                this.renderQuads(matrices, vertices, quads, stack, light, overlay);
+                this.renderQuadList(matrices, vertices, quads, stack, light, overlay);
             }
         }
 
         List<BakedQuad> quads = model.getQuads(null, null, random.setSeedAndReturn(42L));
 
         if (!quads.isEmpty()) {
-            this.renderQuads(matrices, vertices, quads, stack, light, overlay);
+            this.renderQuadList(matrices, vertices, quads, stack, light, overlay);
         }
     }
 
@@ -63,8 +63,8 @@ public class MixinItemRenderer {
      * @author JellySquid
      */
     @Overwrite
-    public void renderQuads(MatrixStack matrixStackIn, IVertexBuilder bufferIn, List<BakedQuad> quadsIn, ItemStack itemStackIn, int combinedLightIn, int combinedOverlayIn) {
-        MatrixStack.Entry entry = matrixStackIn.getLast();
+    public void renderQuadList(MatrixStack matrixStackIn, IVertexBuilder bufferIn, List<BakedQuad> quadsIn, ItemStack itemStackIn, int combinedLightIn, int combinedOverlayIn) {
+        MatrixStack.Entry entry = matrixStackIn.last();
 
         IItemColor colorProvider = null;
 
@@ -75,7 +75,7 @@ public class MixinItemRenderer {
         for (BakedQuad bakedQuad : quadsIn) {
             int color = 0xFFFFFFFF;
 
-            if (!itemStackIn.isEmpty() && bakedQuad.hasTintIndex()) {
+            if (!itemStackIn.isEmpty() && bakedQuad.isTinted()) {
                 if (colorProvider == null) {
                     colorProvider = ((ItemColorsExtended) this.itemColors).getColorProvider(itemStackIn);
                 }
@@ -96,7 +96,7 @@ public class MixinItemRenderer {
                 // Fixes https://github.com/spoorn/sodium-forge/issues/103, https://github.com/spoorn/sodium-forge/issues/104
                 int finalColor = color;
                 try {
-                    if (bakedQuad.hasTintIndex()) {
+                    if (bakedQuad.isTinted()) {
                         finalColor = multABGRInts(quad.getColor(quad.getColorIndex()), color);
                     }
                 } catch (Exception ex) {
@@ -105,7 +105,7 @@ public class MixinItemRenderer {
                     // TODO: This is not a true solution.  We should deep dive to see why color index is out of bounds
                 }
                 drain.writeQuad(entry, quad.getX(i), quad.getY(i), quad.getZ(i), finalColor, quad.getTexU(i), quad.getTexV(i),
-                        combinedLightIn, combinedOverlayIn, ModelQuadUtil.getFacingNormal(bakedQuad.getFace()));
+                        combinedLightIn, combinedOverlayIn, ModelQuadUtil.getFacingNormal(bakedQuad.getDirection()));
             }
 
             SpriteUtil.markSpriteActive(quad.getSprite());

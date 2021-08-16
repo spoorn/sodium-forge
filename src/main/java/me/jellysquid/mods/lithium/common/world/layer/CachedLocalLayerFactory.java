@@ -11,9 +11,9 @@ public final class CachedLocalLayerFactory {
     public static <R extends IArea> IAreaFactory<R> createInit(IAreaTransformer0 layer, CloneableContext<R> context) {
         return createMemoized(() -> {
             IExtendedNoiseRandom<R> clonedContext = context.cloneContext();
-            return clonedContext.makeArea((x, z) -> {
-                clonedContext.setPosition(x, z);
-                return layer.apply(clonedContext, x, z);
+            return clonedContext.createResult((x, z) -> {
+                clonedContext.initRandom(x, z);
+                return layer.applyPixel(clonedContext, x, z);
             });
         });
     }
@@ -23,9 +23,9 @@ public final class CachedLocalLayerFactory {
             IExtendedNoiseRandom<R> clonedContext = context.cloneContext();
             R parentSampler = parent.make();
 
-            return clonedContext.makeArea((x, z) -> {
-                clonedContext.setPosition(x, z);
-                return layer.apply(clonedContext, parentSampler, x, z);
+            return clonedContext.createResult((x, z) -> {
+                clonedContext.initRandom(x, z);
+                return layer.applyPixel(clonedContext, parentSampler, x, z);
             }, parentSampler);
         });
     }
@@ -36,9 +36,9 @@ public final class CachedLocalLayerFactory {
             R sampler1 = layer1.make();
             R sampler2 = layer2.make();
 
-            return clonedContext.makeArea((x, z) -> {
-                clonedContext.setPosition(x, z);
-                return layer.apply(clonedContext, sampler1, sampler2, x, z);
+            return clonedContext.createResult((x, z) -> {
+                clonedContext.initRandom(x, z);
+                return layer.applyPixel(clonedContext, sampler1, sampler2, x, z);
             }, sampler1, sampler2);
         });
     }

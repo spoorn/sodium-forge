@@ -27,7 +27,7 @@ public class MixinChunkStatus {
 
     @Shadow
     @Final
-    private static ChunkStatus.ILoadingWorker NOOP_LOADING_WORKER;
+    private static ChunkStatus.ILoadingWorker PASSTHROUGH_LOAD_TASK;
 
     @Redirect(
         method = "<clinit>",
@@ -47,7 +47,7 @@ public class MixinChunkStatus {
                     either -> getPreLightFuture(lightingProvider, either)
                 ),
             (status, world, structureManager, lightingProvider, function, chunk) ->
-                NOOP_LOADING_WORKER.doWork(status, world, structureManager, lightingProvider, function, chunk).thenCompose(
+                PASSTHROUGH_LOAD_TASK.doWork(status, world, structureManager, lightingProvider, function, chunk).thenCompose(
                     either -> getPreLightFuture(lightingProvider, either)
                 )
             );

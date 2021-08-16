@@ -16,19 +16,19 @@ import org.spongepowered.asm.mixin.Shadow;
 public class MixinGlyphRenderer {
     @Shadow
     @Final
-    private float minX;
+    private float left;
 
     @Shadow
     @Final
-    private float maxX;
+    private float right;
 
     @Shadow
     @Final
-    private float minY;
+    private float up;
 
     @Shadow
     @Final
-    private float maxY;
+    private float down;
 
     @Shadow
     @Final
@@ -52,10 +52,10 @@ public class MixinGlyphRenderer {
      */
     @Overwrite
     public void render(boolean italic, float x, float y, Matrix4f matrix, IVertexBuilder vertexConsumer, float red, float green, float blue, float alpha, int light) {
-        float x1 = x + this.minX;
-        float x2 = x + this.maxX;
-        float y1 = this.minY - 3.0F;
-        float y2 = this.maxY - 3.0F;
+        float x1 = x + this.left;
+        float x2 = x + this.right;
+        float y1 = this.up - 3.0F;
+        float y2 = this.down - 3.0F;
         float h1 = y + y1;
         float h2 = y + y2;
         float w1 = italic ? 1.0F - 0.25F * y1 : 0.0F;

@@ -10,9 +10,9 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(AbstractRaiderEntity.PromoteLeaderGoal.class)
 public class PickupBannerAsLeaderGoalMixin {
     // The call to Raid#getOminousBanner() is very expensive, so cache it and re-use it during AI ticking
-    private static final ItemStack CACHED_OMINOUS_BANNER = Raid.createIllagerBanner();
+    private static final ItemStack CACHED_OMINOUS_BANNER = Raid.getLeaderBannerInstance();
 
-    @Redirect(method = "shouldExecute", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/raid/Raid;createIllagerBanner()Lnet/minecraft/item/ItemStack;"))
+    @Redirect(method = "canUse", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/raid/Raid;getLeaderBannerInstance()Lnet/minecraft/item/ItemStack;"))
     private ItemStack getOminousBanner() {
         return CACHED_OMINOUS_BANNER;
     }

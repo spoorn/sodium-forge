@@ -20,47 +20,47 @@ public abstract class EntityNavigationMixin implements EntityNavigationExtended 
 
     @Shadow
     @Final
-    protected World world;
+    protected World level;
 
     @Shadow
-    protected Path currentPath;
+    protected Path path;
 
     private boolean canListenForBlocks = false;
 
     @Shadow
-    public abstract Path getPathToPos(BlockPos target, int distance);
+    public abstract Path createPath(BlockPos target, int distance);
 
-    @Redirect(method = "updatePath",
+    @Redirect(method = "recomputePath()V",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/pathfinding/PathNavigator;getPathToPos(Lnet/minecraft/util/math/BlockPos;I)Lnet/minecraft/pathfinding/Path;")
+                    target = "Lnet/minecraft/pathfinding/PathNavigator;createPath(Lnet/minecraft/util/math/BlockPos;I)Lnet/minecraft/pathfinding/Path;")
     )
     private Path updateListeningState(PathNavigator entityNavigation, BlockPos target, int distance) {
-        Path pathTo = this.getPathToPos(target, distance);
-        if (this.canListenForBlocks && ((pathTo == null) != (this.currentPath == null))) {
+        Path pathTo = this.createPath(target, distance);
+        if (this.canListenForBlocks && ((pathTo == null) != (this.path == null))) {
             if (pathTo == null) {
-                ((ServerWorldExtended) this.world).setNavigationInactive(this);
+                ((ServerWorldExtended) this.level).setNavigationInactive(this);
             } else {
-                ((ServerWorldExtended) this.world).setNavigationActive(this);
+                ((ServerWorldExtended) this.level).setNavigationActive(this);
             }
         }
         return pathTo;
     }
 
-    @Inject(method = "setPath", at = @At(value = "RETURN"))
+    @Inject(method = "moveTo(Lnet/minecraft/pathfinding/Path;D)Z", at = @At(value = "RETURN"))
     private void updateListeningState2(Path path, double speed, CallbackInfoReturnable<Boolean> cir) {
         if (this.canListenForBlocks) {
-            if (this.currentPath == null) {
-                ((ServerWorldExtended) this.world).setNavigationInactive(this);
+            if (this.path == null) {
+                ((ServerWorldExtended) this.level).setNavigationInactive(this);
             } else {
-                ((ServerWorldExtended) this.world).setNavigationActive(this);
+                ((ServerWorldExtended) this.level).setNavigationActive(this);
             }
         }
     }
 
-    @Inject(method = "clearPath", at = @At(value = "RETURN"))
+    @Inject(method = "stop", at = @At(value = "RETURN"))
     private void stopListening(CallbackInfo ci) {
         if (this.canListenForBlocks) {
-            ((ServerWorldExtended) this.world).setNavigationInactive(this);
+            ((ServerWorldExtended) this.level).setNavigationInactive(this);
         }
     }
 

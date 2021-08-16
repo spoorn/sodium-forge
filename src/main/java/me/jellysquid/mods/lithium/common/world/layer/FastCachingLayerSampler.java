@@ -36,7 +36,7 @@ public final class FastCachingLayerSampler extends LazyArea {
     }
 
     @Override
-    public int getValue(int x, int z) {
+    public int get(int x, int z) {
         long key = key(x, z);
         int idx = hash(key) & this.mask;
 
@@ -46,7 +46,7 @@ public final class FastCachingLayerSampler extends LazyArea {
         }
 
         // cache miss: sample the operator and put the result into our cache entry
-        int sampled = this.pixelTransformer.apply(x, z);
+        int sampled = this.transformer.apply(x, z);
         this.values[idx] = sampled;
         this.keys[idx] = key;
 

@@ -14,23 +14,23 @@ public class ChunkHolderMixin {
 
     @Shadow
     @Final
-    private ShortSet[] field_244383_q;
+    private ShortSet[] changedBlocksPerSection;
 
     @Shadow
-    private boolean field_244382_p;
+    private boolean hasChangedSections;
 
     /**
      * Using Hashsets instead of ArraySets for better worst-case performance
      * The default case of just a few items may be very slightly slower
      */
-    @ModifyVariable(method = "func_244386_a",
+    @ModifyVariable(method = "blockChanged",
             at = @At(value = "FIELD", ordinal = 0,
-                    target = "Lnet/minecraft/world/server/ChunkHolder;field_244383_q:[Lit/unimi/dsi/fastutil/shorts/ShortSet;",
+                    target = "Lnet/minecraft/world/server/ChunkHolder;changedBlocksPerSection:[Lit/unimi/dsi/fastutil/shorts/ShortSet;",
                     shift = At.Shift.BEFORE))
     private byte createShortHashSet(byte b) {
-        if (field_244383_q[b] == null) {
-            this.field_244382_p = true;
-            this.field_244383_q[b] = new ShortOpenHashSet();
+        if (changedBlocksPerSection[b] == null) {
+            this.hasChangedSections = true;
+            this.changedBlocksPerSection[b] = new ShortOpenHashSet();
         }
         return b;
     }

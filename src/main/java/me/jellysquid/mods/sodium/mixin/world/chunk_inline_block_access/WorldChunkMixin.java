@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(value = Chunk.class, priority = 500)
 public class WorldChunkMixin {
-    private static final BlockState DEFAULT_BLOCK_STATE = Blocks.AIR.getDefaultState();
-    private static final FluidState DEFAULT_FLUID_STATE = Fluids.EMPTY.getDefaultState();
+    private static final BlockState DEFAULT_BLOCK_STATE = Blocks.AIR.defaultBlockState();
+    private static final FluidState DEFAULT_FLUID_STATE = Fluids.EMPTY.defaultFluidState();
 
     @Shadow
     @Final
@@ -36,7 +36,7 @@ public class WorldChunkMixin {
         int y = pos.getY();
         int z = pos.getZ();
 
-        if (!World.isYOutOfBounds(y)) {
+        if (!World.isOutsideBuildHeight(y)) {
             ChunkSection section = this.sections[y >> 4];
 
             if (section != EMPTY_SECTION) {
@@ -53,7 +53,7 @@ public class WorldChunkMixin {
      */
     @Overwrite
     public FluidState getFluidState(int x, int y, int z) {
-        if (!World.isYOutOfBounds(y)) {
+        if (!World.isOutsideBuildHeight(y)) {
             ChunkSection section = this.sections[y >> 4];
 
             if (section != EMPTY_SECTION) {

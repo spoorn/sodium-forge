@@ -77,9 +77,9 @@ public class SodiumOptionsGUI extends Screen {
         this.rebuildGUIPages();
         this.rebuildGUIOptions();
 
-        this.undoButton = new FlatButtonWidget(new Dim2i(this.width - 211, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.undo"), this::undoChanges);
-        this.applyButton = new FlatButtonWidget(new Dim2i(this.width - 142, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.apply"), this::applyChanges);
-        this.closeButton = new FlatButtonWidget(new Dim2i(this.width - 73, this.height - 26, 65, 20), I18n.format("sodium.options.buttons.close"), this::closeScreen);
+        this.undoButton = new FlatButtonWidget(new Dim2i(this.width - 211, this.height - 26, 65, 20), I18n.get("sodium.options.buttons.undo"), this::undoChanges);
+        this.applyButton = new FlatButtonWidget(new Dim2i(this.width - 142, this.height - 26, 65, 20), I18n.get("sodium.options.buttons.apply"), this::applyChanges);
+        this.closeButton = new FlatButtonWidget(new Dim2i(this.width - 73, this.height - 26, 65, 20), I18n.get("sodium.options.buttons.close"), this::onClose);
 
         this.children.add(this.undoButton);
         this.children.add(this.applyButton);
@@ -97,7 +97,7 @@ public class SodiumOptionsGUI extends Screen {
         int y = 6;
 
         for (OptionPage page : this.pages) {
-            int width = 12 + this.font.getStringWidth(page.getName());
+            int width = 12 + this.font.width(page.getName());
 
             FlatButtonWidget button = new FlatButtonWidget(new Dim2i(x, y, width, 18), page.getName(), () -> this.setPage(page));
             button.setSelected(this.currentPage == page);
@@ -193,13 +193,13 @@ public class SodiumOptionsGUI extends Screen {
 
         Option<?> option = element.getOption();
 
-        ITextProperties title = new StringTextComponent(option.getName()).mergeStyle(TextFormatting.GRAY);
+        ITextProperties title = new StringTextComponent(option.getName()).withStyle(TextFormatting.GRAY);
 
-        List<IReorderingProcessor> tooltip = new ArrayList<>(this.font.trimStringToWidth(option.getTooltip(), boxWidth - (textPadding * 2)));
+        List<IReorderingProcessor> tooltip = new ArrayList<>(this.font.split(option.getTooltip(), boxWidth - (textPadding * 2)));
         OptionImpact impact = option.getImpact();
 
         if (impact != null) {
-            tooltip.add(LanguageMap.getInstance().func_241870_a(new StringTextComponent(TextFormatting.GRAY + "Performance Impact: " + impact.toDisplayString())));
+            tooltip.add(LanguageMap.getInstance().getVisualOrder(new StringTextComponent(TextFormatting.GRAY + "Performance Impact: " + impact.toDisplayString())));
         }
         int boxHeight = (tooltip.size() * 12) + boxPadding;
         int boxYLimit = boxY + boxHeight;
@@ -211,7 +211,7 @@ public class SodiumOptionsGUI extends Screen {
         this.fillGradient(matrixStack, boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xE0000000, 0xE0000000);
 
         for (int i = 0; i < tooltip.size(); i++) {
-            this.font.func_238422_b_(matrixStack, tooltip.get(i), boxX + textPadding, boxY + textPadding + (i * 12), 0xFFFFFFFF);
+            this.font.draw(matrixStack, tooltip.get(i), boxX + textPadding, boxY + textPadding + (i * 12), 0xFFFFFFFF);
         }
     }
 
@@ -233,12 +233,12 @@ public class SodiumOptionsGUI extends Screen {
         Minecraft client = Minecraft.getInstance();
 
         if (flags.contains(OptionFlag.REQUIRES_RENDERER_RELOAD)) {
-            client.worldRenderer.loadRenderers();
+            client.levelRenderer.allChanged();
         }
 
         if (flags.contains(OptionFlag.REQUIRES_ASSET_RELOAD)) {
-            client.setMipmapLevels(client.gameSettings.mipmapLevels);
-            client.scheduleResourcesRefresh();
+            client.updateMaxMipLevel(client.options.mipmapLevels);
+            client.delayTextureReload();
         }
 
         for (OptionStorage<?> storage : dirtyStorages) {
@@ -254,7 +254,7 @@ public class SodiumOptionsGUI extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_P && (modifiers & GLFW.GLFW_MOD_SHIFT) != 0) {
-            Minecraft.getInstance().displayGuiScreen(new VideoSettingsScreen(this.prevScreen, Minecraft.getInstance().gameSettings));
+            Minecraft.getInstance().setScreen(new VideoSettingsScreen(this.prevScreen, Minecraft.getInstance().options));
 
             return true;
         }
@@ -268,7 +268,7 @@ public class SodiumOptionsGUI extends Screen {
     }
 
     @Override
-    public void closeScreen() {
-        this.minecraft.displayGuiScreen(this.prevScreen);
+    public void onClose() {
+        this.minecraft.setScreen(this.prevScreen);
     }
 }

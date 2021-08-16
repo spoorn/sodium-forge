@@ -13,7 +13,7 @@ public class BasicScreenQuadVertexWriterFallback extends VertexWriterFallback im
     @Override
     public void writeQuad(float x, float y, float z, int color) {
         IVertexBuilder consumer = this.consumer;
-        consumer.pos(x, y, z);
+        consumer.vertex(x, y, z);
         consumer.color(ColorABGR.unpackRed(color), ColorABGR.unpackGreen(color), ColorABGR.unpackBlue(color), ColorABGR.unpackAlpha(color));
         consumer.endVertex();
     }

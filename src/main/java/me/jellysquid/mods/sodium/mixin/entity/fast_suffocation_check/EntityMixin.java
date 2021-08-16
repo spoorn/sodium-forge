@@ -21,7 +21,7 @@ public abstract class EntityMixin {
      * @author JellySquid
      * @reason Use optimized block volume iteration, avoid streams
      */
-    @Redirect(method = "isEntityInsideOpaqueBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;func_241457_a_(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/AxisAlignedBB;Ljava/util/function/BiPredicate;)Ljava/util/stream/Stream;"))
+    @Redirect(method = "isInWall", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getBlockCollisions(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/AxisAlignedBB;Ljava/util/function/BiPredicate;)Ljava/util/stream/Stream;"))
     public Stream<VoxelShape> isInsideWall(World world, Entity entity, AxisAlignedBB box, BiPredicate<BlockState, BlockPos> biPredicate) {
         final ChunkAwareBlockCollisionSweeper sweeper = new ChunkAwareBlockCollisionSweeper(world, (Entity) (Object) this, box,
                 BlockCollisionPredicate.SUFFOCATES);

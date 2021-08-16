@@ -20,7 +20,7 @@ public interface ParentedLayerMixin extends IAreaTransformer1 {
      */
     @Overwrite
     @SuppressWarnings("unchecked")
-    default <R extends IArea> IAreaFactory<R> apply(IExtendedNoiseRandom<R> context, IAreaFactory<R> parent) {
+    default <R extends IArea> IAreaFactory<R> run(IExtendedNoiseRandom<R> context, IAreaFactory<R> parent) {
         return CachedLocalLayerFactory.createParented(this, (CloneableContext<R>) context, parent);
     }
 }

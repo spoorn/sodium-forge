@@ -14,17 +14,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 // forge patches ingamegui, any injections or anything to the base class are worthless
 @Mixin(ForgeIngameGui.class)
 public class MixinInGameHud {
-    @Redirect(method = "renderIngameGui", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isFancyGraphicsEnabled()Z"))
+    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;useFancyGraphics()Z"))
     private boolean redirectFancyGraphicsVignette() {
         return SodiumClientMod.options().quality.enableVignette;
     }
 
-    @Inject(at = @At("TAIL"), method = "renderIngameGui")
+    @Inject(at = @At("TAIL"), method = "render")
     public void render(MatrixStack matrixStack, float partialTicks, CallbackInfo info) {
         Minecraft client = Minecraft.getInstance();
 
         // dont show if we have f3 on
-        if (!client.gameSettings.showDebugInfo && SodiumClientMod.options().fpsCounter) {
+        if (!client.options.renderDebug && SodiumClientMod.options().fpsCounter) {
 
             String displayString = ((MixinMinecraftAccessor)client).getFPSCounter() + " fps";
             float posx = 4;
@@ -38,7 +38,7 @@ public class MixinInGameHud {
             //}
             int alpha = 220;
             int textColor = ((alpha & 0xFF) << 24) | 0xEEEEEE;
-            client.fontRenderer.drawStringWithShadow(matrixStack, displayString, posx, posy, textColor);
+            client.font.drawShadow(matrixStack, displayString, posx, posy, textColor);
         }
     }
 }

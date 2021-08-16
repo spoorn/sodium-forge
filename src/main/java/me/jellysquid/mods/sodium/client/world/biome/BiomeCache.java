@@ -15,7 +15,7 @@ public class BiomeCache {
     private final Biome[] biomes;
 
     public BiomeCache(World world) {
-        this.type = world.getDimensionType().getMagnifier();
+        this.type = world.dimensionType().getBiomeZoomer();
         this.seed = ((ClientWorldExtended) world).getBiomeSeed();
 
         this.biomes = new Biome[16 * 16];

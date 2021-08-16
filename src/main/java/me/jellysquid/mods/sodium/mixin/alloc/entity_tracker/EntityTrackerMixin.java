@@ -19,12 +19,12 @@ public class EntityTrackerMixin {
     @Mutable
     @Shadow
     @Final
-    private Set<ServerPlayerEntity> trackingPlayers;
+    private Set<ServerPlayerEntity> seenBy;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void reinit(ChunkManager parent /* non-static class parent */, Entity entity, int maxDistance,
                         int tickInterval, boolean alwaysUpdateVelocity, CallbackInfo ci) {
         // Uses less memory, and will cache the returned iterator
-        this.trackingPlayers = new ObjectOpenHashSet<>(this.trackingPlayers);
+        this.seenBy = new ObjectOpenHashSet<>(this.seenBy);
     }
 }

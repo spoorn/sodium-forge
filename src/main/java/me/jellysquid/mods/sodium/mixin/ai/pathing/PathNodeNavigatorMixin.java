@@ -15,12 +15,12 @@ import java.util.Map;
 
 @Mixin(PathFinder.class)
 public class PathNodeNavigatorMixin {
-    @Inject(method = "generatePath(Lnet/minecraft/pathfinding/PathPoint;Ljava/util/Map;FIF)Lnet/minecraft/pathfinding/Path;", at = @At("HEAD"))
+    @Inject(method = "findPath(Lnet/minecraft/pathfinding/PathPoint;Ljava/util/Map;FIF)Lnet/minecraft/pathfinding/Path;", at = @At("HEAD"))
     private void preFindPathToAny(PathPoint startNode, Map<FlaggedPathPoint, BlockPos> positions, float followRange, int distance, float rangeMultiplier, CallbackInfoReturnable<Path> cir) {
         PathNodeCache.enableChunkCache();
     }
 
-    @Inject(method = "generatePath(Lnet/minecraft/pathfinding/PathPoint;Ljava/util/Map;FIF)Lnet/minecraft/pathfinding/Path;", at = @At("RETURN"))
+    @Inject(method = "findPath(Lnet/minecraft/pathfinding/PathPoint;Ljava/util/Map;FIF)Lnet/minecraft/pathfinding/Path;", at = @At("RETURN"))
     private void postFindPathToAny(PathPoint startNode, Map<FlaggedPathPoint, BlockPos> positions, float followRange, int distance, float rangeMultiplier, CallbackInfoReturnable<Path> cir) {
         PathNodeCache.disableChunkCache();
     }

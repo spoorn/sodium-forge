@@ -28,23 +28,23 @@ public abstract class MixinBufferBuilder extends DefaultColorVertexBuilder {
     public abstract void endVertex();
 
     @Override
-    public void addQuad(MatrixStack.Entry matrices, BakedQuad quad, float[] brightnessTable, float r, float g, float b, int[] light, int overlay, boolean colorize) {
+    public void putBulkData(MatrixStack.Entry matrices, BakedQuad quad, float[] brightnessTable, float r, float g, float b, int[] light, int overlay, boolean colorize) {
         if (!this.fastFormat) {
-            super.addQuad(matrices, quad, brightnessTable, r, g, b, light, overlay, colorize);
+            super.putBulkData(matrices, quad, brightnessTable, r, g, b, light, overlay, colorize);
 
             return;
         }
 
-        if (this.defaultColor) {
+        if (this.defaultColorSet) {
             throw new IllegalStateException();
         }
 
         ModelQuadView quadView = (ModelQuadView) quad;
 
-        Matrix4f modelMatrix = matrices.getMatrix();
-        Matrix3f normalMatrix = matrices.getNormal();
+        Matrix4f modelMatrix = matrices.pose();
+        Matrix3f normalMatrix = matrices.normal();
 
-        int norm = MatrixUtil.computeNormal(normalMatrix, quad.getFace());
+        int norm = MatrixUtil.computeNormal(normalMatrix, quad.getDirection());
 
         QuadVertexSink drain = VertexDrain.of(this)
                 .createSink(VanillaVertexTypes.QUADS);
@@ -85,7 +85,7 @@ public abstract class MixinBufferBuilder extends DefaultColorVertexBuilder {
             Vector4f pos = new Vector4f(x, y, z, 1.0F);
             pos.transform(modelMatrix);
 
-            drain.writeQuad(pos.getX(), pos.getY(), pos.getZ(), color, u, v, light[i], overlay, norm);
+            drain.writeQuad(pos.x(), pos.y(), pos.z(), color, u, v, light[i], overlay, norm);
         }
 
         drain.flush();

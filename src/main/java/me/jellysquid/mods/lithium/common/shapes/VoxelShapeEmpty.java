@@ -21,22 +21,22 @@ public class VoxelShapeEmpty extends VoxelShape implements VoxelShapeCaster {
     }
 
     @Override
-    public DoubleList getValues(Direction.Axis axis) {
+    public DoubleList getCoords(Direction.Axis axis) {
         return EMPTY_LIST;
     }
 
     @Override
-    protected boolean contains(double x, double y, double z) {
+    protected boolean isFullWide(double x, double y, double z) {
         return false;
     }
 
     @Override
-    public double getStart(Direction.Axis axis) {
+    public double min(Direction.Axis axis) {
         return Double.POSITIVE_INFINITY;
     }
 
     @Override
-    public double getEnd(Direction.Axis axis) {
+    public double max(Direction.Axis axis) {
         return Double.NEGATIVE_INFINITY;
     }
 

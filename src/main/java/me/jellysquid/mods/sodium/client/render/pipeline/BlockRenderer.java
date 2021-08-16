@@ -54,7 +54,7 @@ public class BlockRenderer {
         this.lighters = lighters;
 
         this.occlusionCache = new BlockOcclusionCache();
-        this.useAmbientOcclusion = Minecraft.isAmbientOcclusionEnabled();
+        this.useAmbientOcclusion = Minecraft.useAmbientOcclusion();
     }
 
     public boolean renderModel(IBlockDisplayReader world, BlockState state, BlockPos pos, IBakedModel model, ChunkModelBuffers buffers, boolean cull, long seed) {
@@ -62,7 +62,7 @@ public class BlockRenderer {
         Vector3d offset = state.getOffset(world, pos);
 
         // This is needed for Forge
-        IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().world), pos);
+        IModelData modelData = ModelDataManager.getModelData(Objects.requireNonNull(Minecraft.getInstance().level), pos);
         if (modelData == null) {
             modelData = EmptyModelData.INSTANCE;
         }
@@ -113,9 +113,9 @@ public class BlockRenderer {
         // noinspection ForLoopReplaceableByForEach
         for (BakedQuad quad : quads) {
             QuadLightData light = this.cachedQuadLightData;
-            lighter.calculate((ModelQuadView) quad, pos, light, quad.getFace(), quad.applyDiffuseLighting());
+            lighter.calculate((ModelQuadView) quad, pos, light, quad.getDirection(), quad.isShade());
 
-            if (quad.hasTintIndex() && colorizer == null) {
+            if (quad.isTinted() && colorizer == null) {
                 colorizer = this.blockColors.getColorProvider(state);
             }
 
@@ -133,16 +133,16 @@ public class BlockRenderer {
 
         int[] colors = null;
 
-        if (bakedQuad.hasTintIndex()) {
+        if (bakedQuad.isTinted()) {
             colors = this.biomeColorBlender.getColors(colorProvider, world, state, pos, src);
         }
 
         for (int dstIndex = 0; dstIndex < 4; dstIndex++) {
             int srcIndex = order.getVertexIndex(dstIndex);
 
-            float x = src.getX(srcIndex) + (float) offset.getX();
-            float y = src.getY(srcIndex) + (float) offset.getY();
-            float z = src.getZ(srcIndex) + (float) offset.getZ();
+            float x = src.getX(srcIndex) + (float) offset.x();
+            float y = src.getY(srcIndex) + (float) offset.y();
+            float z = src.getZ(srcIndex) + (float) offset.z();
 
             int color = ColorABGR.mul(colors != null ? colors[srcIndex] : 0xFFFFFFFF, light.br[srcIndex]);
 
@@ -162,7 +162,7 @@ public class BlockRenderer {
     }
 
     private LightMode getLightingMode(BlockState state, IBakedModel model) {
-        if (this.useAmbientOcclusion && model.isAmbientOcclusion() && state.getLightValue() == 0) {
+        if (this.useAmbientOcclusion && model.useAmbientOcclusion() && state.getLightEmission() == 0) {
             return LightMode.SMOOTH;
         } else {
             return LightMode.FLAT;

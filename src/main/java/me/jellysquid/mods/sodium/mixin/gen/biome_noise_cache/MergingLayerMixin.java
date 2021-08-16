@@ -20,7 +20,7 @@ public interface MergingLayerMixin extends IAreaTransformer2 {
      */
     @Overwrite
     @SuppressWarnings("unchecked")
-    default <R extends IArea> IAreaFactory<R> apply(IExtendedNoiseRandom<R> context, IAreaFactory<R> layer1, IAreaFactory<R> layer2) {
+    default <R extends IArea> IAreaFactory<R> run(IExtendedNoiseRandom<R> context, IAreaFactory<R> layer1, IAreaFactory<R> layer2) {
         return CachedLocalLayerFactory.createMerging(this, (CloneableContext<R>) context, layer1, layer2);
     }
 }

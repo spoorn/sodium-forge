@@ -21,11 +21,11 @@ public abstract class AbstractWidget implements IRenderable, IGuiEventListener {
     protected final FontRenderer font;
 
     protected AbstractWidget() {
-        this.font = Minecraft.getInstance().fontRenderer;
+        this.font = Minecraft.getInstance().font;
     }
 
     protected void drawString(MatrixStack matrixStack, String str, int x, int y, int color) {
-        this.font.drawString(matrixStack, str, x, y, color);
+        this.font.draw(matrixStack, str, x, y, color);
     }
 
     protected void drawRect(double x1, double y1, double x2, double y2, int color) {
@@ -42,31 +42,31 @@ public abstract class AbstractWidget implements IRenderable, IGuiEventListener {
         RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
 
-        BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().getBuilder();
         bufferBuilder.begin(GL20C.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
         consumer.accept(bufferBuilder);
 
-        bufferBuilder.finishDrawing();
+        bufferBuilder.end();
 
-        WorldVertexBufferUploader.draw(bufferBuilder);
+        WorldVertexBufferUploader.end(bufferBuilder);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
     }
 
     protected static void addQuad(IVertexBuilder consumer, double x1, double y1, double x2, double y2, float a, float r, float g, float b) {
-        consumer.pos(x2, y1, 0.0D).color(r, g, b, a).endVertex();
-        consumer.pos(x1, y1, 0.0D).color(r, g, b, a).endVertex();
-        consumer.pos(x1, y2, 0.0D).color(r, g, b, a).endVertex();
-        consumer.pos(x2, y2, 0.0D).color(r, g, b, a).endVertex();
+        consumer.vertex(x2, y1, 0.0D).color(r, g, b, a).endVertex();
+        consumer.vertex(x1, y1, 0.0D).color(r, g, b, a).endVertex();
+        consumer.vertex(x1, y2, 0.0D).color(r, g, b, a).endVertex();
+        consumer.vertex(x2, y2, 0.0D).color(r, g, b, a).endVertex();
     }
 
     protected void playClickSound() {
-        Minecraft.getInstance().getSoundHandler()
-                .play(SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+        Minecraft.getInstance().getSoundManager()
+                .play(SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 
     protected int getStringWidth(String text) {
-        return this.font.getStringWidth(text);
+        return this.font.width(text);
     }
 }

@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(VoxelShape.class)
 public interface VoxelShapeAccessorMixin {
 
-    @Invoker("getValues")
-    DoubleList igetValues(Direction.Axis axis);
+    @Invoker("getCoords")
+    DoubleList igetCoords(Direction.Axis axis);
 
 }

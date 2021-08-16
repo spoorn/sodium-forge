@@ -16,10 +16,10 @@ public class RunModeMixin {
          * @author JellySquid
          */
         @Overwrite
-        public <E extends LivingEntity> void func_220630_a(WeightedList<Task<? super E>> tasks, ServerWorld world, E entity, long time) {
+        public <E extends LivingEntity> void apply(WeightedList<Task<? super E>> tasks, ServerWorld world, E entity, long time) {
             for (Task<? super E> task : WeightedListIterable.cast(tasks)) {
                 if (task.getStatus() == Task.Status.STOPPED) {
-                    if (task.start(world, entity, time)) {
+                    if (task.tryStart(world, entity, time)) {
                         break;
                     }
                 }
@@ -34,10 +34,10 @@ public class RunModeMixin {
          * @author JellySquid
          */
         @Overwrite
-        public <E extends LivingEntity> void func_220630_a(WeightedList<Task<? super E>> tasks, ServerWorld world, E entity, long time) {
+        public <E extends LivingEntity> void apply(WeightedList<Task<? super E>> tasks, ServerWorld world, E entity, long time) {
             for (Task<? super E> task : WeightedListIterable.cast(tasks)) {
                 if (task.getStatus() == Task.Status.STOPPED) {
-                    task.start(world, entity, time);
+                    task.tryStart(world, entity, time);
                 }
             }
         }

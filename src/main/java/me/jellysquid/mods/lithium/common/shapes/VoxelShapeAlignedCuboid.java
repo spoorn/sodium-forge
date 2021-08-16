@@ -47,13 +47,13 @@ public class VoxelShapeAlignedCuboid extends VoxelShapeSimpleCube {
     }
 
     @Override
-    public VoxelShape withOffset(double x, double y, double z) {
-        return new VoxelShapeAlignedCuboidOffset(this, this.part, x, y, z);
+    public VoxelShape move(double x, double y, double z) {
+        return new VoxelShapeAlignedCuboidOffset(this, this.shape, x, y, z);
     }
 
 
     @Override
-    public double getAllowedOffset(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
+    public double collideX(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
         if (Math.abs(maxDist) < EPSILON) {
             return 0.0D;
         }
@@ -133,18 +133,18 @@ public class VoxelShapeAlignedCuboid extends VoxelShapeSimpleCube {
     }
 
     @Override
-    public DoubleList getValues(Direction.Axis axis) {
-        return new DoubleRangeList(axis.getCoordinate(this.xSegments, this.ySegments, this.zSegments));
+    public DoubleList getCoords(Direction.Axis axis) {
+        return new DoubleRangeList(axis.choose(this.xSegments, this.ySegments, this.zSegments));
     }
 
     @Override
-    protected double getValueUnchecked(Direction.Axis axis, int index) {
-        return (double) index / (double) axis.getCoordinate(this.xSegments, this.ySegments, this.zSegments);
+    protected double get(Direction.Axis axis, int index) {
+        return (double) index / (double) axis.choose(this.xSegments, this.ySegments, this.zSegments);
     }
 
     @Override
-    protected int getClosestIndex(Direction.Axis axis, double coord) {
-        int i = axis.getCoordinate(this.xSegments, this.ySegments, this.zSegments);
+    protected int findIndex(Direction.Axis axis, double coord) {
+        int i = axis.choose(this.xSegments, this.ySegments, this.zSegments);
         return MathHelper.clamp(MathHelper.floor(coord * (double) i), -1, i);
     }
 }

@@ -18,11 +18,11 @@ import java.util.List;
 @Mixin(DebugOverlayGui.class)
 public abstract class MixinDebugHud {
     @Shadow
-    private static long bytesToMb(long bytes) {
+    private static long bytesToMegabytes(long bytes) {
         throw new UnsupportedOperationException();
     }
 
-    @Redirect(method = "getDebugInfoRight", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList([Ljava/lang/Object;)Ljava/util/ArrayList;"))
+    @Redirect(method = "getSystemInformation", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList([Ljava/lang/Object;)Ljava/util/ArrayList;", remap = false))
     private ArrayList<String> redirectRightTextEarly(Object[] elements) {
         ArrayList<String> strings = Lists.newArrayList((String[]) elements);
         strings.add("");
@@ -74,6 +74,6 @@ public abstract class MixinDebugHud {
     }
 
     private static String getNativeMemoryString() {
-        return "Off-Heap: +" + bytesToMb(ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed()) + "MB";
+        return "Off-Heap: +" + bytesToMegabytes(ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed()) + "MB";
     }
 }

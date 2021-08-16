@@ -28,13 +28,13 @@ public class StructureFeatureMixin {
      * @reason Return null chunk if biome doesn't match structure
      * @author MrGrim
      */
-    @Redirect(method = "func_236388_a_", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/IWorldReader;getChunk(IILnet/minecraft/world/chunk/ChunkStatus;)Lnet/minecraft/world/chunk/IChunk;", ordinal = 0),
+    @Redirect(method = "getNearestGeneratedFeature", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/IWorldReader;getChunk(IILnet/minecraft/world/chunk/ChunkStatus;)Lnet/minecraft/world/chunk/IChunk;", ordinal = 0),
             slice = @Slice(from = @At(value = "FIELD", opcode = Opcodes.GETSTATIC, target = "Lnet/minecraft/world/chunk/ChunkStatus;STRUCTURE_STARTS:Lnet/minecraft/world/chunk/ChunkStatus;", ordinal = 0),
                     to = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/IChunk;getPos()Lnet/minecraft/util/math/ChunkPos;", ordinal = 0)))
     private IChunk biomeConditionalGetChunk(IWorldReader worldView, int x, int z, ChunkStatus status) {
         //magic numbers << 2) + 2 and biomeY = 0 taken from ChunkGenerator.setStructureStarts
         //noinspection rawtypes
-        if (worldView.getNoiseBiome((x << 2) + 2, 0, (z << 2) + 2).getGenerationSettings().hasStructure((Structure) (Object) this)) {
+        if (worldView.getNoiseBiome((x << 2) + 2, 0, (z << 2) + 2).getGenerationSettings().isValidStart((Structure) (Object) this)) {
             return worldView.getChunk(x, z, status);
         } else {
             return null;
@@ -46,9 +46,9 @@ public class StructureFeatureMixin {
      * Send a new (0,0) ChunkPos if so. It won't be used anyway.
      * @author MrGrim
      */
-    @Redirect(method = "func_236388_a_", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/IChunk;getPos()Lnet/minecraft/util/math/ChunkPos;", ordinal = 0),
+    @Redirect(method = "getNearestGeneratedFeature", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/IChunk;getPos()Lnet/minecraft/util/math/ChunkPos;", ordinal = 0),
             slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/world/IWorldReader;getChunk(IILnet/minecraft/world/chunk/ChunkStatus;)Lnet/minecraft/world/chunk/IChunk;", ordinal = 0),
-                    to = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/SectionPos;from(Lnet/minecraft/util/math/ChunkPos;I)Lnet/minecraft/util/math/SectionPos;", ordinal = 0)))
+                    to = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/SectionPos;of(Lnet/minecraft/util/math/ChunkPos;I)Lnet/minecraft/util/math/SectionPos;", ordinal = 0)))
     private ChunkPos checkForNull(IChunk chunk) {
         return chunk == null ? new ChunkPos(0, 0) : chunk.getPos();
     }
@@ -58,10 +58,10 @@ public class StructureFeatureMixin {
      * allowing the search to continue.
      * @author MrGrim
      */
-    @Redirect(method = "func_236388_a_", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/feature/structure/StructureManager;getStructureStart(Lnet/minecraft/util/math/SectionPos;Lnet/minecraft/world/gen/feature/structure/Structure;Lnet/minecraft/world/IStructureReader;)Lnet/minecraft/world/gen/feature/structure/StructureStart;", ordinal = 0),
-            slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/SectionPos;from(Lnet/minecraft/util/math/ChunkPos;I)Lnet/minecraft/util/math/SectionPos;", ordinal = 0),
+    @Redirect(method = "getNearestGeneratedFeature", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/feature/structure/StructureManager;getStartForFeature(Lnet/minecraft/util/math/SectionPos;Lnet/minecraft/world/gen/feature/structure/Structure;Lnet/minecraft/world/IStructureReader;)Lnet/minecraft/world/gen/feature/structure/StructureStart;", ordinal = 0),
+            slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/SectionPos;of(Lnet/minecraft/util/math/ChunkPos;I)Lnet/minecraft/util/math/SectionPos;", ordinal = 0),
                     to = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/feature/structure/StructureStart;isValid()Z", ordinal = 0)))
     private StructureStart<?> checkChunkBeforeGetStructureStart(StructureManager structureAccessor, SectionPos sectionPos, Structure<?> thisStructure, IStructureReader chunk) {
-        return chunk == null ? null : structureAccessor.getStructureStart(sectionPos, thisStructure, chunk);
+        return chunk == null ? null : structureAccessor.getStartForFeature(sectionPos, thisStructure, chunk);
     }
 }

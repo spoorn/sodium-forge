@@ -23,7 +23,7 @@ public class AxisCycleDirectionMixin {
          * @author JellySquid
          */
         @Overwrite
-        public Direction.Axis rotate(Direction.Axis axis) {
+        public Direction.Axis cycle(Direction.Axis axis) {
             switch (axis.ordinal()) {
                 case 0: //X
                     return Direction.Axis.Y;
@@ -44,7 +44,7 @@ public class AxisCycleDirectionMixin {
          * @author JellySquid
          */
         @Overwrite
-        public Direction.Axis rotate(Direction.Axis axis) {
+        public Direction.Axis cycle(Direction.Axis axis) {
             switch (axis.ordinal()) {
                 case 0: //X
                     return Direction.Axis.Z;

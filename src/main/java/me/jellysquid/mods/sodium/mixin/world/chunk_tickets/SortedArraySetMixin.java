@@ -10,10 +10,10 @@ import java.util.function.Predicate;
 @Mixin(SortedArraySet.class)
 public abstract class SortedArraySetMixin<T> implements Collection<T> {
     @Shadow
-    private int maxIndex;
+    private int size;
 
     @Shadow
-    private T[] storage;
+    private T[] contents;
 
     /**
      * Add an optimized implementation of {@link Collection#removeIf(Predicate)} which doesn't attempt to shift
@@ -22,9 +22,9 @@ public abstract class SortedArraySetMixin<T> implements Collection<T> {
      */
     @Override
     public boolean removeIf(Predicate<? super T> filter) {
-        T[] arr = this.storage;
+        T[] arr = this.contents;
 
-        int writeLim = this.maxIndex;
+        int writeLim = this.size;
         int writeIdx = 0;
 
         for (int readIdx = 0; readIdx < writeLim; readIdx++) {
@@ -45,7 +45,7 @@ public abstract class SortedArraySetMixin<T> implements Collection<T> {
             writeIdx++;
         }
 
-        this.maxIndex = writeIdx;
+        this.size = writeIdx;
 
         return writeLim != writeIdx;
     }

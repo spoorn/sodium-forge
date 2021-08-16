@@ -37,7 +37,7 @@ import java.util.Random;
 public abstract class ExplosionMixin {
     @Shadow
     @Final
-    private float size;
+    private float radius;
 
     @Shadow
     @Final
@@ -53,31 +53,31 @@ public abstract class ExplosionMixin {
 
     @Shadow
     @Final
-    private World world;
+    private World level;
 
     @Shadow
     @Final
-    private Entity exploder;
+    private Entity source;
 
     @Shadow
     @Final
-    private List<BlockPos> affectedBlockPositions;
+    private List<BlockPos> toBlow;
 
     @Shadow
     public abstract DamageSource getDamageSource();
 
     @Shadow
-    public static float getBlockDensity(Vector3d self, Entity entity) {
+    public static float getSeenPercent(Vector3d self, Entity entity) {
         throw new UnsupportedOperationException();
     }
 
     @Shadow
     @Final
-    private Map<PlayerEntity, Vector3d> playerKnockbackMap;
+    private Map<PlayerEntity, Vector3d> hitPlayers;
 
     @Shadow
     @Final
-    private ExplosionContext context;
+    private ExplosionContext damageCalculator;
     // The cached mutable block position used during block traversal.
     private final BlockPos.Mutable cachedPos = new BlockPos.Mutable();
 
@@ -92,7 +92,7 @@ public abstract class ExplosionMixin {
      * @reason Optimizations for explosions
      * @author JellySquid
      */
-    @Inject(method = "doExplosionA", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "explode", at = @At("HEAD"), cancellable = true)
     public void collectBlocksAndDamageEntities(CallbackInfo ci) {
         // We don't want to use an Overwrite here as it can conflict with other mods modifying this code path and will
         // crash the game. This *will* cause issues with other mods which transform this method, but it shouldn't break
@@ -106,7 +106,7 @@ public abstract class ExplosionMixin {
         // compared to a memory allocation and associated overhead of hashing real objects in a set.
         final LongOpenHashSet touched = new LongOpenHashSet(6 * 6 * 6);
 
-        final Random random = this.world.rand;
+        final Random random = this.level.random;
 
         // Explosions work by casting many rays through the world from the origin of the explosion
         for (int rayX = 0; rayX < 16; ++rayX) {
@@ -133,12 +133,12 @@ public abstract class ExplosionMixin {
         // We can now iterate back over the set of positions we modified and re-build BlockPos objects from them
         // This will only allocate as many objects as there are in the set, where otherwise we would allocate them
         // each step of a every ray.
-        List<BlockPos> affectedBlocks = this.affectedBlockPositions;
+        List<BlockPos> affectedBlocks = this.toBlow;
 
         LongIterator it = touched.iterator();
 
         while (it.hasNext()) {
-            affectedBlocks.add(BlockPos.fromLong(it.nextLong()));
+            affectedBlocks.add(BlockPos.of(it.nextLong()));
         }
 
         this.damageEntities();
@@ -151,7 +151,7 @@ public abstract class ExplosionMixin {
         double normY = vecY / dist;
         double normZ = vecZ / dist;
 
-        float strength = this.size * (0.7F + (random.nextFloat() * 0.6F));
+        float strength = this.radius * (0.7F + (random.nextFloat() * 0.6F));
 
         double stepX = this.x;
         double stepY = this.y;
@@ -207,11 +207,11 @@ public abstract class ExplosionMixin {
      * @return The resistance of the current block space to the ray
      */
     private float traverseBlock(float strength, int blockX, int blockY, int blockZ, LongOpenHashSet touched) {
-        BlockPos pos = this.cachedPos.setPos(blockX, blockY, blockZ);
+        BlockPos pos = this.cachedPos.set(blockX, blockY, blockZ);
 
         // Early-exit if the y-coordinate is out of bounds.
-        if (World.isYOutOfBounds(blockY)) {
-            Optional<Float> blastResistance = this.context.getExplosionResistance((Explosion) (Object) this, this.world, pos, Blocks.AIR.getDefaultState(), Fluids.EMPTY.getDefaultState());
+        if (World.isOutsideBuildHeight(blockY)) {
+            Optional<Float> blastResistance = this.damageCalculator.getBlockExplosionResistance((Explosion) (Object) this, this.level, pos, Blocks.AIR.defaultBlockState(), Fluids.EMPTY.defaultFluidState());
             if (blastResistance.isPresent()) {
                 return (blastResistance.get() + 0.3F) * 0.3F;
             }
@@ -224,7 +224,7 @@ public abstract class ExplosionMixin {
 
         // Avoid calling into the chunk manager as much as possible through managing chunks locally
         if (this.prevChunkX != chunkX || this.prevChunkZ != chunkZ) {
-            this.prevChunk = this.world.getChunk(chunkX, chunkZ);
+            this.prevChunk = this.level.getChunk(chunkX, chunkZ);
 
             this.prevChunkX = chunkX;
             this.prevChunkZ = chunkZ;
@@ -232,7 +232,7 @@ public abstract class ExplosionMixin {
 
         final Chunk chunk = this.prevChunk;
 
-        BlockState blockState = Blocks.AIR.getDefaultState();
+        BlockState blockState = Blocks.AIR.defaultBlockState();
         float totalResistance = 0.0F;
         Optional<Float> blastResistance;
 
@@ -257,12 +257,12 @@ public abstract class ExplosionMixin {
                         FluidState fluidState = blockState.getFluidState();
 
                         // Get the explosion resistance like vanilla
-                        blastResistance = this.context.getExplosionResistance((Explosion) (Object) this, this.world, pos, blockState, fluidState);
+                        blastResistance = this.damageCalculator.getBlockExplosionResistance((Explosion) (Object) this, this.level, pos, blockState, fluidState);
                         break labelGetBlastResistance;
                     }
                 }
             }
-            blastResistance = this.context.getExplosionResistance((Explosion) (Object) this, this.world, pos, Blocks.AIR.getDefaultState(), Fluids.EMPTY.getDefaultState());
+            blastResistance = this.damageCalculator.getBlockExplosionResistance((Explosion) (Object) this, this.level, pos, Blocks.AIR.defaultBlockState(), Fluids.EMPTY.defaultFluidState());
         }
         // Calculate how much this block will resist an explosion's ray
         if (blastResistance.isPresent()) {
@@ -273,8 +273,8 @@ public abstract class ExplosionMixin {
         // of positions to destroy
         float reducedStrength = strength - totalResistance;
         if (reducedStrength > 0.0F) {
-            if (this.context.canExplosionDestroyBlock((Explosion) (Object) this, this.world, pos, blockState, reducedStrength)) {
-                touched.add(pos.toLong());
+            if (this.damageCalculator.shouldBlockExplode((Explosion) (Object) this, this.level, pos, blockState, reducedStrength)) {
+                touched.add(pos.asLong());
             }
         }
 
@@ -283,7 +283,7 @@ public abstract class ExplosionMixin {
 
     // [VanillaCopy] Explosion#collectBlocksAndDamageEntities()
     private void damageEntities() {
-        float range = this.size * 2.0F;
+        float range = this.radius * 2.0F;
 
         int minX = MathHelper.floor(this.x - (double) range - 1.0D);
         int maxX = MathHelper.floor(this.x + (double) range + 1.0D);
@@ -292,27 +292,27 @@ public abstract class ExplosionMixin {
         int minZ = MathHelper.floor(this.z - (double) range - 1.0D);
         int maxZ = MathHelper.floor(this.z + (double) range + 1.0D);
 
-        List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this.exploder, new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ));
-        net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.world, (Explosion)(Object)this, entities, range);
+        List<Entity> entities = this.level.getEntities(this.source, new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ));
+        net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.level, (Explosion)(Object)this, entities, range);
 
         Vector3d selfPos = new Vector3d(this.x, this.y, this.z);
 
         for (Entity entity : entities) {
-            if (entity.isImmuneToExplosions()) {
+            if (entity.ignoreExplosion()) {
                 continue;
             }
 
-            double damageScale = MathHelper.sqrt(entity.getDistanceSq(selfPos)) / range;
+            double damageScale = MathHelper.sqrt(entity.distanceToSqr(selfPos)) / range;
 
             if (damageScale > 1.0D) {
                 continue;
             }
 
-            double distXSq = entity.getPosX() - this.x;
+            double distXSq = entity.getX() - this.x;
             // [VanillaCopy] In the 1.16 snapshots Mojang added this distinction between TNT and other entities in the explosion code to
             // fix the the increased eye height affecting explosions. The eye height increase was an attempt to fix rendering of tnt on soulsand.
-            double distYSq = (entity instanceof TNTEntity ? entity.getPosY() : entity.getPosYEye()) - this.y;
-            double distZSq = entity.getPosZ() - this.z;
+            double distYSq = (entity instanceof TNTEntity ? entity.getY() : entity.getEyeY()) - this.y;
+            double distZSq = entity.getZ() - this.z;
 
             double dist = MathHelper.sqrt((distXSq * distXSq) + (distYSq * distYSq) + (distZSq * distZSq));
 
@@ -324,24 +324,24 @@ public abstract class ExplosionMixin {
             distYSq = distYSq / dist;
             distZSq = distZSq / dist;
 
-            double exposure = getBlockDensity(selfPos, entity);
+            double exposure = getSeenPercent(selfPos, entity);
             double damage = (1.0D - damageScale) * exposure;
 
-            entity.attackEntityFrom(this.getDamageSource(), (int) (((((damage * damage) + damage) / 2.0D) * 7.0D * (double) range) + 1.0D));
+            entity.hurt(this.getDamageSource(), (int) (((((damage * damage) + damage) / 2.0D) * 7.0D * (double) range) + 1.0D));
 
             double knockback = damage;
 
             if (entity instanceof LivingEntity) {
-                knockback = ProtectionEnchantment.getBlastDamageReduction((LivingEntity) entity, damage);
+                knockback = ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, damage);
             }
 
-            entity.setMotion(entity.getMotion().add(distXSq * knockback, distYSq * knockback, distZSq * knockback));
+            entity.setDeltaMovement(entity.getDeltaMovement().add(distXSq * knockback, distYSq * knockback, distZSq * knockback));
 
             if (entity instanceof PlayerEntity) {
                 PlayerEntity player = (PlayerEntity) entity;
 
-                if (!player.isSpectator() && (!player.isCreative() || !player.abilities.isFlying)) {
-                    this.playerKnockbackMap.put(player, new Vector3d(distXSq * damage, distYSq * damage, distZSq * damage));
+                if (!player.isSpectator() && (!player.isCreative() || !player.abilities.flying)) {
+                    this.hitPlayers.put(player, new Vector3d(distXSq * damage, distYSq * damage, distZSq * damage));
                 }
             }
         }

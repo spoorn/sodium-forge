@@ -14,12 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class FractionalDoubleListMixin {
     @Shadow
     @Final
-    private int field_197854_a;
+    private int parts;
     private double scale;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     public void initScale(int sectionCount, CallbackInfo ci) {
-        this.scale = 1.0D / this.field_197854_a;
+        this.scale = 1.0D / this.parts;
     }
 
     /**

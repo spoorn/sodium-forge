@@ -118,12 +118,12 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
             return null;
         }
 
-        MutableBoundingBox volume = new MutableBoundingBox(origin.getWorldStartX() - NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldStartY() - NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldStartZ() - NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldEndX() + NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldEndY() + NEIGHBOR_BLOCK_RADIUS,
-                origin.getWorldEndZ() + NEIGHBOR_BLOCK_RADIUS);
+        MutableBoundingBox volume = new MutableBoundingBox(origin.minBlockX() - NEIGHBOR_BLOCK_RADIUS,
+                origin.minBlockY() - NEIGHBOR_BLOCK_RADIUS,
+                origin.minBlockZ() - NEIGHBOR_BLOCK_RADIUS,
+                origin.maxBlockX() + NEIGHBOR_BLOCK_RADIUS,
+                origin.maxBlockY() + NEIGHBOR_BLOCK_RADIUS,
+                origin.maxBlockZ() + NEIGHBOR_BLOCK_RADIUS);
 
         // The min/max bounds of the chunks copied by this slice
         final int minChunkX = origin.getX() - NEIGHBOR_CHUNK_RADIUS;
@@ -209,14 +209,14 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
 
         SectionPos pos = section.getPosition();
 
-        int minBlockX = Math.max(box.minX, pos.getWorldStartX());
-        int maxBlockX = Math.min(box.maxX, pos.getWorldEndX());
+        int minBlockX = Math.max(box.x0, pos.minBlockX());
+        int maxBlockX = Math.min(box.x1, pos.maxBlockX());
 
-        int minBlockY = Math.max(box.minY, pos.getWorldStartY());
-        int maxBlockY = Math.min(box.maxY, pos.getWorldEndY());
+        int minBlockY = Math.max(box.y0, pos.minBlockY());
+        int maxBlockY = Math.min(box.y1, pos.maxBlockY());
 
-        int minBlockZ = Math.max(box.minZ, pos.getWorldStartZ());
-        int maxBlockZ = Math.min(box.maxZ, pos.getWorldEndZ());
+        int minBlockZ = Math.max(box.z0, pos.minBlockZ());
+        int maxBlockZ = Math.min(box.z1, pos.maxBlockZ());
 
         /*for (int y = minBlockY; y <= maxBlockY; y++) {
             for (int z = minBlockZ; z <= maxBlockZ; z++) {
@@ -246,9 +246,9 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
      * Returns the index of a block in global coordinate space for this slice.
      */
     private int getBlockIndex(MutableBoundingBox box, int x, int y, int z) {
-        int x2 = x - box.minX;
-        int y2 = y - box.minY;
-        int z2 = z - box.minZ;
+        int x2 = x - box.x0;
+        int y2 = y - box.y0;
+        int z2 = z - box.z0;
         return (y2 * BLOCK_LENGTH * BLOCK_LENGTH) + (z2 * BLOCK_LENGTH) + x2;
     }
 
@@ -263,8 +263,8 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     public BlockState getBlockState(int x, int y, int z, BlockPos pos) {
-        if (World.isYOutOfBounds(y)) {
-            return Blocks.VOID_AIR.getDefaultState();
+        if (World.isOutsideBuildHeight(y)) {
+            return Blocks.VOID_AIR.defaultBlockState();
         }
 
         // Some mods such as Inspirations that modifies block colors traverse around the current BlockPos to look for
@@ -296,17 +296,17 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public float func_230487_a_(Direction direction, boolean shaded) {
-        return this.world.func_230487_a_(direction, shaded);
+    public float getShade(Direction direction, boolean shaded) {
+        return this.world.getShade(direction, shaded);
     }
 
     @Override
-    public WorldLightManager getLightManager() {
-        return this.world.getLightManager();
+    public WorldLightManager getLightEngine() {
+        return this.world.getLightEngine();
     }
 
     @Override
-    public TileEntity getTileEntity(BlockPos pos) {
+    public TileEntity getBlockEntity(BlockPos pos) {
         int relX = pos.getX() - this.baseX;
         int relY = pos.getY() - this.baseY;
         int relZ = pos.getZ() - this.baseZ;
@@ -316,7 +316,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
         // error.  When this happens, we can default to the World's getBlockState
         int index = getLocalSectionIndex(relX >> 4, relY >> 4, relZ >> 4);
         if (index < 0 || index >= this.sections.length) {
-            return this.world.getTileEntity(pos);
+            return this.world.getBlockEntity(pos);
         }
 
         return this.sections[getLocalSectionIndex(relX >> 4, relY >> 4, relZ >> 4)]
@@ -324,7 +324,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public int getBlockColor(BlockPos pos, ColorResolver resolver) {
+    public int getBlockTint(BlockPos pos, ColorResolver resolver) {
         BiomeColorCache cache;
 
         if (this.prevColorResolver == resolver) {
@@ -344,7 +344,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public int getLightFor(LightType type, BlockPos pos) {
+    public int getBrightness(LightType type, BlockPos pos) {
         int relX = pos.getX() - this.baseX;
         int relY = pos.getY() - this.baseY;
         int relZ = pos.getZ() - this.baseZ;
@@ -354,7 +354,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
     }
 
     @Override
-    public int getLightSubtracted(BlockPos pos, int ambientDarkness) {
+    public int getRawBrightness(BlockPos pos, int ambientDarkness) {
         return 0;
     }
 
@@ -377,7 +377,7 @@ public class WorldSlice implements IBlockDisplayReader, BiomeManager.IBiomeReade
             return section.getBiomeForNoiseGen(x, y, z);
         }
 
-        return this.world.getNoiseBiomeRaw(x, y, z);
+        return this.world.getUncachedNoiseBiome(x, y, z);
     }
 
     /**

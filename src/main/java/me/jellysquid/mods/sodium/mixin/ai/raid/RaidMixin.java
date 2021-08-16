@@ -15,10 +15,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class RaidMixin {
     @Shadow
     @Final
-    private ServerBossInfo bossInfo;
+    private ServerBossInfo raidEvent;
 
     @Shadow
-    public abstract float getCurrentHealth();
+    public abstract float getHealthOfLivingRaiders();
 
     @Shadow
     private float totalHealth;
@@ -31,7 +31,7 @@ public abstract class RaidMixin {
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
         if (this.isBarDirty) {
-            this.bossInfo.setPercent(MathHelper.clamp(this.getCurrentHealth() / this.totalHealth, 0.0F, 1.0F));
+            this.raidEvent.setPercent(MathHelper.clamp(this.getHealthOfLivingRaiders() / this.totalHealth, 0.0F, 1.0F));
 
             this.isBarDirty = false;
         }
@@ -42,7 +42,7 @@ public abstract class RaidMixin {
      * @author JellySquid
      */
     @Overwrite
-    public void updateBarPercentage() {
+    public void updateBossbar() {
         this.isBarDirty = true;
     }
 

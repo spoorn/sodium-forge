@@ -13,12 +13,12 @@ public class MinecraftOptionsStorage implements OptionStorage<GameSettings> {
 
     @Override
     public GameSettings getData() {
-        return this.client.gameSettings;
+        return this.client.options;
     }
 
     @Override
     public void save() {
-        this.getData().saveOptions();
+        this.getData().save();
 
         SodiumClientMod.logger().info("Flushed changes to Minecraft configuration");
     }

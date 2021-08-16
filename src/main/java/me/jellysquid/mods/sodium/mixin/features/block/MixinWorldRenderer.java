@@ -18,7 +18,7 @@ public class MixinWorldRenderer {
      * Reset any global cached state before rendering a frame. This will hopefully ensure that any world state that has
      * changed is reflected in vanilla-style rendering.
      */
-    @Inject(method = "updateCameraAndRender", at = @At("HEAD"))
+    @Inject(method = "renderLevel", at = @At("HEAD"))
     private void reset(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, ActiveRenderInfo camera,
                        GameRenderer gameRenderer, LightTexture lightmapTextureManager, Matrix4f matrix4f,
                        CallbackInfo ci) {

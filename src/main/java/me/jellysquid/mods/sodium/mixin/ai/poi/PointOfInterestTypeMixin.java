@@ -20,11 +20,11 @@ public class PointOfInterestTypeMixin {
     @Mutable
     @Shadow
     @Final
-    private static Map<BlockState, PointOfInterestType> POIT_BY_BLOCKSTATE;
+    private static Map<BlockState, PointOfInterestType> TYPE_BY_STATE;
 
     static {
-        POIT_BY_BLOCKSTATE = new Reference2ReferenceOpenHashMap<>(POIT_BY_BLOCKSTATE);
+        TYPE_BY_STATE = new Reference2ReferenceOpenHashMap<>(TYPE_BY_STATE);
 
-        PointOfInterestTypeHelper.init(new ObjectArraySet<>(POIT_BY_BLOCKSTATE.keySet()));
+        PointOfInterestTypeHelper.init(new ObjectArraySet<>(TYPE_BY_STATE.keySet()));
     }
 }

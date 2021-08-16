@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(VoxelShapes.class)
 public class VoxelShapesMixin {
-    @Inject(method = "compare",
+    @Inject(method = "joinIsNotEmpty(Lnet/minecraft/util/math/shapes/VoxelShape;Lnet/minecraft/util/math/shapes/VoxelShape;Lnet/minecraft/util/math/shapes/IBooleanFunction;)Z",
             at = @At(value = "INVOKE", shift = At.Shift.BEFORE,
-                    target = "Lnet/minecraft/util/math/shapes/VoxelShape;getValues(Lnet/minecraft/util/Direction$Axis;)Lit/unimi/dsi/fastutil/doubles/DoubleList;",
+                    target = "Lnet/minecraft/util/math/shapes/VoxelShape;getCoords(Lnet/minecraft/util/Direction$Axis;)Lit/unimi/dsi/fastutil/doubles/DoubleList;",
                     ordinal = 0),
             cancellable = true)
     private static void cuboidMatchesAnywhere(VoxelShape shapeA, VoxelShape shapeB, IBooleanFunction predicate, CallbackInfoReturnable<Boolean> cir) {

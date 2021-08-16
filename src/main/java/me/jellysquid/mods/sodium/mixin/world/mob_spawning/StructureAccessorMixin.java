@@ -20,26 +20,26 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class StructureAccessorMixin {
     @Shadow
     @Final
-    private IWorld world;
+    private IWorld level;
 
     /**
      * @reason Avoid heavily nested stream code and object allocations where possible
      * @author JellySquid
      */
     @Overwrite
-    public StructureStart<?> getStructureStart(BlockPos blockPos, boolean fine, Structure<?> feature) {
-        IChunk originChunk = this.world.getChunk(blockPos.getX() >> 4, blockPos.getZ() >> 4, ChunkStatus.STRUCTURE_REFERENCES);
+    public StructureStart<?> getStructureAt(BlockPos blockPos, boolean fine, Structure<?> feature) {
+        IChunk originChunk = this.level.getChunk(blockPos.getX() >> 4, blockPos.getZ() >> 4, ChunkStatus.STRUCTURE_REFERENCES);
 
-        LongSet references = originChunk.func_230346_b_(feature);
+        LongSet references = originChunk.getReferencesForFeature(feature);
         LongIterator iterator = references.iterator();
 
         while (iterator.hasNext()) {
             long pos = iterator.nextLong();
 
-            IChunk chunk = this.world.getChunk(ChunkPos.getX(pos), ChunkPos.getZ(pos), ChunkStatus.STRUCTURE_STARTS);
-            StructureStart<?> structure = chunk.func_230342_a_(feature);
+            IChunk chunk = this.level.getChunk(ChunkPos.getX(pos), ChunkPos.getZ(pos), ChunkStatus.STRUCTURE_STARTS);
+            StructureStart<?> structure = chunk.getStartForFeature(feature);
 
-            if (structure == null || !structure.isRefCountBelowMax() || !structure.getBoundingBox().isVecInside(blockPos)) {
+            if (structure == null || !structure.canBeReferenced() || !structure.getBoundingBox().isInside(blockPos)) {
                 continue;
             }
 
@@ -48,12 +48,12 @@ public abstract class StructureAccessorMixin {
             }
         }
 
-        return StructureStart.DUMMY;
+        return StructureStart.INVALID_START;
     }
 
     private boolean anyPieceContainsPosition(StructureStart<?> structure, BlockPos blockPos) {
-        for (StructurePiece piece : structure.getComponents()) {
-            if (piece.getBoundingBox().isVecInside(blockPos)) {
+        for (StructurePiece piece : structure.getPieces()) {
+            if (piece.getBoundingBox().isInside(blockPos)) {
                 return true;
             }
         }

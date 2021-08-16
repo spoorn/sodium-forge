@@ -245,6 +245,6 @@ enum AoNeighborInfo {
      * @return Returns the {@link AoNeighborInfo} which corresponds with the specified direction
      */
     public static AoNeighborInfo get(Direction direction) {
-        return VALUES[direction.getIndex()];
+        return VALUES[direction.get3DDataValue()];
     }
 }

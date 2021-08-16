@@ -36,11 +36,11 @@ public class BlockRenderPassManager {
      */
     public static BlockRenderPassManager createDefaultMappings() {
         BlockRenderPassManager mapper = new BlockRenderPassManager();
-        mapper.addMapping(RenderType.getSolid(), BlockRenderPass.SOLID);
-        mapper.addMapping(RenderType.getCutoutMipped(), BlockRenderPass.CUTOUT_MIPPED);
-        mapper.addMapping(RenderType.getCutout(), BlockRenderPass.CUTOUT);
-        mapper.addMapping(RenderType.getTranslucent(), BlockRenderPass.TRANSLUCENT);
-        mapper.addMapping(RenderType.getTripwire(), BlockRenderPass.TRIPWIRE);
+        mapper.addMapping(RenderType.solid(), BlockRenderPass.SOLID);
+        mapper.addMapping(RenderType.cutoutMipped(), BlockRenderPass.CUTOUT_MIPPED);
+        mapper.addMapping(RenderType.cutout(), BlockRenderPass.CUTOUT);
+        mapper.addMapping(RenderType.translucent(), BlockRenderPass.TRANSLUCENT);
+        mapper.addMapping(RenderType.tripwire(), BlockRenderPass.TRIPWIRE);
 
         return mapper;
     }

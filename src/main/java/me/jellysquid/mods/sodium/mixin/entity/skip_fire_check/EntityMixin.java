@@ -8,13 +8,13 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(Entity.class)
 public abstract class EntityMixin {
     @Shadow
-    private int fire;
+    private int remainingFireTicks;
 
     @Shadow
     protected abstract int getFireImmuneTicks();
 
     @Shadow
-    public World world;
+    public World level;
 
     //@Redirect(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/BlockPos;getAllInBox(Lnet/minecraft/util/math/AxisAlignedBB;)Ljava/util/stream/Stream;"))
     //private Stream<BlockPos> skipFireTestIfResultDoesNotMatter(AxisAlignedBB box) {

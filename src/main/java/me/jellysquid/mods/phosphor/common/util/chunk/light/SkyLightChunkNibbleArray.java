@@ -8,8 +8,8 @@ public class SkyLightChunkNibbleArray extends ReadonlyChunkNibbleArray {
     }
 
     @Override
-    protected int getCoordinateIndex(final int x, final int y, final int z) {
-        return super.getCoordinateIndex(x, 0, z);
+    protected int getIndex(final int x, final int y, final int z) {
+        return super.getIndex(x, 0, z);
     }
 
     @Override

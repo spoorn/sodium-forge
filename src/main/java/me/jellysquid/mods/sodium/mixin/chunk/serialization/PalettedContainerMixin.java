@@ -29,17 +29,17 @@ public abstract class PalettedContainerMixin<T> {
     private static final long[] EMPTY_PALETTE_DATA = new long[(4 * 4096) / 64];
 
     @Shadow
-    public abstract void lock();
+    public abstract void acquire();
 
     @Shadow
-    public abstract void unlock();
+    public abstract void release();
 
     @Shadow
     protected abstract T get(int index);
 
     @Shadow
     @Final
-    private T defaultState;
+    private T defaultValue;
 
     @Shadow
     @Final
@@ -50,11 +50,11 @@ public abstract class PalettedContainerMixin<T> {
 
     @Shadow
     @Final
-    private Function<CompoundNBT, T> deserializer;
+    private Function<CompoundNBT, T> reader;
 
     @Shadow
     @Final
-    private Function<T, CompoundNBT> serializer;
+    private Function<T, CompoundNBT> writer;
 
     @Shadow
     protected BitArray storage;
@@ -74,8 +74,8 @@ public abstract class PalettedContainerMixin<T> {
      * @author JellySquid
      */
     @Overwrite
-    public void writeChunkPalette(CompoundNBT rootTag, String paletteKey, String dataKey) {
-        this.lock();
+    public void write(CompoundNBT rootTag, String paletteKey, String dataKey) {
+        this.acquire();
 
         // The palette that will be serialized
         LithiumHashPalette<T> palette = null;
@@ -85,32 +85,32 @@ public abstract class PalettedContainerMixin<T> {
             palette = ((LithiumHashPalette<T>) this.palette);
 
             // The palette only contains the default block, so don't re-pack
-            if (palette.getSize() == 1 && palette.get(0) == this.defaultState) {
+            if (palette.getSize() == 1 && palette.valueFor(0) == this.defaultValue) {
                 dataArray = EMPTY_PALETTE_DATA;
             }
         }
 
         // If we aren't going to use an empty data array, start a compaction
         if (dataArray == null) {
-            LithiumHashPalette<T> compactedPalette = new LithiumHashPalette<>(this.registry, this.bits, null, this.deserializer, this.serializer);
+            LithiumHashPalette<T> compactedPalette = new LithiumHashPalette<>(this.registry, this.bits, null, this.reader, this.writer);
 
             short[] array = cachedCompactionArrays.get();
             ((CompactingPackedIntegerArray) this.storage).compact(this.palette, compactedPalette, array);
 
             // If the palette didn't change during compaction, do a simple copy of the data array
             if (palette != null && palette.getSize() == compactedPalette.getSize()) {
-                dataArray = this.storage.getBackingLongArray().clone();
+                dataArray = this.storage.getRaw().clone();
             } else {
                 // Re-pack the integer array as the palette has changed size
-                int size = Math.max(4, MathHelper.log2DeBruijn(compactedPalette.getSize()));
+                int size = Math.max(4, MathHelper.ceillog2(compactedPalette.getSize()));
                 BitArray copy = new BitArray(size, 4096);
 
                 for (int i = 0; i < array.length; ++i) {
-                    copy.setAt(i, array[i]);
+                    copy.set(i, array[i]);
                 }
 
                 // We don't need to clone the data array as we are the sole owner of it
-                dataArray = copy.getBackingLongArray();
+                dataArray = copy.getRaw();
                 palette = compactedPalette;
             }
         }
@@ -121,7 +121,7 @@ public abstract class PalettedContainerMixin<T> {
         rootTag.put(paletteKey, paletteTag);
         rootTag.putLongArray(dataKey, dataArray);
 
-        this.unlock();
+        this.release();
     }
 
     /**
@@ -145,7 +145,7 @@ public abstract class PalettedContainerMixin<T> {
         this.storage.getAll(i -> counts[i]++);
 
         for (int i = 0; i < counts.length; i++) {
-            T obj = this.palette.get(i);
+            T obj = this.palette.valueFor(i);
 
             if (obj != null) {
                 consumer.accept(obj, counts[i]);

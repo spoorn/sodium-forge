@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
-import static net.minecraft.util.math.SectionPos.toChunk;
+import static net.minecraft.util.math.SectionPos.blockToSectionCoord;
 
 @Mixin(BlockLightEngine.class)
 public abstract class MixinChunkBlockLightProvider extends LightEngine<BlockLightStorage.StorageMap, BlockLightStorage>
@@ -30,7 +30,7 @@ public abstract class MixinChunkBlockLightProvider extends LightEngine<BlockLigh
     }
 
     @Shadow
-    protected abstract int getLightValue(long blockPos);
+    protected abstract int getLightEmission(long blockPos);
 
     @Shadow
     @Final
@@ -42,7 +42,7 @@ public abstract class MixinChunkBlockLightProvider extends LightEngine<BlockLigh
      */
     @Override
     @Overwrite
-    public int getEdgeLevel(long fromId, long toId, int currentLevel) {
+    public int computeLevelFromNeighbor(long fromId, long toId, int currentLevel) {
         return this.getPropagatedLevel(fromId, null, toId, currentLevel);
     }
 
@@ -65,20 +65,20 @@ public abstract class MixinChunkBlockLightProvider extends LightEngine<BlockLigh
     public int getPropagatedLevel(long fromId, BlockState fromState, long toId, int currentLevel) {
         if (toId == Long.MAX_VALUE) {
             return 15;
-        } else if (fromId == Long.MAX_VALUE && ((BlockLightStorageAccess) this.storage).isLightEnabled(SectionPos.worldToSection(toId))) {
+        } else if (fromId == Long.MAX_VALUE && ((BlockLightStorageAccess) this.storage).isLightEnabled(SectionPos.blockToSection(toId))) {
             // Disable blocklight sources before initial lighting
-            return currentLevel + 15 - this.getLightValue(toId);
+            return currentLevel + 15 - this.getLightEmission(toId);
         } else if (currentLevel >= 15) {
             return currentLevel;
         }
 
-        int toX = BlockPos.unpackX(toId);
-        int toY = BlockPos.unpackY(toId);
-        int toZ = BlockPos.unpackZ(toId);
+        int toX = BlockPos.getX(toId);
+        int toY = BlockPos.getY(toId);
+        int toZ = BlockPos.getZ(toId);
 
-        int fromX = BlockPos.unpackX(fromId);
-        int fromY = BlockPos.unpackY(fromId);
-        int fromZ = BlockPos.unpackZ(fromId);
+        int fromX = BlockPos.getX(fromId);
+        int fromY = BlockPos.getY(fromId);
+        int fromZ = BlockPos.getZ(fromId);
 
         Direction dir = DirectionHelper.getVecDirection(toX - fromX, toY - fromY, toZ - fromZ);
 
@@ -117,24 +117,24 @@ public abstract class MixinChunkBlockLightProvider extends LightEngine<BlockLigh
      */
     @Override
     @Overwrite
-    public void notifyNeighbors(long id, int targetLevel, boolean mergeAsMin) {
-        int x = BlockPos.unpackX(id);
-        int y = BlockPos.unpackY(id);
-        int z = BlockPos.unpackZ(id);
+    public void checkNeighborsAfterUpdate(long id, int targetLevel, boolean mergeAsMin) {
+        int x = BlockPos.getX(id);
+        int y = BlockPos.getY(id);
+        int z = BlockPos.getZ(id);
 
-        long chunk = SectionPos.asLong(toChunk(x), toChunk(y), toChunk(z));
+        long chunk = SectionPos.asLong(blockToSectionCoord(x), blockToSectionCoord(y), blockToSectionCoord(z));
 
         BlockState state = this.getBlockStateForLighting(x, y, z);
 
         for (Direction dir : DIRECTIONS) {
-            int adjX = x + dir.getXOffset();
-            int adjY = y + dir.getYOffset();
-            int adjZ = z + dir.getZOffset();
+            int adjX = x + dir.getStepX();
+            int adjY = y + dir.getStepY();
+            int adjZ = z + dir.getStepZ();
 
-            long adjChunk = SectionPos.asLong(toChunk(adjX), toChunk(adjY), toChunk(adjZ));
+            long adjChunk = SectionPos.asLong(blockToSectionCoord(adjX), blockToSectionCoord(adjY), blockToSectionCoord(adjZ));
 
-            if ((chunk == adjChunk) || this.storage.hasSection(adjChunk)) {
-                this.propagateLevel(id, state, BlockPos.pack(adjX, adjY, adjZ), targetLevel, mergeAsMin);
+            if ((chunk == adjChunk) || this.storage.storingLightForSection(adjChunk)) {
+                this.propagateLevel(id, state, BlockPos.asLong(adjX, adjY, adjZ), targetLevel, mergeAsMin);
             }
         }
     }

@@ -72,7 +72,7 @@ public abstract class VoronoiBiomeAccessTypeMixin {
                 sZ = z3 - 1.0D;
             }
 
-            double dist = distanceToCorner(seed, bX, bY, bZ, sX, sY, sZ);
+            double dist = getFiddledDistance(seed, bX, bY, bZ, sX, sY, sZ);
 
             if (minDist > dist) {
                 minDist = dist;
@@ -91,12 +91,12 @@ public abstract class VoronoiBiomeAccessTypeMixin {
      * @author Kroppeb
      */
     @Overwrite
-    private static double randomDouble(long seed) {
+    private static double getFiddle(long seed) {
         return (((seed >> 24) & 1023L) - 512) * 0.00087890625; // * 0.9 / 1024.0d
     }
 
     @Shadow
-    private static double distanceToCorner(long seed, int x, int y, int z, double xFraction, double yFraction, double zFraction) {
+    private static double getFiddledDistance(long seed, int x, int y, int z, double xFraction, double yFraction, double zFraction) {
         throw new UnsupportedOperationException();
     }
 }

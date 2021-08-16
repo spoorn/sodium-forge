@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class MixinClientWorld
 {
     @Redirect(
-        method = "onChunkUnloaded(Lnet/minecraft/world/chunk/Chunk;)V",
+        method = "unload(Lnet/minecraft/world/chunk/Chunk;)V",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/lighting/WorldLightManager;enableLightSources(Lnet/minecraft/util/math/ChunkPos;Z)V"

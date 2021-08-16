@@ -26,13 +26,13 @@ public class EntityClassGroup {
 
     static {
         //String remapped_method_30948 = FabricLoader.getInstance().getMappingResolver().mapMethodName("intermediary", "net.minecraft.class_1297", "method_30948", "()Z");
-        String remapped_method_30948 = ObfuscationReflectionHelper.findMethod(Entity.class, "func_241845_aY").getName();
+        String remapped_method_30948 = ObfuscationReflectionHelper.findMethod(Entity.class, "canBeCollidedWith").getName();
         BOAT_SHULKER_LIKE_COLLISION = new EntityClassGroup(
                 (Class<?> entityClass) -> isMethodFromSuperclassOverwritten(entityClass, Entity.class, remapped_method_30948));
 
 
         //String remapped_method_30949 = FabricLoader.getInstance().getMappingResolver().mapMethodName("intermediary", "net.minecraft.class_1297", "method_30949", "(Lnet/minecraft/class_1297;)Z");
-        String remapped_method_30949 = ObfuscationReflectionHelper.findMethod(Entity.class, "func_241849_j", Entity.class).getName();
+        String remapped_method_30949 = ObfuscationReflectionHelper.findMethod(Entity.class, "canCollideWith", Entity.class).getName();
         MINECART_BOAT_LIKE_COLLISION = new EntityClassGroup(
                 (Class<?> entityClass) -> isMethodFromSuperclassOverwritten(entityClass, Entity.class, remapped_method_30949, Entity.class));
 

@@ -4,19 +4,19 @@ import net.minecraft.client.resources.I18n;
 
 public interface ControlValueFormatter {
     static ControlValueFormatter guiScale() {
-        return (v) -> (v == 0) ? I18n.format("options.guiScale.auto") : v + "x";
+        return (v) -> (v == 0) ? I18n.get("options.guiScale.auto") : v + "x";
     }
 
     static ControlValueFormatter fpsLimit() {
-        return (v) -> (v == 260) ? I18n.format("options.framerateLimit.max") : v + " FPS";
+        return (v) -> (v == 260) ? I18n.get("options.framerateLimit.max") : v + " FPS";
     }
 
     static ControlValueFormatter brightness() {
         return (v) -> {
             if (v == 0) {
-                return I18n.format("options.gamma.min");
+                return I18n.get("options.gamma.min");
             } else if (v == 100) {
-                return I18n.format("options.gamma.max");
+                return I18n.get("options.gamma.max");
             } else {
                 return v + "%";
             }

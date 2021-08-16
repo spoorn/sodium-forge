@@ -67,7 +67,7 @@ public class SodiumGameOptions {
 
         @Override
         public String getLocalizedName() {
-            return I18n.format(this.name);
+            return I18n.get(this.name);
         }
 
         public boolean isFancy(GraphicsFanciness graphicsMode) {

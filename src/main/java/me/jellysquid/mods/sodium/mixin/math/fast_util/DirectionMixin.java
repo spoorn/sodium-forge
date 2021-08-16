@@ -16,7 +16,7 @@ public class DirectionMixin {
 
     @Shadow
     @Final
-    private int opposite;
+    private int oppositeIndex;
 
     /**
      * @reason Avoid the modulo/abs operations
@@ -24,7 +24,7 @@ public class DirectionMixin {
      */
     @Overwrite
     public Direction getOpposite() {
-        return VALUES[this.opposite];
+        return VALUES[this.oppositeIndex];
     }
 
     /**
@@ -32,7 +32,7 @@ public class DirectionMixin {
      * @author JellySquid
      */
     @Overwrite
-    public static Direction getRandomDirection(Random rand) {
+    public static Direction getRandom(Random rand) {
         return VALUES[rand.nextInt(VALUES.length)];
     }
 }

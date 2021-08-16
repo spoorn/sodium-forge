@@ -25,12 +25,12 @@ public abstract class LivingEntityMixin extends Entity {
 
     private BlockState lastStateAtFeet = null;
 
-    private long lastPos = Long.MIN_VALUE;
+    private long lastPosition = Long.MIN_VALUE;
 
     @Inject(method = "baseTick", at = @At("HEAD"))
     private void clearCache(CallbackInfo ci) {
         this.lastStateAtFeet = null;
-        this.lastPos = Long.MIN_VALUE;
+        this.lastPosition = Long.MIN_VALUE;
     }
 
     /**
@@ -38,20 +38,20 @@ public abstract class LivingEntityMixin extends Entity {
      * @author JellySquid
      */
     @Overwrite
-    public BlockState getBlockState() {
-        int x = MathHelper.floor(this.getPosX());
-        int y = MathHelper.floor(this.getPosY());
-        int z = MathHelper.floor(this.getPosZ());
+    public BlockState getFeetBlockState() {
+        int x = MathHelper.floor(this.getX());
+        int y = MathHelper.floor(this.getY());
+        int z = MathHelper.floor(this.getZ());
 
-        long pos = BlockPos.pack(x, y, z);
+        long pos = BlockPos.asLong(x, y, z);
 
-        if (this.lastPos == pos) {
+        if (this.lastPosition == pos) {
             return this.lastStateAtFeet;
         }
 
-        BlockState state = this.world.getBlockState(new BlockPos(x, y, z));
+        BlockState state = this.level.getBlockState(new BlockPos(x, y, z));
 
-        this.lastPos = pos;
+        this.lastPosition = pos;
         this.lastStateAtFeet = state;
 
         return state;

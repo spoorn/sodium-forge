@@ -391,7 +391,7 @@ public class MultidrawChunkRenderBackend extends ChunkRenderShaderBackend<Multid
     private static boolean isWindowsIntelDriver() {
         // We only care about Windows
         // The open-source drivers on Linux are not known to have driver bugs with indirect command buffers
-        if (Util.getOSType() != Util.OS.WINDOWS) {
+        if (Util.getPlatform() != Util.OS.WINDOWS) {
             return false;
         }
 

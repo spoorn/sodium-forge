@@ -15,7 +15,7 @@ public class VertexBufferBuilder implements VertexBufferView {
     public VertexBufferBuilder(BufferVertexFormat vertexFormat, int initialCapacity) {
         this.vertexFormat = vertexFormat;
 
-        this.buffer = GLAllocation.createDirectByteBuffer(initialCapacity);
+        this.buffer = GLAllocation.createByteBuffer(initialCapacity);
         this.capacity = initialCapacity;
         this.writerOffset = 0;
     }
@@ -25,7 +25,7 @@ public class VertexBufferBuilder implements VertexBufferView {
         int cap = Math.max(this.capacity * 2, this.capacity + len);
 
         // Allocate a new buffer and copy the old buffer's contents into it
-        ByteBuffer buffer = GLAllocation.createDirectByteBuffer(cap);
+        ByteBuffer buffer = GLAllocation.createByteBuffer(cap);
         buffer.put(this.buffer);
         buffer.position(0);
 

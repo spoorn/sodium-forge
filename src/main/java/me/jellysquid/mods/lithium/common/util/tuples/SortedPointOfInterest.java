@@ -9,7 +9,7 @@ public class SortedPointOfInterest {
 
     public SortedPointOfInterest(PointOfInterest poi, BlockPos origin) {
         this.poi = poi;
-        this.distance = poi.getPos().distanceSq(origin);
+        this.distance = poi.getPos().distSqr(origin);
     }
 
     public BlockPos getPos() {

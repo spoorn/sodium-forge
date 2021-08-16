@@ -25,9 +25,9 @@ public class ArrayLightDataCache extends LightDataAccess {
     }
 
     public void reset(SectionPos origin) {
-        this.xOffset = origin.getWorldStartX() - NEIGHBOR_BLOCK_RADIUS;
-        this.yOffset = origin.getWorldStartY() - NEIGHBOR_BLOCK_RADIUS;
-        this.zOffset = origin.getWorldStartZ() - NEIGHBOR_BLOCK_RADIUS;
+        this.xOffset = origin.minBlockX() - NEIGHBOR_BLOCK_RADIUS;
+        this.yOffset = origin.minBlockY() - NEIGHBOR_BLOCK_RADIUS;
+        this.zOffset = origin.minBlockZ() - NEIGHBOR_BLOCK_RADIUS;
 
         Arrays.fill(this.light, 0L);
     }

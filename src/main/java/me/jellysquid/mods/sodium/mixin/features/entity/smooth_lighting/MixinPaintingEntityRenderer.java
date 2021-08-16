@@ -38,22 +38,22 @@ public abstract class MixinPaintingEntityRenderer extends EntityRenderer<Paintin
      * @author FlashyReese
      * @reason Redirect Lightmap coord with Sodium's EntityLighter.
      */
-    @Redirect(method = "func_229122_a_", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/WorldRenderer;getCombinedLight(Lnet/minecraft/world/IBlockDisplayReader;Lnet/minecraft/util/math/BlockPos;)I"))
+    @Redirect(method = "renderPainting", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/WorldRenderer;getLightColor(Lnet/minecraft/world/IBlockDisplayReader;Lnet/minecraft/util/math/BlockPos;)I"))
     public int redirectLightmapCoord(IBlockDisplayReader lightReaderIn, BlockPos blockPosIn) {
         if (SodiumClientMod.options().quality.smoothLighting == SodiumGameOptions.LightingQuality.HIGH && this.entity != null) {
             return EntityLighter.getBlendedLight(this, this.entity, tickDelta);
         } else {
-            return WorldRenderer.getCombinedLight(lightReaderIn, blockPosIn);
+            return WorldRenderer.getLightColor(lightReaderIn, blockPosIn);
         }
     }
 
     @Override
     public int bridge$getBlockLight(PaintingEntity entity, BlockPos pos) {
-        return this.getBlockLight(entity, pos);
+        return this.getBlockLightLevel(entity, pos);
     }
 
     @Override
     public int bridge$getSkyLight(PaintingEntity entity, BlockPos pos) {
-        return this.getSkyLight(entity, pos);
+        return this.getSkyLightLevel(entity, pos);
     }
 }

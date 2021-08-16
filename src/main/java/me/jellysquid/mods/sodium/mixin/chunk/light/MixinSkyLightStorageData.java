@@ -15,12 +15,12 @@ import org.spongepowered.asm.mixin.*;
 public class MixinSkyLightStorageData extends LightDataMap<SkyLightStorage.StorageMap>
         implements SkyLightStorageDataAccess, SharedSkyLightData {
     @Shadow
-    private int minY;
+    private int currentLowestY;
 
     @Mutable
     @Shadow
     @Final
-    private Long2IntOpenHashMap surfaceSections;
+    private Long2IntOpenHashMap topSections;
 
     // Our new double-buffered collection
     private DoubleBufferedLong2IntHashMap topArraySectionYQueue;
@@ -35,7 +35,7 @@ public class MixinSkyLightStorageData extends LightDataMap<SkyLightStorage.Stora
     @Override
     public void makeSharedCopy(Long2IntOpenHashMap map, DoubleBufferedLong2IntHashMap queue) {
         this.topArraySectionYQueue = queue;
-        this.surfaceSections = map;
+        this.topSections = map;
 
         // We need to immediately see all updates on the thread this is being copied to
         if (queue != null) {
@@ -59,8 +59,8 @@ public class MixinSkyLightStorageData extends LightDataMap<SkyLightStorage.Stora
             this.initialize();
         }
 
-        SkyLightStorage.StorageMap data = new SkyLightStorage.StorageMap(this.arrays, this.surfaceSections, this.minY);
-        ((SharedSkyLightData) (Object) data).makeSharedCopy(this.surfaceSections, this.topArraySectionYQueue);
+        SkyLightStorage.StorageMap data = new SkyLightStorage.StorageMap(this.map, this.topSections, this.currentLowestY);
+        ((SharedSkyLightData) (Object) data).makeSharedCopy(this.topSections, this.topArraySectionYQueue);
         ((SharedNibbleArrayMap) (Object) data).makeSharedCopy((SharedNibbleArrayMap) this);
 
         return data;
@@ -70,14 +70,14 @@ public class MixinSkyLightStorageData extends LightDataMap<SkyLightStorage.Stora
         ((SharedNibbleArrayMap) this).init();
 
         this.topArraySectionYQueue = new DoubleBufferedLong2IntHashMap();
-        this.surfaceSections = this.topArraySectionYQueue.createSyncView();
+        this.topSections = this.topArraySectionYQueue.createSyncView();
 
         this.init = true;
     }
 
     @Override
     public int getDefaultHeight() {
-        return this.minY;
+        return this.currentLowestY;
     }
 
     @Override
@@ -87,9 +87,9 @@ public class MixinSkyLightStorageData extends LightDataMap<SkyLightStorage.Stora
 
     @Override
     public void updateMinHeight(final int y) {
-        if (this.minY > y) {
-            this.minY = y;
-            this.surfaceSections.defaultReturnValue(this.minY);
+        if (this.currentLowestY > y) {
+            this.currentLowestY = y;
+            this.topSections.defaultReturnValue(this.currentLowestY);
         }
     }
 }

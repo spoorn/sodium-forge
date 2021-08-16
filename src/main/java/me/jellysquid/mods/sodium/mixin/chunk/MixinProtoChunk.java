@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 @Mixin(ChunkPrimer.class)
 public abstract class MixinProtoChunk {
     @Shadow
-    public abstract WorldLightManager getWorldLightManager();
+    public abstract WorldLightManager getLightEngine();
 
     @Shadow
     public abstract ChunkStatus getStatus();
@@ -35,8 +35,8 @@ public abstract class MixinProtoChunk {
         locals = LocalCapture.CAPTURE_FAILHARD
     )
     private void addLightmap(final BlockPos pos, final BlockState state, final boolean moved, final CallbackInfoReturnable<BlockState> ci, final int x, final int y, final int z, final ChunkSection section) {
-        if (this.getStatus().isAtLeast(PRE_LIGHT) && ChunkSection.isEmpty(section)) {
-            this.getWorldLightManager().func_215567_a(pos, false);
+        if (this.getStatus().isOrAfter(PRE_LIGHT) && ChunkSection.isEmpty(section)) {
+            this.getLightEngine().updateSectionStatus(pos, false);
         }
     }
 
@@ -55,8 +55,8 @@ public abstract class MixinProtoChunk {
         locals = LocalCapture.CAPTURE_FAILHARD
     )
     private void removeLightmap(final BlockPos pos, final BlockState state, final boolean moved, final CallbackInfoReturnable<BlockState> ci, final int x, final int y, final int z, final ChunkSection section) {
-        if (this.getStatus().isAtLeast(PRE_LIGHT) && ChunkSection.isEmpty(section)) {
-            this.getWorldLightManager().func_215567_a(pos, true);
+        if (this.getStatus().isOrAfter(PRE_LIGHT) && ChunkSection.isEmpty(section)) {
+            this.getLightEngine().updateSectionStatus(pos, true);
         }
     }
 }

@@ -27,7 +27,7 @@ import java.util.Queue;
 public class MixinParticleManager {
     @Shadow
     @Final
-    private Map<IParticleRenderType, Queue<Particle>> byType;
+    private Map<IParticleRenderType, Queue<Particle>> particles;
 
     private final Queue<Particle> cachedQueue = new ArrayDeque<>();
 
@@ -49,7 +49,7 @@ public class MixinParticleManager {
     @SuppressWarnings({ "SuspiciousMethodCalls", "unchecked" })
     @Redirect(method = "renderParticles(Lcom/mojang/blaze3d/matrix/MatrixStack;Lnet/minecraft/client/renderer/IRenderTypeBuffer$Impl;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/renderer/ActiveRenderInfo;FLnet/minecraft/client/renderer/culling/ClippingHelper;)V", at = @At(value = "INVOKE", target = "Ljava/util/Map;get(Ljava/lang/Object;)Ljava/lang/Object;"), remap = false)
     private <V> V filterParticleList(Map<IParticleRenderType, Queue<Particle>> map, Object key, MatrixStack matrixStack, IRenderTypeBuffer.Impl immediate, LightTexture lightmapTextureManager, ActiveRenderInfo camera, float f, ClippingHelper clippingHelper) {
-        Queue<Particle> queue = this.byType.get(key);
+        Queue<Particle> queue = this.particles.get(key);
 
         if (queue == null || queue.isEmpty()) {
             return null;
@@ -68,7 +68,7 @@ public class MixinParticleManager {
             AxisAlignedBB box = particle.getBoundingBox();
 
             // Hack: Grow the particle's bounding box in order to work around mis-behaved particles
-            if (this.cullingFrustum.isBoxInFrustum(box.minX - 1.0D, box.minY - 1.0D, box.minZ - 1.0D, box.maxX + 1.0D, box.maxY + 1.0D, box.maxZ + 1.0D)) {
+            if (this.cullingFrustum.cubeInFrustum(box.minX - 1.0D, box.minY - 1.0D, box.minZ - 1.0D, box.maxX + 1.0D, box.maxY + 1.0D, box.maxZ + 1.0D)) {
                 filtered.add(particle);
             }
         }
@@ -76,8 +76,8 @@ public class MixinParticleManager {
         return (V) filtered;
     }
 
-    @Inject(method = "renderParticles", at = @At("RETURN"))
-    private void postRenderParticles(MatrixStack matrixStack, IRenderTypeBuffer.Impl immediate, LightTexture lightmapTextureManager, ActiveRenderInfo camera, float f, CallbackInfo ci) {
+    @Inject(method = "renderParticles", at = @At("RETURN"), remap = false)
+    private void postRenderParticles(MatrixStack matrixStack, IRenderTypeBuffer.Impl immediate, LightTexture lightmapTextureManager, ActiveRenderInfo camera, float f, ClippingHelper clippingHelper, CallbackInfo ci) {
         // Ensure particles don't linger in the temporary collection
         this.cachedQueue.clear();
     }

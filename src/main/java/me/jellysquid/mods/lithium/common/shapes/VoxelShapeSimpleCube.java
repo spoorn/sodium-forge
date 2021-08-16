@@ -44,12 +44,12 @@ public class VoxelShapeSimpleCube extends VoxelShape implements VoxelShapeCaster
     }
 
     @Override
-    public VoxelShape withOffset(double x, double y, double z) {
-        return new VoxelShapeSimpleCube(this.part, this.minX + x, this.minY + y, this.minZ + z, this.maxX + x, this.maxY + y, this.maxZ + z);
+    public VoxelShape move(double x, double y, double z) {
+        return new VoxelShapeSimpleCube(this.shape, this.minX + x, this.minY + y, this.minZ + z, this.maxX + x, this.maxY + y, this.maxZ + z);
     }
 
     @Override
-    public double getAllowedOffset(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
+    public double collideX(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
         if (Math.abs(maxDist) < EPSILON) {
             return 0.0D;
         }
@@ -114,27 +114,27 @@ public class VoxelShapeSimpleCube extends VoxelShape implements VoxelShapeCaster
     }
 
     @Override
-    public List<AxisAlignedBB> toBoundingBoxList() {
-        return Lists.newArrayList(this.getBoundingBox());
+    public List<AxisAlignedBB> toAabbs() {
+        return Lists.newArrayList(this.bounds());
     }
 
     @Override
-    public AxisAlignedBB getBoundingBox() {
+    public AxisAlignedBB bounds() {
         return new AxisAlignedBB(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);
     }
 
     @Override
-    public double getStart(Direction.Axis axis) {
-        return axis.getCoordinate(this.minX, this.minY, this.minZ);
+    public double min(Direction.Axis axis) {
+        return axis.choose(this.minX, this.minY, this.minZ);
     }
 
     @Override
-    public double getEnd(Direction.Axis axis) {
-        return axis.getCoordinate(this.maxX, this.maxY, this.maxZ);
+    public double max(Direction.Axis axis) {
+        return axis.choose(this.maxX, this.maxY, this.maxZ);
     }
 
     @Override
-    protected double getValueUnchecked(Direction.Axis axis, int index) {
+    protected double get(Direction.Axis axis, int index) {
         if ((index < 0) || (index > 1)) {
             throw new ArrayIndexOutOfBoundsException();
         }
@@ -152,7 +152,7 @@ public class VoxelShapeSimpleCube extends VoxelShape implements VoxelShapeCaster
     }
 
     @Override
-    public DoubleList getValues(Direction.Axis axis) {
+    public DoubleList getCoords(Direction.Axis axis) {
         switch (axis) {
             case X:
                 return DoubleArrayList.wrap(new double[]{this.minX, this.maxX});
@@ -166,7 +166,7 @@ public class VoxelShapeSimpleCube extends VoxelShape implements VoxelShapeCaster
     }
 
     @Override
-    protected boolean contains(double x, double y, double z) {
+    protected boolean isFullWide(double x, double y, double z) {
         return (x >= this.minX) && (x < this.maxX) && (y >= this.minY) && (y < this.maxY) && (z >= this.minZ) && (z < this.maxZ);
     }
 
@@ -176,12 +176,12 @@ public class VoxelShapeSimpleCube extends VoxelShape implements VoxelShapeCaster
     }
 
     @Override
-    protected int getClosestIndex(Direction.Axis axis, double coord) {
-        if (coord < this.getStart(axis)) {
+    protected int findIndex(Direction.Axis axis, double coord) {
+        if (coord < this.min(axis)) {
             return -1;
         }
 
-        if (coord >= this.getEnd(axis)) {
+        if (coord >= this.max(axis)) {
             return 1;
         }
 
@@ -201,7 +201,7 @@ public class VoxelShapeSimpleCube extends VoxelShape implements VoxelShapeCaster
 
 
     @Override
-    public void forEachBox(VoxelShapes.ILineConsumer boxConsumer) {
+    public void forAllBoxes(VoxelShapes.ILineConsumer boxConsumer) {
         boxConsumer.consume(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);
     }
 }

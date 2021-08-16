@@ -17,6 +17,6 @@ public class PointOfInterestTypeHelper {
     }
 
     public static boolean shouldScan(ChunkSection section) {
-        return section.isValidPOIState(TYPES::contains);
+        return section.maybeHas(TYPES::contains);
     }
 }

@@ -188,7 +188,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private void setup(ActiveRenderInfo camera) {
-        Vector3d cameraPos = camera.getProjectedView();
+        Vector3d cameraPos = camera.getPosition();
 
         this.cameraX = (float) cameraPos.x;
         this.cameraY = (float) cameraPos.y;
@@ -411,7 +411,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
     }
 
     private ChunkRenderColumn<T> getAdjacentColumn(ChunkRenderColumn<T> column, Direction dir) {
-        return this.getColumn(column.getX() + dir.getXOffset(), column.getZ() + dir.getZOffset());
+        return this.getColumn(column.getX() + dir.getStepX(), column.getZ() + dir.getStepZ());
     }
 
     private ChunkRenderColumn<T> getColumn(int x, int z) {

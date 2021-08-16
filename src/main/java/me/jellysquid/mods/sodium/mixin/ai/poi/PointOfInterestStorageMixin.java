@@ -46,21 +46,21 @@ public abstract class PointOfInterestStorageMixin extends RegionSectionCache<Poi
      */
     @Overwrite
     public void checkConsistencyWithBlocks(ChunkPos chunkPos_1, ChunkSection section) {
-        SectionPos sectionPos = SectionPos.from(chunkPos_1, section.getYLocation() >> 4);
+        SectionPos sectionPos = SectionPos.of(chunkPos_1, section.bottomBlockY() >> 4);
 
-        PointOfInterestData set = this.func_219113_d(sectionPos.asLong()).orElse(null);
+        PointOfInterestData set = this.getOrLoad(sectionPos.asLong()).orElse(null);
 
         if (set != null) {
             set.refresh((consumer) -> {
                 if (PointOfInterestTypeHelper.shouldScan(section)) {
-                    this.updateFromSelection(section, sectionPos, consumer);
+                    this.updateFromSection(section, sectionPos, consumer);
                 }
             });
         } else {
             if (PointOfInterestTypeHelper.shouldScan(section)) {
-                set = this.func_235995_e_(sectionPos.asLong());
+                set = this.getOrCreate(sectionPos.asLong());
 
-                this.updateFromSelection(section, sectionPos, set::add);
+                this.updateFromSection(section, sectionPos, set::add);
             }
         }
     }
@@ -104,7 +104,7 @@ public abstract class PointOfInterestStorageMixin extends RegionSectionCache<Poi
      * @author JellySquid
      */
     @Overwrite
-    public Optional<BlockPos> func_234148_d_(Predicate<PointOfInterestType> predicate, BlockPos pos, int radius,
+    public Optional<BlockPos> findClosest(Predicate<PointOfInterestType> predicate, BlockPos pos, int radius,
                                                  PointOfInterestManager.Status status) {
         List<PointOfInterest> points = this.collectWithinRadius(predicate, pos, radius, status);
 
@@ -112,7 +112,7 @@ public abstract class PointOfInterestStorageMixin extends RegionSectionCache<Poi
         double nearestDistance = Double.POSITIVE_INFINITY;
 
         for (PointOfInterest point : points) {
-            double distance = point.getPos().distanceSq(pos);
+            double distance = point.getPos().distSqr(pos);
 
             if (distance < nearestDistance) {
                 nearest = point.getPos();
@@ -138,7 +138,7 @@ public abstract class PointOfInterestStorageMixin extends RegionSectionCache<Poi
      * @reason Avoid stream-heavy code, use faster filtering and fetches
      */
     @Overwrite
-    public Stream<PointOfInterest> func_219146_b(Predicate<PointOfInterestType> predicate, BlockPos origin, int radius,
+    public Stream<PointOfInterest> getInRange(Predicate<PointOfInterestType> predicate, BlockPos origin, int radius,
                                                PointOfInterestManager.Status status) {
         double radiusSq = radius * radius;
 
@@ -204,9 +204,9 @@ public abstract class PointOfInterestStorageMixin extends RegionSectionCache<Poi
     }
 
     private static boolean isWithinCircleRadius(BlockPos origin, double radiusSq, BlockPos pos) {
-        return origin.distanceSq(pos) <= radiusSq;
+        return origin.distSqr(pos) <= radiusSq;
     }
 
     @Shadow
-    protected abstract void updateFromSelection(ChunkSection section, SectionPos sectionPos, BiConsumer<BlockPos, PointOfInterestType> entryConsumer);
+    protected abstract void updateFromSection(ChunkSection section, SectionPos sectionPos, BiConsumer<BlockPos, PointOfInterestType> entryConsumer);
 }

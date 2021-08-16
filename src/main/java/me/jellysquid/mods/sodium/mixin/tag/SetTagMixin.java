@@ -19,7 +19,7 @@ public abstract class SetTagMixin<T> implements ITag<T> {
     @Shadow
     @Final
     @Mutable
-    private Set<T> contents;
+    private Set<T> values;
 
     /**
      * If the number of elements in a tag is very small (<=3), it can be significantly faster to use simple linear scanning
@@ -35,10 +35,10 @@ public abstract class SetTagMixin<T> implements ITag<T> {
     private void init(Set<T> set, Class<?> var2, CallbackInfo ci) {
         // Reference equality is safe for tag values
         // Use linear-scanning when the number of items in the tag is small
-        if (this.contents.size() <= 3) {
-            this.contents = new ReferenceArraySet<>(this.contents);
+        if (this.values.size() <= 3) {
+            this.values = new ReferenceArraySet<>(this.values);
         } else {
-            this.contents = new ReferenceOpenHashSet<>(this.contents);
+            this.values = new ReferenceOpenHashSet<>(this.values);
         }
     }
 }

@@ -62,9 +62,9 @@ public abstract class ServerWorldMixin extends World implements ServerWorldExten
         this.activeEntityNavigations = new ReferenceOpenHashSet<>();
     }
 
-    @Redirect(method = "onEntityAdded", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/MobEntity;getNavigator()Lnet/minecraft/pathfinding/PathNavigator;"))
+    @Redirect(method = "add", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/MobEntity;getNavigation()Lnet/minecraft/pathfinding/PathNavigator;"))
     private PathNavigator startListeningOnEntityLoad(MobEntity mobEntity) {
-        PathNavigator navigation = mobEntity.getNavigator();
+        PathNavigator navigation = mobEntity.getNavigation();
         ((EntityNavigationExtended)navigation).setRegisteredToWorld(true);
         if (navigation.getPath() != null) {
             this.activeEntityNavigations.add(navigation);
@@ -72,9 +72,9 @@ public abstract class ServerWorldMixin extends World implements ServerWorldExten
         return navigation;
     }
 
-    @Redirect(method = "removeEntityComplete", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/MobEntity;getNavigator()Lnet/minecraft/pathfinding/PathNavigator;"))
+    @Redirect(method = "removeEntityComplete", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/MobEntity;getNavigation()Lnet/minecraft/pathfinding/PathNavigator;"))
     private PathNavigator stopListeningOnEntityUnload(MobEntity mobEntity) {
-        PathNavigator navigation = mobEntity.getNavigator();
+        PathNavigator navigation = mobEntity.getNavigation();
         ((EntityNavigationExtended)navigation).setRegisteredToWorld(false);
         if (navigation.getPath() != null) {
             this.activeEntityNavigations.remove(navigation);
@@ -87,13 +87,13 @@ public abstract class ServerWorldMixin extends World implements ServerWorldExten
      * never react to the update.
      * With thousands of non-pathfinding mobs in the world, this can be a relevant difference.
      */
-    @Redirect(method = "notifyBlockUpdate", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;"))
+    @Redirect(method = "sendBlockUpdated", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;"))
     private Iterator<PathNavigator> getActiveListeners(Set<PathNavigator> set) {
         this.isIteratingActiveEntityNavigations = true;
         return this.activeEntityNavigations.iterator();
     }
 
-    @Inject(method = "notifyBlockUpdate", at = @At(value = "RETURN"))
+    @Inject(method = "sendBlockUpdated", at = @At(value = "RETURN"))
     private void onIterationFinished(BlockPos pos, BlockState oldState, BlockState newState, int flags, CallbackInfo ci) {
         this.isIteratingActiveEntityNavigations = false;
     }

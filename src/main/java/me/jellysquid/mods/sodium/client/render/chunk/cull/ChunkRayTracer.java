@@ -86,7 +86,7 @@ public class ChunkRayTracer {
             } else {
                 BlockState state = this.world.getBlockState(curr);
                 // We found an opaque block from another chunk that's blocking the view to this translucent block
-                if (!state.isAir() && state.isOpaqueCube(this.world, curr)) {
+                if (!state.isAir() && state.isSolidRender(this.world, curr)) {
                     blockStateCache.put(curr, true);
                     return false;
                 } else {

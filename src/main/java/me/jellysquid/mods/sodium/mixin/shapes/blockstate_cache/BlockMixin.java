@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 public class BlockMixin {
     private static final Object2BooleanCacheTable<VoxelShape> FULL_CUBE_CACHE = new Object2BooleanCacheTable<>(
             512,
-            shape -> !VoxelShapes.compare(VoxelShapes.fullCube(), shape, IBooleanFunction.NOT_SAME)
+            shape -> !VoxelShapes.joinIsNotEmpty(VoxelShapes.block(), shape, IBooleanFunction.NOT_SAME)
     );
 
     /**
@@ -20,7 +20,7 @@ public class BlockMixin {
      * @author gegy1000
      */
     @Overwrite
-    public static boolean isOpaque(VoxelShape shape) {
+    public static boolean isShapeFullBlock(VoxelShape shape) {
         return FULL_CUBE_CACHE.get(shape);
     }
 }

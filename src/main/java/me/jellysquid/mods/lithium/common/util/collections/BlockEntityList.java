@@ -92,7 +92,7 @@ public class BlockEntityList implements List<TileEntity> {
     }
 
     private void throwException(TileEntity blockEntity) {
-        throw new IllegalStateException("Lithium TileEntityList" + (this.posMap != null ? " with posMap" : "") + ": Adding the same TileEntity object twice: " + blockEntity.write(new CompoundNBT()));
+        throw new IllegalStateException("Lithium TileEntityList" + (this.posMap != null ? " with posMap" : "") + ": Adding the same TileEntity object twice: " + blockEntity.save(new CompoundNBT()));
     }
 
     @Override
@@ -218,7 +218,7 @@ public class BlockEntityList implements List<TileEntity> {
     }
 
     private static long getEntityPos(TileEntity e) {
-        return e.getPos().toLong();
+        return e.getBlockPos().asLong();
     }
 
 
@@ -235,17 +235,17 @@ public class BlockEntityList implements List<TileEntity> {
 
     //Methods only supported when posMap is present!
     public void markRemovedAndRemoveAllAtPosition(BlockPos blockPos) {
-        long pos = blockPos.toLong();
+        long pos = blockPos.asLong();
         TileEntity blockEntity = this.posMap.remove(pos);
         if (blockEntity != null) {
             List<TileEntity> multiEntry = this.posMapMulti.remove(pos);
             if (multiEntry != null) {
                 for (TileEntity blockEntity1 : multiEntry) {
-                    blockEntity1.remove();
+                    blockEntity1.setRemoved();
                     this.allBlockEntities.remove(blockEntity1);
                 }
             } else {
-                blockEntity.remove();
+                blockEntity.setRemoved();
                 this.allBlockEntities.remove(blockEntity);
             }
         }

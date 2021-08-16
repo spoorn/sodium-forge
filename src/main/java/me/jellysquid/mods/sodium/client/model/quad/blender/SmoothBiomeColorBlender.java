@@ -46,7 +46,7 @@ public class SmoothBiomeColorBlender implements BiomeColorBlender {
 
     private int getBlockColor(IBlockColor colorizer, IBlockDisplayReader world, BlockState state, BlockPos origin,
                               int x, int z, int colorIdx) {
-        return colorizer.getColor(state, world, this.mpos.setPos(x, origin.getY(), z), colorIdx);
+        return colorizer.getColor(state, world, this.mpos.set(x, origin.getY(), z), colorIdx);
     }
 
     private int getInterpolatedVertexColor(IBlockColor colorizer, IBlockDisplayReader world, BlockState state,

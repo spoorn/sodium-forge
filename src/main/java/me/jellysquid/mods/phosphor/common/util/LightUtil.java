@@ -13,7 +13,7 @@ public class LightUtil {
      */
     public static boolean unionCoversFullCube(VoxelShape a, VoxelShape b) {
         // At least one shape is a full cube and will match
-        if (a == VoxelShapes.fullCube() || b == VoxelShapes.fullCube()) {
+        if (a == VoxelShapes.block() || b == VoxelShapes.block()) {
             return true;
         }
 
@@ -36,10 +36,10 @@ public class LightUtil {
         }
 
         // No special optimizations can be performed, so we need to merge both shapes and test them
-        return coversFullCube(VoxelShapes.combine(a, b, IBooleanFunction.OR));
+        return coversFullCube(VoxelShapes.joinUnoptimized(a, b, IBooleanFunction.OR));
     }
 
     private static boolean coversFullCube(VoxelShape shape) {
-        return !VoxelShapes.compare(VoxelShapes.fullCube(), shape, IBooleanFunction.ONLY_FIRST);
+        return !VoxelShapes.joinIsNotEmpty(VoxelShapes.block(), shape, IBooleanFunction.ONLY_FIRST);
     }
 }

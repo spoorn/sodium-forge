@@ -33,12 +33,12 @@ public class VoxelShapeAlignedCuboidOffset extends VoxelShapeAlignedCuboid {
     }
 
     @Override
-    public VoxelShape withOffset(double x, double y, double z) {
-        return new VoxelShapeAlignedCuboidOffset(this, this.part, x, y, z);
+    public VoxelShape move(double x, double y, double z) {
+        return new VoxelShapeAlignedCuboidOffset(this, this.shape, x, y, z);
     }
 
     @Override
-    public double getAllowedOffset(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
+    public double collideX(AxisRotation cycleDirection, AxisAlignedBB box, double maxDist) {
         if (Math.abs(maxDist) < EPSILON) {
             return 0.0D;
         }
@@ -133,21 +133,21 @@ public class VoxelShapeAlignedCuboidOffset extends VoxelShapeAlignedCuboid {
     }
 
     @Override
-    public DoubleList getValues(Direction.Axis axis) {
-        return new OffsetFractionalDoubleList(axis.getCoordinate(this.xSegments, this.ySegments, this.zSegments),
-                axis.getCoordinate(this.xOffset, this.yOffset, this.zOffset));
+    public DoubleList getCoords(Direction.Axis axis) {
+        return new OffsetFractionalDoubleList(axis.choose(this.xSegments, this.ySegments, this.zSegments),
+                axis.choose(this.xOffset, this.yOffset, this.zOffset));
     }
 
     @Override
-    protected double getValueUnchecked(Direction.Axis axis, int index) {
-        return axis.getCoordinate(this.xOffset, this.yOffset, this.zOffset) +
-                ((double) index / (double) axis.getCoordinate(this.xSegments, this.ySegments, this.zSegments));
+    protected double get(Direction.Axis axis, int index) {
+        return axis.choose(this.xOffset, this.yOffset, this.zOffset) +
+                ((double) index / (double) axis.choose(this.xSegments, this.ySegments, this.zSegments));
     }
 
     @Override
-    protected int getClosestIndex(Direction.Axis axis, double coord) {
-        coord -= axis.getCoordinate(this.xOffset, this.yOffset, this.zOffset);
-        int numSegments = axis.getCoordinate(this.xSegments, this.ySegments, this.zSegments);
+    protected int findIndex(Direction.Axis axis, double coord) {
+        coord -= axis.choose(this.xOffset, this.yOffset, this.zOffset);
+        int numSegments = axis.choose(this.xSegments, this.ySegments, this.zSegments);
         return MathHelper.clamp(MathHelper.floor(coord * (double) numSegments), -1, numSegments);
     }
 }

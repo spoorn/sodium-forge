@@ -45,7 +45,7 @@ public class MixinLevelLoadingScreen {
      * @author JellySquid
      */
     @Overwrite
-    public static void func_238625_a_(MatrixStack matrixStack, TrackingChunkStatusListener tracker, int mapX, int mapY, int mapScale, int mapPadding) {
+    public static void renderChunks(MatrixStack matrixStack, TrackingChunkStatusListener tracker, int mapX, int mapY, int mapScale, int mapPadding) {
         if (STATUS_TO_COLOR_FAST == null) {
             STATUS_TO_COLOR_FAST = new Reference2IntOpenHashMap<>(COLORS.size());
             STATUS_TO_COLOR_FAST.put(null, NULL_STATUS_COLOR);
@@ -53,7 +53,7 @@ public class MixinLevelLoadingScreen {
                     .forEach(entry -> STATUS_TO_COLOR_FAST.put(entry.getKey(), ColorARGB.toABGR(entry.getIntValue(), 0xFF)));
         }
 
-        Matrix4f matrix = matrixStack.getLast().getMatrix();
+        Matrix4f matrix = matrixStack.last().pose();
 
         Tessellator tessellator = Tessellator.getInstance();
 
@@ -61,13 +61,13 @@ public class MixinLevelLoadingScreen {
         RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
         
-        BufferBuilder buffer = tessellator.getBuffer();
+        BufferBuilder buffer = tessellator.getBuilder();
         buffer.begin(GL20C.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
         BasicScreenQuadVertexSink sink = VertexDrain.of(buffer).createSink(VanillaVertexTypes.BASIC_SCREEN_QUADS);
 
-        int centerSize = tracker.getDiameter();
-        int size = tracker.func_219523_d();
+        int centerSize = tracker.getFullDiameter();
+        int size = tracker.getDiameter();
 
         int tileSize = mapScale + mapPadding;
 
@@ -113,7 +113,7 @@ public class MixinLevelLoadingScreen {
         }
 
         sink.flush();
-        tessellator.draw();
+        tessellator.end();
 
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();

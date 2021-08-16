@@ -40,31 +40,31 @@ import java.util.concurrent.CompletableFuture;
 public abstract class ServerChunkManagerMixin {
     @Shadow
     @Final
-    private ServerChunkProvider.ChunkExecutor executor;
+    private ServerChunkProvider.ChunkExecutor mainThreadProcessor;
 
     @Shadow
     @Final
-    private TicketManager ticketManager;
+    private TicketManager distanceManager;
 
     @Shadow
     @Final
-    public ChunkManager chunkManager;
+    public ChunkManager chunkMap;
 
     @Shadow
-    protected abstract ChunkHolder func_217213_a(long pos);
+    protected abstract ChunkHolder getVisibleChunkIfPresent(long pos);
 
     @Shadow
-    protected abstract boolean func_217235_l();
+    protected abstract boolean runDistanceManagerUpdates();
 
     @Shadow
-    protected abstract boolean func_217224_a(ChunkHolder holder, int maxLevel);
+    protected abstract boolean chunkAbsent(ChunkHolder holder, int maxLevel);
 
     @Shadow
     @Final
     private Thread mainThread;
     private long time;
 
-    @Inject(method = "func_217235_l()Z", at = @At("HEAD"))
+    @Inject(method = "runDistanceManagerUpdates()Z", at = @At("HEAD"))
     private void preTick(CallbackInfoReturnable<Boolean> cir) {
         this.time++;
     }
@@ -111,7 +111,7 @@ public abstract class ServerChunkManagerMixin {
     }
 
     private IChunk getChunkOffThread(int x, int z, ChunkStatus status, boolean create) {
-        return CompletableFuture.supplyAsync(() -> this.getChunk(x, z, status, create), this.executor).join();
+        return CompletableFuture.supplyAsync(() -> this.getChunk(x, z, status, create), this.mainThreadProcessor).join();
     }
 
     /**
@@ -128,23 +128,23 @@ public abstract class ServerChunkManagerMixin {
         final long key = ChunkPos.asLong(x, z);
         final int level = 33 + ChunkStatus.getDistance(status);
 
-        ChunkHolder holder = this.func_217213_a(key);
+        ChunkHolder holder = this.getVisibleChunkIfPresent(key);
 
         // Check if the holder is present and is at least of the level we need
-        if (this.func_217224_a(holder, level)) {
+        if (this.chunkAbsent(holder, level)) {
             if (create) {
                 // The chunk holder is missing, so we need to create a ticket in order to load it
                 this.createChunkLoadTicket(x, z, level);
 
                 // Tick the chunk manager to have our new ticket processed
-                this.func_217235_l();
+                this.runDistanceManagerUpdates();
 
                 // Try to fetch the holder again now that we have requested a load
-                holder = this.func_217213_a(key);
+                holder = this.getVisibleChunkIfPresent(key);
 
                 // If the holder is still not available, we need to fail now... something is wrong.
-                if (this.func_217224_a(holder, level)) {
-                    throw Util.pauseDevMode(new IllegalStateException("No chunk holder after ticket has been added"));
+                if (this.chunkAbsent(holder, level)) {
+                    throw Util.pauseInIde(new IllegalStateException("No chunk holder after ticket has been added"));
                 }
             } else {
                 // The holder is absent and we weren't asked to create anything, so return null
@@ -158,7 +158,7 @@ public abstract class ServerChunkManagerMixin {
         }
 
         CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> loadFuture = null;
-        CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> statusFuture = ((ChunkHolderExtended) holder).getFutureByStatus(status.ordinal());
+        CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> statusFuture = ((ChunkHolderExtended) holder).getFutureByStatus(status.getIndex());
 
         if (statusFuture != null) {
             Either<IChunk, ChunkHolder.IChunkLoadingError> immediate = statusFuture.getNow(null);
@@ -179,13 +179,13 @@ public abstract class ServerChunkManagerMixin {
 
         // Create a future to load the chunk if none exists
         if (loadFuture == null) {
-            if (ChunkHolder.getChunkStatusFromLevel(holder.getChunkLevel()).isAtLeast(status)) {
+            if (ChunkHolder.getStatus(holder.getTicketLevel()).isOrAfter(status)) {
                 // Create a new future which upgrades the chunk from the previous status level to the desired one
-                CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> mergedFuture = this.chunkManager.func_219244_a(holder, status);
+                CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> mergedFuture = this.chunkMap.schedule(holder, status);
 
                 // Add this future to the chunk holder so subsequent calls will see it
-                holder.chain(mergedFuture);
-                ((ChunkHolderExtended) holder).setFutureForStatus(status.ordinal(), mergedFuture);
+                holder.updateChunkToSave(mergedFuture);
+                ((ChunkHolderExtended) holder).setFutureForStatus(status.getIndex(), mergedFuture);
 
                 loadFuture = mergedFuture;
             } else {
@@ -203,7 +203,7 @@ public abstract class ServerChunkManagerMixin {
         if (!loadFuture.isDone()) {
             // Perform other chunk tasks while waiting for this future to complete
             // This returns when either the future is done or there are no other tasks remaining
-            this.executor.driveUntil(loadFuture::isDone);
+            this.mainThreadProcessor.managedBlock(loadFuture::isDone);
         }
 
         // Wait for the result of the future and unwrap it, returning null if the chunk is absent
@@ -213,7 +213,7 @@ public abstract class ServerChunkManagerMixin {
     private void createChunkLoadTicket(int x, int z, int level) {
         ChunkPos chunkPos = new ChunkPos(x, z);
 
-        this.ticketManager.registerWithLevel(TicketType.UNKNOWN, chunkPos, level, chunkPos);
+        this.distanceManager.addTicket(TicketType.UNKNOWN, chunkPos, level, chunkPos);
     }
 
     /**
@@ -231,7 +231,7 @@ public abstract class ServerChunkManagerMixin {
      * status.
      */
     private static long createCacheKey(int chunkX, int chunkZ, ChunkStatus status) {
-        return ((long) chunkX & 0xfffffffL) | (((long) chunkZ & 0xfffffffL) << 28) | ((long) status.ordinal() << 56);
+        return ((long) chunkX & 0xfffffffL) | (((long) chunkZ & 0xfffffffL) << 28) | ((long) status.getIndex() << 56);
     }
 
     /**
@@ -250,7 +250,7 @@ public abstract class ServerChunkManagerMixin {
     /**
      * Reset our own caches whenever vanilla does the same
      */
-    @Inject(method = "invalidateCaches", at = @At("HEAD"))
+    @Inject(method = "clearCache", at = @At("HEAD"))
     private void onCachesCleared(CallbackInfo ci) {
         Arrays.fill(this.cacheKeys, Long.MAX_VALUE);
         Arrays.fill(this.cacheChunks, null);

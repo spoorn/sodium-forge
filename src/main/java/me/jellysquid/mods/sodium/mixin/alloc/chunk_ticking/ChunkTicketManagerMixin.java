@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 @Mixin(TicketManager.class)
 public abstract class ChunkTicketManagerMixin {
     @Shadow
-    private long currentTime;
+    private long ticketTickCounter;
 
     @Shadow
     @Final
@@ -27,7 +27,7 @@ public abstract class ChunkTicketManagerMixin {
     private TicketManager.ChunkTicketTracker ticketTracker;
 
     @Shadow
-    private static int getLevel(SortedArraySet<Ticket<?>> sortedArraySet) {
+    private static int getTicketLevelAt(SortedArraySet<Ticket<?>> sortedArraySet) {
         throw new UnsupportedOperationException();
     }
 
@@ -36,19 +36,19 @@ public abstract class ChunkTicketManagerMixin {
      * @author JellySquid
      */
     @Overwrite
-    public void tick() {
-        ++this.currentTime;
+    public void purgeStaleTickets() {
+        ++this.ticketTickCounter;
 
         ObjectIterator<Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>>> iterator =
                 this.tickets.long2ObjectEntrySet().fastIterator();
-        Predicate<Ticket<?>> predicate = (chunkTicket) -> chunkTicket.isExpired(this.currentTime);
+        Predicate<Ticket<?>> predicate = (chunkTicket) -> chunkTicket.timedOut(this.ticketTickCounter);
 
         while (iterator.hasNext()) {
             Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> entry = iterator.next();
             SortedArraySet<Ticket<?>> value = entry.getValue();
 
             if (value.removeIf(predicate)) {
-                this.ticketTracker.updateSourceLevel(entry.getLongKey(), getLevel(entry.getValue()), false);
+                this.ticketTracker.update(entry.getLongKey(), getTicketLevelAt(entry.getValue()), false);
             }
 
             if (value.isEmpty()) {

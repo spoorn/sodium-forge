@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(Region.class)
 public class ChunkCacheMixin {
-    private static final BlockState DEFAULT_BLOCK = Blocks.AIR.getDefaultState();
+    private static final BlockState DEFAULT_BLOCK = Blocks.AIR.defaultBlockState();
 
     @Shadow
     @Final
@@ -32,11 +32,11 @@ public class ChunkCacheMixin {
 
     @Shadow
     @Final
-    protected int chunkX;
+    protected int centerX;
 
     @Shadow
     @Final
-    protected int chunkZ;
+    protected int centerZ;
 
     // A 1D view of the chunks available to this cache
     private IChunk[] chunksFlat;
@@ -65,12 +65,12 @@ public class ChunkCacheMixin {
     public BlockState getBlockState(BlockPos pos) {
         int y = pos.getY();
 
-        if (!World.isYOutOfBounds(pos.getY())) {
+        if (!World.isOutsideBuildHeight(pos.getY())) {
             int x = pos.getX();
             int z = pos.getZ();
 
-            int chunkX = (x >> 4) - this.chunkX;
-            int chunkZ = (z >> 4) - this.chunkZ;
+            int chunkX = (x >> 4) - this.centerX;
+            int chunkZ = (z >> 4) - this.centerZ;
 
             if (chunkX >= 0 && chunkX < this.xLen && chunkZ >= 0 && chunkZ < this.zLen) {
                 IChunk chunk = this.chunksFlat[(chunkX * this.zLen) + chunkZ];

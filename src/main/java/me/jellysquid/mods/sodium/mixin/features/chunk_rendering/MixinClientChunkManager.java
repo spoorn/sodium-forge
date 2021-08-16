@@ -33,14 +33,14 @@ public abstract class MixinClientChunkManager implements ChunkStatusListenerMana
 
     private ChunkStatusListener listener;
 
-    @Inject(method = "loadChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/world/ClientWorld;onChunkLoaded(II)V", shift = At.Shift.AFTER))
+    @Inject(method = "replaceWithPacketData", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/world/ClientWorld;onChunkLoaded(II)V", shift = At.Shift.AFTER))
     private void afterLoadChunkFromPacket(int chunkX, int chunkZ, BiomeContainer biomeContainerIn, PacketBuffer packetIn, CompoundNBT nbtTagIn, int sizeIn, boolean fullChunk, CallbackInfoReturnable<Chunk> cir) {
         if (this.listener != null && this.loadedChunks.add(ChunkPos.asLong(chunkX, chunkZ))) {
             this.listener.onChunkAdded(chunkX, chunkZ);
         }
     }
 
-    @Inject(method = "unloadChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientChunkProvider$ChunkArray;unload(ILnet/minecraft/world/chunk/Chunk;Lnet/minecraft/world/chunk/Chunk;)Lnet/minecraft/world/chunk/Chunk;", shift = At.Shift.AFTER))
+    @Inject(method = "drop", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientChunkProvider$ChunkArray;replace(ILnet/minecraft/world/chunk/Chunk;Lnet/minecraft/world/chunk/Chunk;)Lnet/minecraft/world/chunk/Chunk;", shift = At.Shift.AFTER))
     private void afterUnloadChunk(int x, int z, CallbackInfo ci) {
         if (this.listener != null && this.loadedChunks.remove(ChunkPos.asLong(x, z))) {
             this.listener.onChunkRemoved(x, z);
@@ -73,12 +73,12 @@ public abstract class MixinClientChunkManager implements ChunkStatusListenerMana
         this.needsTrackingUpdate = false;
     }
 
-    @Inject(method = "setCenter(II)V", at = @At("RETURN"))
+    @Inject(method = "updateViewCenter(II)V", at = @At("RETURN"))
     private void afterChunkMapCenterChanged(int x, int z, CallbackInfo ci) {
         this.needsTrackingUpdate = true;
     }
 
-    @Inject(method = "setViewDistance",
+    @Inject(method = "updateViewRadius",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/multiplayer/ClientChunkProvider$ChunkArray;replace(ILnet/minecraft/world/chunk/Chunk;)V",
                     shift = At.Shift.AFTER))
@@ -101,28 +101,29 @@ public abstract class MixinClientChunkManager implements ChunkStatusListenerMana
         @Mutable
         @Shadow
         @Final
-        private int viewDistance;
+        private int chunkRadius;
 
         @Mutable
         @Shadow
         @Final
-        private int sideLength;
+        private int viewRange;
 
         private int factor;
 
-        @Inject(method = "<init>", at = @At("RETURN"))
+        @Dynamic("The constructor needs the outer class reference in the first parameter which is not in the source code.")
+        @Inject(method = "<init>(Lnet/minecraft/client/multiplayer/ClientChunkProvider;I)V", at = @At("RETURN"))
         private void reinit(ClientChunkProvider outer, int viewDistanceIn, CallbackInfo ci) {
             // This re-initialization is a bit expensive on memory, but it only happens when either the world is
             // switched or the render distance is changed;
-            this.viewDistance = viewDistanceIn;
+            this.chunkRadius = viewDistanceIn;
 
             // Make the diameter a power-of-two so we can exploit bit-wise math when computing indices
-            this.sideLength = MathHelper.smallestEncompassingPowerOfTwo(viewDistanceIn * 2 + 1);
+            this.viewRange = MathHelper.smallestEncompassingPowerOfTwo(viewDistanceIn * 2 + 1);
 
             // The factor is used as a bit mask to replace the modulo in getIndex
-            this.factor = this.sideLength - 1;
+            this.factor = this.viewRange - 1;
 
-            this.chunks = new AtomicReferenceArray<>(this.sideLength * this.sideLength);
+            this.chunks = new AtomicReferenceArray<>(this.viewRange * this.viewRange);
         }
 
         /**
@@ -131,7 +132,7 @@ public abstract class MixinClientChunkManager implements ChunkStatusListenerMana
          */
         @Overwrite
         private int getIndex(int chunkX, int chunkZ) {
-            return (chunkZ & this.factor) * this.sideLength + (chunkX & this.factor);
+            return (chunkZ & this.factor) * this.viewRange + (chunkX & this.factor);
         }
     }
 }

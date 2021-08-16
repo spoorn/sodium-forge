@@ -47,14 +47,14 @@ public class ChunkProgram extends GlProgram {
 
         this.fogShader.setup();
 
-        MatrixStack.Entry matrices = matrixStack.getLast();
+        MatrixStack.Entry matrices = matrixStack.last();
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer bufModelViewProjection = stack.mallocFloat(16);
 
-            Matrix4f modelView = matrices.getMatrix().copy();
+            Matrix4f modelView = matrices.pose().copy();
             modelView.multiplyBackward(projection);
-            modelView.write(bufModelViewProjection);
+            modelView.store(bufModelViewProjection);
             GL20.glUniformMatrix4fv(this.uModelViewProjectionMatrix, false, bufModelViewProjection);
             // If for some reason vanilla minecraft doesn't expose the projection matrix anymore, we can fetch it
             // if it was pushed onto the GL stack with below code

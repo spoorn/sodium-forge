@@ -24,25 +24,25 @@ import java.nio.ByteBuffer;
 @Mixin(BufferBuilder.class)
 public abstract class MixinBufferBuilder implements VertexBufferView, VertexDrain {
     @Shadow
-    private int nextElementBytes;
+    private int nextElementByte;
 
     @Shadow
-    private ByteBuffer byteBuffer;
+    private ByteBuffer buffer;
 
     @Shadow
     @Final
     private static Logger LOGGER;
 
     @Shadow
-    private static int roundUpPositive(int amount) {
+    private static int roundUp(int amount) {
         throw new UnsupportedOperationException();
     }
 
     @Shadow
-    private VertexFormat vertexFormat;
+    private VertexFormat format;
 
     @Shadow
-    private int vertexCount;
+    private int vertices;
 
     /**
      * This fixes the IllegalArgumentException in Buffer.limit(newLimit) as described in
@@ -55,10 +55,10 @@ public abstract class MixinBufferBuilder implements VertexBufferView, VertexDrai
      *
      * No idea why the fuck this has to be a Redirect instead of Inject.  Only slept 5 hours last night.  I'm tired.
      */
-    @Redirect(method = "getNextBuffer", at = @At(value = "INVOKE", target = "Ljava/nio/Buffer;limit(I)Ljava/nio/Buffer;"))
+    @Redirect(method = "popNextBuffer", at = @At(value = "INVOKE", target = "Ljava/nio/Buffer;limit(I)Ljava/nio/Buffer;"))
     public Buffer debugGetNextBuffer(Buffer buffer, int newLimit) {
         ensureBufferCapacity(newLimit);
-        buffer = (Buffer) this.byteBuffer;
+        buffer = (Buffer) this.buffer;
         buffer.limit(newLimit);
         return buffer;
     }
@@ -66,50 +66,50 @@ public abstract class MixinBufferBuilder implements VertexBufferView, VertexDrai
     @Override
     public boolean ensureBufferCapacity(int bytes) {
         // Ensure that there is always space for 1 more vertex; see BufferBuilder.next()
-        bytes += vertexFormat.getSize();
+        bytes += format.getVertexSize();
 
-        if (this.nextElementBytes + bytes <= this.byteBuffer.capacity()) {
+        if (this.nextElementByte + bytes <= this.buffer.capacity()) {
             return false;
         }
 
-        int newSize = this.byteBuffer.capacity() + roundUpPositive(bytes);
+        int newSize = this.buffer.capacity() + roundUp(bytes);
 
-        LOGGER.debug("Needed to grow BufferBuilder buffer: Old size {} bytes, new size {} bytes.", this.byteBuffer.capacity(), newSize);
+        LOGGER.debug("Needed to grow BufferBuilder buffer: Old size {} bytes, new size {} bytes.", this.buffer.capacity(), newSize);
 
-        this.byteBuffer.position(0);
+        this.buffer.position(0);
 
-        ByteBuffer byteBuffer = GLAllocation.createDirectByteBuffer(newSize);
-        byteBuffer.put(this.byteBuffer);
+        ByteBuffer byteBuffer = GLAllocation.createByteBuffer(newSize);
+        byteBuffer.put(this.buffer);
         byteBuffer.rewind();
 
-        this.byteBuffer = byteBuffer;
+        this.buffer = byteBuffer;
 
         return true;
     }
 
     @Override
     public ByteBuffer getDirectBuffer() {
-        return this.byteBuffer;
+        return this.buffer;
     }
 
     @Override
     public int getWriterPosition() {
-        return this.nextElementBytes;
+        return this.nextElementByte;
     }
 
     @Override
     public BufferVertexFormat getVertexFormat() {
-        return BufferVertexFormat.from(this.vertexFormat);
+        return BufferVertexFormat.from(this.format);
     }
 
     @Override
     public void flush(int vertexCount, BufferVertexFormat format) {
-        if (BufferVertexFormat.from(this.vertexFormat) != format) {
-            throw new IllegalStateException("Mis-matched vertex format (expected: [" + format + "], currently using: [" + this.vertexFormat + "])");
+        if (BufferVertexFormat.from(this.format) != format) {
+            throw new IllegalStateException("Mis-matched vertex format (expected: [" + format + "], currently using: [" + this.format + "])");
         }
 
-        this.vertexCount += vertexCount;
-        this.nextElementBytes += vertexCount * format.getStride();
+        this.vertices += vertexCount;
+        this.nextElementByte += vertexCount * format.getStride();
     }
 
     @Override

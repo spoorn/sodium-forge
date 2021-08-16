@@ -13,22 +13,22 @@ import org.spongepowered.asm.mixin.Shadow;
 public class NoiseChunkGeneratorMixin {
     @Shadow
     @Final
-    private OctavesNoiseGenerator field_222568_o;
+    private OctavesNoiseGenerator minLimitPerlinNoise;
 
     @Shadow
     @Final
-    private OctavesNoiseGenerator field_222569_p;
+    private OctavesNoiseGenerator maxLimitPerlinNoise;
 
     @Shadow
     @Final
-    private OctavesNoiseGenerator field_222570_q;
+    private OctavesNoiseGenerator mainPerlinNoise;
 
     /**
      * @reason Smarter use of perlin noise that avoids unneeded sampling.
      * @author SuperCoder79
      */
     @Overwrite
-    public double func_222552_a(int x, int y, int z, double horizontalScale, double verticalScale, double horizontalStretch, double verticalStretch) {
+    public double sampleAndClampNoise(int x, int y, int z, double horizontalScale, double verticalScale, double horizontalStretch, double verticalStretch) {
         // To generate it's terrain, Minecraft uses two different perlin noises.
         // It interpolates these two noises to create the final sample at a position.
         // However, the interpolation noise is not all that good and spends most of it's time at > 1 or < 0, rendering
@@ -44,10 +44,10 @@ public class NoiseChunkGeneratorMixin {
             double scaledVerticalScale = verticalStretch * frequency;
             double scaledY = y * scaledVerticalScale;
 
-            interpolationValue += sampleOctave(this.field_222570_q.getOctave(octave),
-                    OctavesNoiseGenerator.maintainPrecision(x * horizontalStretch * frequency),
-                    OctavesNoiseGenerator.maintainPrecision(scaledY),
-                    OctavesNoiseGenerator.maintainPrecision(z * horizontalStretch * frequency), scaledVerticalScale, scaledY, frequency);
+            interpolationValue += sampleOctave(this.mainPerlinNoise.getOctaveNoise(octave),
+                    OctavesNoiseGenerator.wrap(x * horizontalStretch * frequency),
+                    OctavesNoiseGenerator.wrap(scaledY),
+                    OctavesNoiseGenerator.wrap(z * horizontalStretch * frequency), scaledVerticalScale, scaledY, frequency);
 
             frequency /= 2.0;
         }
@@ -62,10 +62,10 @@ public class NoiseChunkGeneratorMixin {
                 double scaledVerticalScale = verticalScale * frequency;
                 double scaledY = y * scaledVerticalScale;
 
-                noise += sampleOctave(this.field_222569_p.getOctave(octave),
-                        OctavesNoiseGenerator.maintainPrecision(x * horizontalScale * frequency),
-                        OctavesNoiseGenerator.maintainPrecision(scaledY),
-                        OctavesNoiseGenerator.maintainPrecision(z * horizontalScale * frequency), scaledVerticalScale, scaledY, frequency);
+                noise += sampleOctave(this.maxLimitPerlinNoise.getOctaveNoise(octave),
+                        OctavesNoiseGenerator.wrap(x * horizontalScale * frequency),
+                        OctavesNoiseGenerator.wrap(scaledY),
+                        OctavesNoiseGenerator.wrap(z * horizontalScale * frequency), scaledVerticalScale, scaledY, frequency);
 
                 frequency /= 2.0;
             }
@@ -78,10 +78,10 @@ public class NoiseChunkGeneratorMixin {
             for (int octave = 0; octave < 16; octave++) {
                 double scaledVerticalScale = verticalScale * frequency;
                 double scaledY = y * scaledVerticalScale;
-                noise += sampleOctave(this.field_222568_o.getOctave(octave),
-                        OctavesNoiseGenerator.maintainPrecision(x * horizontalScale * frequency),
-                        OctavesNoiseGenerator.maintainPrecision(scaledY),
-                        OctavesNoiseGenerator.maintainPrecision(z * horizontalScale * frequency), scaledVerticalScale, scaledY, frequency);
+                noise += sampleOctave(this.minLimitPerlinNoise.getOctaveNoise(octave),
+                        OctavesNoiseGenerator.wrap(x * horizontalScale * frequency),
+                        OctavesNoiseGenerator.wrap(scaledY),
+                        OctavesNoiseGenerator.wrap(z * horizontalScale * frequency), scaledVerticalScale, scaledY, frequency);
 
                 frequency /= 2.0;
             }
@@ -99,12 +99,12 @@ public class NoiseChunkGeneratorMixin {
                 // Pre calculate these values to share them
                 double scaledVerticalScale = verticalScale * frequency;
                 double scaledY = y * scaledVerticalScale;
-                double xVal = OctavesNoiseGenerator.maintainPrecision(x * horizontalScale * frequency);
-                double yVal = OctavesNoiseGenerator.maintainPrecision(scaledY);
-                double zVal = OctavesNoiseGenerator.maintainPrecision(z * horizontalScale * frequency);
+                double xVal = OctavesNoiseGenerator.wrap(x * horizontalScale * frequency);
+                double yVal = OctavesNoiseGenerator.wrap(scaledY);
+                double zVal = OctavesNoiseGenerator.wrap(z * horizontalScale * frequency);
 
-                upperNoise += sampleOctave(this.field_222569_p.getOctave(octave), xVal, yVal, zVal, scaledVerticalScale, scaledY, frequency);
-                lowerNoise += sampleOctave(this.field_222568_o.getOctave(octave), xVal, yVal, zVal, scaledVerticalScale, scaledY, frequency);
+                upperNoise += sampleOctave(this.maxLimitPerlinNoise.getOctaveNoise(octave), xVal, yVal, zVal, scaledVerticalScale, scaledY, frequency);
+                lowerNoise += sampleOctave(this.minLimitPerlinNoise.getOctaveNoise(octave), xVal, yVal, zVal, scaledVerticalScale, scaledY, frequency);
 
                 frequency /= 2.0;
             }
@@ -115,6 +115,6 @@ public class NoiseChunkGeneratorMixin {
     }
 
     private static double sampleOctave(ImprovedNoiseGenerator sampler, double x, double y, double z, double scaledVerticalScale, double scaledY, double frequency) {
-        return sampler.func_215456_a(x, y, z, scaledVerticalScale, scaledY) / frequency;
+        return sampler.noise(x, y, z, scaledVerticalScale, scaledY) / frequency;
     }
 }

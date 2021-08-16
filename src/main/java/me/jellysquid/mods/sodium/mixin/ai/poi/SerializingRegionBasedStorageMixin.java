@@ -33,20 +33,20 @@ public abstract class SerializingRegionBasedStorageMixin<R> implements RegionBas
     @Mutable
     @Shadow
     @Final
-    private Long2ObjectMap<Optional<R>> data;
+    private Long2ObjectMap<Optional<R>> storage;
 
     @Shadow
-    protected abstract Optional<R> func_219113_d(long pos);
+    protected abstract Optional<R> getOrLoad(long pos);
 
     @Shadow
-    protected abstract void func_219107_b(ChunkPos pos);
+    protected abstract void readColumn(ChunkPos pos);
 
     private Long2ObjectOpenHashMap<BitSet> columns;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(File directory, Function<Runnable, Codec<R>> function, Function<Runnable, R> function2, DataFixer dataFixer, DefaultTypeReferences dataFixTypes, boolean sync, CallbackInfo ci) {
         this.columns = new Long2ObjectOpenHashMap<>();
-        this.data = new ListeningLong2ObjectOpenHashMap<>(this::onEntryAdded, this::onEntryRemoved);
+        this.storage = new ListeningLong2ObjectOpenHashMap<>(this::onEntryAdded, this::onEntryRemoved);
     }
 
     private void onEntryRemoved(long key, Optional<R> value) {
@@ -55,15 +55,15 @@ public abstract class SerializingRegionBasedStorageMixin<R> implements RegionBas
     }
 
     private void onEntryAdded(long key, Optional<R> value) {
-        int y = SectionPos.extractY(key);
+        int y = SectionPos.y(key);
 
         // We only care about items belonging to a valid sub-chunk
         if (y < 0 || y >= 16) {
             return;
         }
 
-        int x = SectionPos.extractX(key);
-        int z = SectionPos.extractZ(key);
+        int x = SectionPos.x(key);
+        int z = SectionPos.z(key);
 
         long pos = ChunkPos.asLong(x, z);
 
@@ -86,7 +86,7 @@ public abstract class SerializingRegionBasedStorageMixin<R> implements RegionBas
         }
 
         return flags.stream()
-                .mapToObj((chunkY) -> this.data.get(SectionPos.asLong(chunkX, chunkY, chunkZ)).orElse(null))
+                .mapToObj((chunkY) -> this.storage.get(SectionPos.asLong(chunkX, chunkY, chunkZ)).orElse(null))
                 .filter(Objects::nonNull);
     }
 
@@ -107,7 +107,7 @@ public abstract class SerializingRegionBasedStorageMixin<R> implements RegionBas
             protected R computeNext() {
                 // If the next bit is <0, that means that no remaining set bits exist
                 while (this.nextBit >= 0) {
-                    Optional<R> next = SerializingRegionBasedStorageMixin.this.data.get(SectionPos.asLong(chunkX, this.nextBit, chunkZ));
+                    Optional<R> next = SerializingRegionBasedStorageMixin.this.storage.get(SectionPos.asLong(chunkX, this.nextBit, chunkZ));
 
                     // Find and advance to the next set bit
                     this.nextBit = flags.nextSetBit(this.nextBit + 1);
@@ -131,7 +131,7 @@ public abstract class SerializingRegionBasedStorageMixin<R> implements RegionBas
             return flags;
         }
 
-        this.func_219107_b(new ChunkPos(pos));
+        this.readColumn(new ChunkPos(pos));
 
         return this.getColumnInfo(pos, true);
     }

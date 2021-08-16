@@ -21,11 +21,11 @@ public abstract class SpriteTexturedVertexTransformer<T extends VertexSink> exte
     public SpriteTexturedVertexTransformer(T delegate, TextureAtlasSprite sprite) {
         super(delegate);
 
-        this.uMin = sprite.getMinU();
-        this.vMin = sprite.getMinV();
+        this.uMin = sprite.getU0();
+        this.vMin = sprite.getV0();
 
-        this.uMaxMin = sprite.getMaxU() - this.uMin;
-        this.vMaxMin = sprite.getMaxV() - this.vMin;
+        this.uMaxMin = sprite.getU1() - this.uMin;
+        this.vMaxMin = sprite.getV1() - this.vMin;
     }
 
     protected float transformTextureU(float u) {

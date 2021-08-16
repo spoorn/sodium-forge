@@ -15,11 +15,11 @@ public abstract class MixinLightingProvider implements InitialLightingAccess
 {
     @Shadow
     @Final
-    private LightEngine<?, ?> blockLight;
+    private LightEngine<?, ?> blockEngine;
 
     @Shadow
     @Final
-    private LightEngine<?, ?> skyLight;
+    private LightEngine<?, ?> skyEngine;
 
     @Shadow
     public void updateSectionStatus(SectionPos pos, boolean notReady) {
@@ -39,23 +39,23 @@ public abstract class MixinLightingProvider implements InitialLightingAccess
 
     @Override
     public void enableSourceLight(final long chunkPos) {
-        if (this.blockLight != null) {
-            ((InitialLightingAccess) this.blockLight).enableSourceLight(chunkPos);
+        if (this.blockEngine != null) {
+            ((InitialLightingAccess) this.blockEngine).enableSourceLight(chunkPos);
         }
 
-        if (this.skyLight != null) {
-            ((InitialLightingAccess) this.skyLight).enableSourceLight(chunkPos);
+        if (this.skyEngine != null) {
+            ((InitialLightingAccess) this.skyEngine).enableSourceLight(chunkPos);
         }
     }
 
     @Override
     public void enableLightUpdates(final long chunkPos) {
-        if (this.blockLight != null) {
-            ((InitialLightingAccess) this.blockLight).enableLightUpdates(chunkPos);
+        if (this.blockEngine != null) {
+            ((InitialLightingAccess) this.blockEngine).enableLightUpdates(chunkPos);
         }
 
-        if (this.skyLight != null) {
-            ((InitialLightingAccess) this.skyLight).enableLightUpdates(chunkPos);
+        if (this.skyEngine != null) {
+            ((InitialLightingAccess) this.skyEngine).enableLightUpdates(chunkPos);
         }
     }
 }

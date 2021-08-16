@@ -45,7 +45,7 @@ public class BoxMixin {
      * @author JellySquid
      */
     @Overwrite
-    public double getMin(Direction.Axis axis) {
+    public double min(Direction.Axis axis) {
         switch (axis.ordinal()) {
             case 0: //X
                 return this.minX;
@@ -63,7 +63,7 @@ public class BoxMixin {
      * @author JellySquid
      */
     @Overwrite
-    public double getMax(Direction.Axis axis) {
+    public double max(Direction.Axis axis) {
         switch (axis.ordinal()) {
             case 0: //X
                 return this.maxX;

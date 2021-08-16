@@ -18,14 +18,14 @@ import java.util.function.Predicate;
 public class ArmorStandEntityMixin {
     @Shadow
     @Final
-    private static Predicate<Entity> IS_RIDEABLE_MINECART;
+    private static Predicate<Entity> RIDABLE_MINECARTS;
 
-    @Redirect(method = "collideWithNearbyEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getEntitiesInAABBexcluding(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/AxisAlignedBB;Ljava/util/function/Predicate;)Ljava/util/List;"))
+    @Redirect(method = "pushEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/AxisAlignedBB;Ljava/util/function/Predicate;)Ljava/util/List;"))
     private List<Entity> getMinecartsDirectly(World world, Entity excluded, AxisAlignedBB box, Predicate<? super Entity> predicate) {
-        if (predicate == IS_RIDEABLE_MINECART) {
+        if (predicate == RIDABLE_MINECARTS) {
             //not using MinecartEntity.class and no predicate, because mods may add another minecart that is type ridable without being MinecartEntity
-            return world.getEntitiesWithinAABB(AbstractMinecartEntity.class, box, (Entity e) -> e != excluded && ((AbstractMinecartEntity) e).getMinecartType() == AbstractMinecartEntity.Type.RIDEABLE);
+            return world.getEntitiesOfClass(AbstractMinecartEntity.class, box, (Entity e) -> e != excluded && ((AbstractMinecartEntity) e).getMinecartType() == AbstractMinecartEntity.Type.RIDEABLE);
         }
-        return world.getEntitiesInAABBexcluding(excluded, box, predicate);
+        return world.getEntities(excluded, box, predicate);
     }
 }

@@ -19,11 +19,11 @@ public class TaskMixin<E extends LivingEntity> {
     @Mutable
     @Shadow
     @Final
-    protected Map<MemoryModuleType<?>, MemoryModuleStatus> requiredMemoryState;
+    protected Map<MemoryModuleType<?>, MemoryModuleStatus> entryCondition;
 
     @Inject(method = "<init>(Ljava/util/Map;II)V", at = @At("RETURN"))
     private void init(Map<MemoryModuleType<?>, MemoryModuleStatus> map, int int_1, int int_2, CallbackInfo ci) {
-        this.requiredMemoryState = new Reference2ObjectOpenHashMap<>(map);
+        this.entryCondition = new Reference2ObjectOpenHashMap<>(map);
     }
 
     /**
@@ -33,10 +33,10 @@ public class TaskMixin<E extends LivingEntity> {
     @Overwrite
     private boolean hasRequiredMemories(E entity) {
         Iterable<Reference2ObjectMap.Entry<MemoryModuleType<?>, MemoryModuleStatus>> iterable =
-                Reference2ObjectMaps.fastIterable((Reference2ObjectOpenHashMap<MemoryModuleType<?>, MemoryModuleStatus>) this.requiredMemoryState);
+                Reference2ObjectMaps.fastIterable((Reference2ObjectOpenHashMap<MemoryModuleType<?>, MemoryModuleStatus>) this.entryCondition);
 
         for (Reference2ObjectMap.Entry<MemoryModuleType<?>, MemoryModuleStatus> entry : iterable) {
-            if (!entity.getBrain().hasMemory(entry.getKey(), entry.getValue())) {
+            if (!entity.getBrain().checkMemory(entry.getKey(), entry.getValue())) {
                 return false;
             }
         }

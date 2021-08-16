@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(LazyAreaLayerContext.class)
 public class CachingLayerContextMixin implements CachingLayerContextExtended {
     @Shadow
-    private long positionSeed;
+    private long rval;
 
     @Shadow
     @Final
@@ -18,6 +18,6 @@ public class CachingLayerContextMixin implements CachingLayerContextExtended {
 
     @Override
     public void skipInt() {
-        this.positionSeed = FastRandom.mix(this.positionSeed, this.seed);
+        this.rval = FastRandom.next(this.rval, this.seed);
     }
 }

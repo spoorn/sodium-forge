@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class MixinLevelPropagator implements LevelPropagatorExtended, LevelUpdateListener, LevelPropagatorAccess {
     @Shadow
     @Final
-    private Long2ByteMap propagationLevels;
+    private Long2ByteMap computedLevels;
 
     @Shadow
     protected abstract int getLevel(long id);
@@ -28,25 +28,25 @@ public abstract class MixinLevelPropagator implements LevelPropagatorExtended, L
     private int levelCount;
 
     @Shadow
-    protected abstract int getEdgeLevel(long sourceId, long targetId, int level);
+    protected abstract int computeLevelFromNeighbor(long sourceId, long targetId, int level);
 
     @Shadow
-    protected abstract void propagateLevel(long sourceId, long id, int level, int currentLevel, int pendingLevel, boolean decrease);
+    protected abstract void checkEdge(long sourceId, long id, int level, int currentLevel, int pendingLevel, boolean decrease);
 
     @Override
-    @Invoker("propagateLevel")
+    @Invoker("checkNeighbor")
     public abstract void invokePropagateLevel(long sourceId, long targetId, int level, boolean decrease);
 
     // [VanillaCopy] LevelPropagator#propagateLevel(long, long, int, boolean)
     @Override
     public void propagateLevel(long sourceId, BlockState sourceState, long targetId, int level, boolean decrease) {
-        int pendingLevel = this.propagationLevels.get(targetId) & 0xFF;
+        int pendingLevel = this.computedLevels.get(targetId) & 0xFF;
 
         int propagatedLevel = this.getPropagatedLevel(sourceId, sourceState, targetId, level);
         int clampedLevel = MathHelper.clamp(propagatedLevel, 0, this.levelCount - 1);
 
         if (decrease) {
-            this.propagateLevel(sourceId, targetId, clampedLevel, this.getLevel(targetId), pendingLevel, true);
+            this.checkEdge(sourceId, targetId, clampedLevel, this.getLevel(targetId), pendingLevel, true);
 
             return;
         }
@@ -63,16 +63,16 @@ public abstract class MixinLevelPropagator implements LevelPropagatorExtended, L
         }
 
         if (clampedLevel == resultLevel) {
-            this.propagateLevel(sourceId, targetId, this.levelCount - 1, flag ? resultLevel : this.getLevel(targetId), pendingLevel, false);
+            this.checkEdge(sourceId, targetId, this.levelCount - 1, flag ? resultLevel : this.getLevel(targetId), pendingLevel, false);
         }
     }
 
     @Override
     public int getPropagatedLevel(long sourceId, BlockState sourceState, long targetId, int level) {
-        return this.getEdgeLevel(sourceId, targetId, level);
+        return this.computeLevelFromNeighbor(sourceId, targetId, level);
     }
 
-    @Redirect(method = { "removeToUpdate(JIIZ)V", "processUpdates" }, at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/longs/Long2ByteMap;remove(J)B", remap = false))
+    @Redirect(method = { "dequeue(JIIZ)V", "runUpdates" }, at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/longs/Long2ByteMap;remove(J)B", remap = false))
     private byte redirectRemovePendingUpdate(Long2ByteMap map, long key) {
         byte ret = map.remove(key);
 
@@ -83,7 +83,7 @@ public abstract class MixinLevelPropagator implements LevelPropagatorExtended, L
         return ret;
     }
 
-    @Redirect(method = "addToUpdate", at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/longs/Long2ByteMap;put(JB)B", remap = false))
+    @Redirect(method = "enqueue", at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/longs/Long2ByteMap;put(JB)B", remap = false))
     private byte redirectAddPendingUpdate(Long2ByteMap map, long key, byte value) {
         byte ret = map.put(key, value);
 

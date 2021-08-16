@@ -19,21 +19,21 @@ import java.util.Set;
 public class CompositeTaskMixin<E extends LivingEntity> {
     @Shadow
     @Final
-    private WeightedList<Task<? super E>> field_220419_e;
+    private WeightedList<Task<? super E>> behaviors;
 
     @Shadow
     @Final
-    private Set<MemoryModuleType<?>> field_220416_b;
+    private Set<MemoryModuleType<?>> exitErasedMemories;
 
     /**
      * @reason Replace stream code with traditional iteration
      * @author JellySquid
      */
     @Overwrite
-    public boolean shouldContinueExecuting(ServerWorld world, E entity, long time) {
-        for (Task<? super E> task : WeightedListIterable.cast(this.field_220419_e)) {
+    public boolean canStillUse(ServerWorld world, E entity, long time) {
+        for (Task<? super E> task : WeightedListIterable.cast(this.behaviors)) {
             if (task.getStatus() == Task.Status.RUNNING) {
-                if (((TaskAccessorMixin<E>)task).ishouldContinueExecuting(world, entity, time)) {
+                if (((TaskAccessorMixin<E>)task).canWeStillUse(world, entity, time)) {
                     return true;
                 }
             }
@@ -47,10 +47,10 @@ public class CompositeTaskMixin<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    public void updateTask(ServerWorld world, E entity, long time) {
-        for (Task<? super E> task : WeightedListIterable.cast(this.field_220419_e)) {
+    public void tick(ServerWorld world, E entity, long time) {
+        for (Task<? super E> task : WeightedListIterable.cast(this.behaviors)) {
             if (task.getStatus() == Task.Status.RUNNING) {
-                task.tick(world, entity, time);
+                task.tickOrStop(world, entity, time);
             }
         }
     }
@@ -60,17 +60,17 @@ public class CompositeTaskMixin<E extends LivingEntity> {
      * @author JellySquid
      */
     @Overwrite
-    public void resetTask(ServerWorld world, E entity, long time) {
-        for (Task<? super E> task : WeightedListIterable.cast(this.field_220419_e)) {
+    public void stop(ServerWorld world, E entity, long time) {
+        for (Task<? super E> task : WeightedListIterable.cast(this.behaviors)) {
             if (task.getStatus() == Task.Status.RUNNING) {
-                task.stop(world, entity, time);
+                task.doStop(world, entity, time);
             }
         }
 
         Brain<?> brain = entity.getBrain();
 
-        for (MemoryModuleType<?> module : this.field_220416_b) {
-            brain.removeMemory(module);
+        for (MemoryModuleType<?> module : this.exitErasedMemories) {
+            brain.eraseMemory(module);
         }
     }
 }

@@ -15,20 +15,20 @@ public abstract class MixinSprite implements SpriteExtended {
     private boolean forceNextUpdate;
 
     @Shadow
-    private int tickCounter;
+    private int subFrame;
 
     @Shadow
     @Final
-    private AnimationMetadataSection animationMetadata;
+    private AnimationMetadataSection metadata;
 
     @Shadow
-    private int frameCounter;
+    private int frame;
 
     @Shadow
     public abstract int getFrameCount();
 
     @Shadow
-    protected abstract void uploadFrames(int int_1);
+    protected abstract void upload(int int_1);
 
     @Shadow
     @Final
@@ -39,8 +39,8 @@ public abstract class MixinSprite implements SpriteExtended {
      * @reason Allow conditional texture updating
      */
     @Overwrite
-    public void updateAnimation() {
-        this.tickCounter++;
+    public void cycleFrames() {
+        this.subFrame++;
 
         boolean onDemand = SodiumClientMod.options().advanced.animateOnlyVisibleTextures;
 
@@ -51,17 +51,17 @@ public abstract class MixinSprite implements SpriteExtended {
     }
 
     private void uploadTexture() {
-        if (this.tickCounter >= this.animationMetadata.getFrameTimeSingle(this.frameCounter)) {
-            int prevFrameIndex = this.animationMetadata.getFrameIndex(this.frameCounter);
-            int frameCount = this.animationMetadata.getFrameCount() == 0 ? this.getFrameCount() : this.animationMetadata.getFrameCount();
+        if (this.subFrame >= this.metadata.getFrameTime(this.frame)) {
+            int prevFrameIndex = this.metadata.getFrameIndex(this.frame);
+            int frameCount = this.metadata.getFrameCount() == 0 ? this.getFrameCount() : this.metadata.getFrameCount();
 
-            this.frameCounter = (this.frameCounter + 1) % frameCount;
-            this.tickCounter = 0;
+            this.frame = (this.frame + 1) % frameCount;
+            this.subFrame = 0;
 
-            int frameIndex = this.animationMetadata.getFrameIndex(this.frameCounter);
+            int frameIndex = this.metadata.getFrameIndex(this.frame);
 
             if (prevFrameIndex != frameIndex && frameIndex >= 0 && frameIndex < this.getFrameCount()) {
-                this.uploadFrames(frameIndex);
+                this.upload(frameIndex);
             }
         } else if (this.interpolationData != null) {
             if (!RenderSystem.isOnRenderThread()) {
@@ -80,6 +80,6 @@ public abstract class MixinSprite implements SpriteExtended {
     }
 
     private void updateInterpolatedTexture() {
-        this.interpolationData.uploadInterpolated();
+        this.interpolationData.uploadInterpolatedFrame();
     }
 }

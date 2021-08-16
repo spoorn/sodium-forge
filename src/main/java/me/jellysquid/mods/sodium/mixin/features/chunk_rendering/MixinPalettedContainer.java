@@ -21,7 +21,7 @@ public class MixinPalettedContainer<T> implements PalettedContainerExtended<T> {
 
     @Shadow
     @Final
-    private T defaultState;
+    private T defaultValue;
 
     @Override
     public BitArray getDataArray() {
@@ -35,7 +35,7 @@ public class MixinPalettedContainer<T> implements PalettedContainerExtended<T> {
 
     @Override
     public T getDefaultValue() {
-        return this.defaultState;
+        return this.defaultValue;
     }
 
     @Override

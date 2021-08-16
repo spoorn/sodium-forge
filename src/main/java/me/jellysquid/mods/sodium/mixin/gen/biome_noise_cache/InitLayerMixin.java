@@ -20,7 +20,7 @@ public interface InitLayerMixin extends IAreaTransformer0 {
      */
     @Overwrite
     @SuppressWarnings("unchecked")
-    default <R extends IArea> IAreaFactory<R> apply(IExtendedNoiseRandom<R> context) {
+    default <R extends IArea> IAreaFactory<R> run(IExtendedNoiseRandom<R> context) {
         return CachedLocalLayerFactory.createInit(this, (CloneableContext<R>) context);
     }
 }

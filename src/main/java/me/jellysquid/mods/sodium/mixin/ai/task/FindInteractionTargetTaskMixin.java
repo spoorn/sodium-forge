@@ -22,17 +22,17 @@ import java.util.function.Predicate;
 public abstract class FindInteractionTargetTaskMixin extends Task<LivingEntity> {
     @Shadow
     @Final
-    private Predicate<LivingEntity> field_220536_d;
+    private Predicate<LivingEntity> selfFilter;
 
     @Shadow
-    protected abstract List<LivingEntity> getVisibleMobs(LivingEntity entity);
+    protected abstract List<LivingEntity> getVisibleEntities(LivingEntity entity);
 
     @Shadow
-    protected abstract boolean isNearInteractableEntity(LivingEntity entity);
+    protected abstract boolean isMatchingTarget(LivingEntity entity);
 
     @Shadow
     @Final
-    private int field_220534_b;
+    private int interactionRangeSqr;
 
     public FindInteractionTargetTaskMixin(Map<MemoryModuleType<?>, MemoryModuleStatus> memories) {
         super(memories);
@@ -43,15 +43,15 @@ public abstract class FindInteractionTargetTaskMixin extends Task<LivingEntity> 
      * @author JellySquid
      */
     @Overwrite
-    public boolean shouldExecute(ServerWorld world, LivingEntity entity) {
-        if (!this.field_220536_d.test(entity)) {
+    public boolean checkExtraStartConditions(ServerWorld world, LivingEntity entity) {
+        if (!this.selfFilter.test(entity)) {
             return false;
         }
 
-        List<LivingEntity> visibleEntities = this.getVisibleMobs(entity);
+        List<LivingEntity> visibleEntities = this.getVisibleEntities(entity);
 
         for (LivingEntity otherEntity : visibleEntities) {
-            if (this.isNearInteractableEntity(otherEntity)) {
+            if (this.isMatchingTarget(otherEntity)) {
                 return true;
             }
         }
@@ -64,20 +64,20 @@ public abstract class FindInteractionTargetTaskMixin extends Task<LivingEntity> 
      * @author JellySquid
      */
     @Overwrite
-    public void startExecuting(ServerWorld world, LivingEntity entity, long time) {
-        super.startExecuting(world, entity, time);
+    public void start(ServerWorld world, LivingEntity entity, long time) {
+        super.start(world, entity, time);
 
         Brain<?> brain = entity.getBrain();
 
-        List<LivingEntity> visibleEntities = brain.getMemory(MemoryModuleType.VISIBLE_MOBS)
+        List<LivingEntity> visibleEntities = brain.getMemory(MemoryModuleType.VISIBLE_LIVING_ENTITIES)
                 .orElse(Collections.emptyList());
 
         for (LivingEntity otherEntity : visibleEntities) {
-            if (otherEntity.getDistanceSq(entity) > (double) this.field_220534_b) {
+            if (otherEntity.distanceToSqr(entity) > (double) this.interactionRangeSqr) {
                 continue;
             }
 
-            if (this.isNearInteractableEntity(otherEntity)) {
+            if (this.isMatchingTarget(otherEntity)) {
                 brain.setMemory(MemoryModuleType.INTERACTION_TARGET, otherEntity);
                 brain.setMemory(MemoryModuleType.LOOK_TARGET, new EntityPosWrapper(otherEntity, true));
 

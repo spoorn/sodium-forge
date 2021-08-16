@@ -35,34 +35,34 @@ import java.util.BitSet;
 @Mixin(LightEngine.class)
 public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S extends SectionLightStorage<M>>
         extends LevelBasedGraph implements LightProviderUpdateTracker, LightProviderBlockAccess, LightInitializer, LevelUpdateListener, InitialLightingAccess {
-    private static final BlockState DEFAULT_STATE = Blocks.AIR.getDefaultState();
+    private static final BlockState DEFAULT_STATE = Blocks.AIR.defaultBlockState();
     private static final ChunkSection[] EMPTY_SECTION_ARRAY = new ChunkSection[16];
 
     @Shadow
     @Final
-    protected BlockPos.Mutable scratchPos;
+    protected BlockPos.Mutable pos;
 
     @Shadow
     @Final
-    protected IChunkLightProvider chunkProvider;
+    protected IChunkLightProvider chunkSource;
 
     private final long[] cachedChunkPos = new long[2];
     private final ChunkSection[][] cachedChunkSections = new ChunkSection[2][];
 
     private final Long2ObjectOpenHashMap<BitSet> buckets = new Long2ObjectOpenHashMap<>();
 
-    private long prevChunkBucketKey = ChunkPos.SENTINEL;
+    private long prevChunkBucketKey = ChunkPos.INVALID_CHUNK_POS;
     private BitSet prevChunkBucketSet;
 
     protected MixinChunkLightProvider(int levelCount, int expectedLevelSize, int expectedTotalSize) {
         super(levelCount, expectedLevelSize, expectedTotalSize);
     }
 
-    @Inject(method = "invalidateCaches", at = @At("RETURN"))
+    @Inject(method = "clearCache", at = @At("RETURN"))
     private void onCleanup(CallbackInfo ci) {
         // This callback may be executed from the constructor above, and the object won't be initialized then
         if (this.cachedChunkPos != null) {
-            Arrays.fill(this.cachedChunkPos, ChunkPos.SENTINEL);
+            Arrays.fill(this.cachedChunkPos, ChunkPos.INVALID_CHUNK_POS);
             Arrays.fill(this.cachedChunkSections, null);
         }
     }
@@ -70,7 +70,7 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
     // [VanillaCopy] method_20479
     @Override
     public BlockState getBlockStateForLighting(int x, int y, int z) {
-        if (World.isYOutOfBounds(y)) {
+        if (World.isOutsideBuildHeight(y)) {
             return DEFAULT_STATE;
         }
 
@@ -100,7 +100,7 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
     }
 
     private ChunkSection[] getAndCacheChunkSections(int x, int z) {
-        final IChunk chunk = (IChunk) this.chunkProvider.getChunkForLight(x, z);
+        final IChunk chunk = (IChunk) this.chunkSource.getChunkForLighting(x, z);
         final ChunkSection[] sections = chunk != null ? chunk.getSections() : EMPTY_SECTION_ARRAY;
 
         final ChunkSection[][] cachedSections = this.cachedChunkSections;
@@ -127,13 +127,13 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
     }
 
     private int getSubtractedLightFallback(BlockState state, int x, int y, int z) {
-        return state.getBlock().getOpacity(state, this.chunkProvider.getWorld(), this.scratchPos.setPos(x, y, z));
+        return state.getBlock().getLightBlock(state, this.chunkSource.getLevel(), this.pos.set(x, y, z));
     }
 
     // [VanillaCopy] method_20479
     @Override
     public VoxelShape getOpaqueShape(BlockState state, int x, int y, int z, Direction dir) {
-        if (state != null && state.isTransparent()) {
+        if (state != null && state.useShapeForLightOcclusion()) {
             BlockStateLightInfo info = ((BlockStateLightInfoAccess) state).getLightInfo();
 
             if (info != null) {
@@ -151,13 +151,13 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
     }
 
     private VoxelShape getOpaqueShapeFallback(BlockState state, int x, int y, int z, Direction dir) {
-        return VoxelShapes.getFaceShape(state.getRenderShape(this.chunkProvider.getWorld(), this.scratchPos.setPos(x, y, z)), dir);
+        return VoxelShapes.getFaceShape(state.getOcclusionShape(this.chunkSource.getLevel(), this.pos.set(x, y, z)), dir);
     }
 
     @Override
     public void spreadLightInto(long a, long b) {
-        this.scheduleUpdate(a, b, this.getEdgeLevel(a, b, this.getLevel(a)), false);
-        this.scheduleUpdate(b, a, this.getEdgeLevel(b, a, this.getLevel(b)), false);
+        this.checkEdge(a, b, this.computeLevelFromNeighbor(a, b, this.getLevel(a)), false);
+        this.checkEdge(b, a, this.computeLevelFromNeighbor(b, a, this.getLevel(b)), false);
     }
 
     /**
@@ -178,16 +178,16 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
         BitSet bits = this.removeChunkBucket(key);
 
         if (bits != null && !bits.isEmpty()) {
-            int startX = SectionPos.extractX(sectionPos) << 4;
-            int startY = SectionPos.extractY(sectionPos) << 4;
-            int startZ = SectionPos.extractZ(sectionPos) << 4;
+            int startX = SectionPos.x(sectionPos) << 4;
+            int startY = SectionPos.y(sectionPos) << 4;
+            int startZ = SectionPos.z(sectionPos) << 4;
 
             for (int i = bits.nextSetBit(0); i != -1; i = bits.nextSetBit(i + 1)) {
                 int x = (i >> 8) & 15;
                 int y = (i >> 4) & 15;
                 int z = i & 15;
 
-                this.cancelUpdate(BlockPos.pack(startX + x, startY + y, startZ + z));
+                this.removeFromQueue(BlockPos.asLong(startX + x, startY + y, startZ + z));
             }
         }
     }
@@ -238,21 +238,21 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
     }
 
     // Used to mask a long-encoded block position into a bucket key by dropping the first 4 bits of each component
-    private static final long BLOCK_TO_BUCKET_KEY_MASK = ~BlockPos.pack(15, 15, 15);
+    private static final long BLOCK_TO_BUCKET_KEY_MASK = ~BlockPos.asLong(15, 15, 15);
 
     private long getBucketKeyForBlock(long blockPos) {
         return blockPos & BLOCK_TO_BUCKET_KEY_MASK;
     }
 
     private long getBucketKeyForSection(long sectionPos) {
-        return BlockPos.pack(SectionPos.extractX(sectionPos) << 4, SectionPos.extractY(sectionPos) << 4, SectionPos.extractZ(sectionPos) << 4);
+        return BlockPos.asLong(SectionPos.x(sectionPos) << 4, SectionPos.y(sectionPos) << 4, SectionPos.z(sectionPos) << 4);
     }
 
     private BitSet removeChunkBucket(long key) {
         BitSet set = this.buckets.remove(key);
 
         if (this.prevChunkBucketSet == set) {
-            this.prevChunkBucketKey = ChunkPos.SENTINEL;
+            this.prevChunkBucketKey = ChunkPos.INVALID_CHUNK_POS;
             this.prevChunkBucketSet = null;
         }
 
@@ -261,9 +261,9 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
 
     // Finds the bit-flag index of a local position within a chunk section
     private static int getLocalIndex(long blockPos) {
-        int x = BlockPos.unpackX(blockPos) & 15;
-        int y = BlockPos.unpackY(blockPos) & 15;
-        int z = BlockPos.unpackZ(blockPos) & 15;
+        int x = BlockPos.getX(blockPos) & 15;
+        int y = BlockPos.getY(blockPos) & 15;
+        int z = BlockPos.getZ(blockPos) & 15;
 
         return (x << 8) | (y << 4) | z;
     }
@@ -278,8 +278,8 @@ public abstract class MixinChunkLightProvider<M extends LightDataMap<M>, S exten
      * Now controls both source light and light updates. Disabling now additionally removes all data associated to the chunk.
      */
     @Overwrite
-    public void func_215620_a(final ChunkPos pos, final boolean enabled) {
-        final long chunkPos = SectionPos.toSectionColumnPos(SectionPos.asLong(pos.x, 0, pos.z));
+    public void enableLightSources(final ChunkPos pos, final boolean enabled) {
+        final long chunkPos = SectionPos.getZeroNode(SectionPos.asLong(pos.x, 0, pos.z));
         final LightStorageAccess lightStorage = (LightStorageAccess) this.storage;
 
         if (enabled) {

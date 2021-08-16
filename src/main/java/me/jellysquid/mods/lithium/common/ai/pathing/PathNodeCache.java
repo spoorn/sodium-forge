@@ -50,8 +50,8 @@ public class PathNodeCache {
     }
 
     private static boolean isChunkSectionDangerousNeighbor(ChunkSection section) {
-        return section.getData()
-                .func_235963_a_(state -> getNeighborPathNodeType(state) != PathNodeType.OPEN);
+        return section.getStates()
+                .maybeHas(state -> getNeighborPathNodeType(state) != PathNodeType.OPEN);
     }
 
     public static PathNodeType getPathNodeType(BlockState state) {

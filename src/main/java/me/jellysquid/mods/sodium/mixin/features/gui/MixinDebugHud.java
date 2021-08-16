@@ -28,15 +28,15 @@ import java.util.List;
 public abstract class MixinDebugHud {
     @Shadow
     @Final
-    private Minecraft mc;
+    private Minecraft minecraft;
 
     @Shadow
     @Final
-    private FontRenderer fontRenderer;
+    private FontRenderer font;
 
     private List<String> capturedList = null;
 
-    @Redirect(method = { "renderDebugInfoLeft", "renderDebugInfoRight" }, at = @At(value = "INVOKE", target = "Ljava/util/List;size()I"))
+    @Redirect(method = { "drawGameInformation", "drawSystemInformation" }, at = @At(value = "INVOKE", target = "Ljava/util/List;size()I"))
     private int preRenderText(List<String> list) {
         // Capture the list to be rendered later
         this.capturedList = list;
@@ -44,12 +44,12 @@ public abstract class MixinDebugHud {
         return 0; // Prevent the rendering of any text
     }
 
-    @Inject(method = "renderDebugInfoLeft", at = @At("RETURN"))
+    @Inject(method = "drawGameInformation", at = @At("RETURN"))
     public void renderLeftText(MatrixStack matrixStack, CallbackInfo ci) {
         this.renderCapturedText(matrixStack, false);
     }
 
-    @Inject(method = "renderDebugInfoRight", at = @At("RETURN"))
+    @Inject(method = "drawSystemInformation", at = @At("RETURN"))
     public void renderRightText(MatrixStack matrixStack, CallbackInfo ci) {
         this.renderCapturedText(matrixStack, true);
     }
@@ -64,26 +64,26 @@ public abstract class MixinDebugHud {
     }
 
     private void renderStrings(MatrixStack matrixStack, List<String> list, boolean right) {
-        IRenderTypeBuffer.Impl immediate = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
+        IRenderTypeBuffer.Impl immediate = IRenderTypeBuffer.immediate(Tessellator.getInstance().getBuilder());
 
-        Matrix4f modelMatrix = matrixStack.getLast().getMatrix();
+        Matrix4f modelMatrix = matrixStack.last().pose();
 
         for (int i = 0; i < list.size(); ++i) {
             String string = list.get(i);
 
             if (!Strings.isNullOrEmpty(string)) {
                 int height = 9;
-                int width = this.fontRenderer.getStringWidth(string);
+                int width = this.font.width(string);
 
-                float x1 = right ? this.mc.getMainWindow().getScaledWidth() - 2 - width : 2;
+                float x1 = right ? this.minecraft.getWindow().getGuiScaledWidth() - 2 - width : 2;
                 float y1 = 2 + (height * i);
 
-                this.fontRenderer.drawBidiString(string, x1, y1, 0xe0e0e0, false, modelMatrix, immediate,
-                        false, 0, 15728880, this.fontRenderer.getBidiFlag());
+                this.font.drawInBatch(string, x1, y1, 0xe0e0e0, false, modelMatrix, immediate,
+                        false, 0, 15728880, this.font.isBidirectional());
             }
         }
 
-        immediate.finish();
+        immediate.endBatch();
     }
 
     private void renderBackdrop(MatrixStack matrixStack, List<String> list, boolean right) {
@@ -98,11 +98,11 @@ public abstract class MixinDebugHud {
         float h = (float) (color >> 8 & 255) / 255.0F;
         float k = (float) (color & 255) / 255.0F;
 
-        BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
+        BufferBuilder bufferBuilder = Tessellator.getInstance().getBuilder();
         bufferBuilder.begin(GL20C.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-        Matrix4f matrix = matrixStack.getLast()
-                .getMatrix();
+        Matrix4f matrix = matrixStack.last()
+                .pose();
 
         for (int i = 0; i < list.size(); ++i) {
             String string = list.get(i);
@@ -112,9 +112,9 @@ public abstract class MixinDebugHud {
             }
 
             int height = 9;
-            int width = this.fontRenderer.getStringWidth(string);
+            int width = this.font.width(string);
 
-            int x = right ? this.mc.getMainWindow().getScaledWidth() - 2 - width : 2;
+            int x = right ? this.minecraft.getWindow().getGuiScaledWidth() - 2 - width : 2;
             int y = 2 + height * i;
 
             float x1 = x - 1;
@@ -122,15 +122,15 @@ public abstract class MixinDebugHud {
             float x2 = x + width + 1;
             float y2 = y + height - 1;
 
-            bufferBuilder.pos(matrix, x1, y2, 0.0F).color(g, h, k, f).endVertex();
-            bufferBuilder.pos(matrix, x2, y2, 0.0F).color(g, h, k, f).endVertex();
-            bufferBuilder.pos(matrix, x2, y1, 0.0F).color(g, h, k, f).endVertex();
-            bufferBuilder.pos(matrix, x1, y1, 0.0F).color(g, h, k, f).endVertex();
+            bufferBuilder.vertex(matrix, x1, y2, 0.0F).color(g, h, k, f).endVertex();
+            bufferBuilder.vertex(matrix, x2, y2, 0.0F).color(g, h, k, f).endVertex();
+            bufferBuilder.vertex(matrix, x2, y1, 0.0F).color(g, h, k, f).endVertex();
+            bufferBuilder.vertex(matrix, x1, y1, 0.0F).color(g, h, k, f).endVertex();
         }
 
-        bufferBuilder.finishDrawing();
+        bufferBuilder.end();
 
-        WorldVertexBufferUploader.draw(bufferBuilder);
+        WorldVertexBufferUploader.end(bufferBuilder);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
     }

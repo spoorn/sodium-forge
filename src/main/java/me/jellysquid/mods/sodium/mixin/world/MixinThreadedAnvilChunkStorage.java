@@ -22,32 +22,32 @@ import java.util.function.IntFunction;
 @Mixin(ChunkManager.class)
 public abstract class MixinThreadedAnvilChunkStorage implements ThreadedAnvilChunkStorageAccess {
     @Shadow
-    protected abstract CompletableFuture<Either<List<Chunk>, ChunkHolder.IChunkLoadingError>> func_219236_a(final ChunkPos centerChunk, final int margin, final IntFunction<ChunkStatus> distanceToStatus);
+    protected abstract CompletableFuture<Either<List<Chunk>, ChunkHolder.IChunkLoadingError>> getChunkRangeFuture(final ChunkPos centerChunk, final int margin, final IntFunction<ChunkStatus> distanceToStatus);
 
     @Override
-    @Invoker("func_219209_c")
+    @Invoker("releaseLightTicket")
     public abstract void invokeReleaseLightTicket(ChunkPos pos);
 
     @Shadow
     @Final
-    private ThreadTaskExecutor<Runnable> mainThread;
+    private ThreadTaskExecutor<Runnable> mainThreadExecutor;
 
     @Redirect(
-        method = "func_222961_b(Lnet/minecraft/world/server/ChunkHolder;)Ljava/util/concurrent/CompletableFuture;",
+        method = "unpackTicks(Lnet/minecraft/world/server/ChunkHolder;)Ljava/util/concurrent/CompletableFuture;",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/server/ChunkHolder;func_219276_a(Lnet/minecraft/world/chunk/ChunkStatus;Lnet/minecraft/world/server/ChunkManager;)Ljava/util/concurrent/CompletableFuture;"
+            target = "Lnet/minecraft/world/server/ChunkHolder;getOrScheduleFuture(Lnet/minecraft/world/chunk/ChunkStatus;Lnet/minecraft/world/server/ChunkManager;)Ljava/util/concurrent/CompletableFuture;"
         )
     )
     private CompletableFuture<Either<Chunk, ChunkHolder.IChunkLoadingError>> enforceNeighborsLoaded(final ChunkHolder holder, final ChunkStatus targetStatus, final ChunkManager chunkStorage) {
-        return holder.func_219276_a(ChunkStatus.FULL, (ChunkManager) (Object) this).thenComposeAsync(
+        return holder.getOrScheduleFuture(ChunkStatus.FULL, (ChunkManager) (Object) this).thenComposeAsync(
             either -> either.map(
-                chunk -> this.func_219236_a(holder.getPosition(), 1, ChunkStatus::getStatus).thenApply(
+                chunk -> this.getChunkRangeFuture(holder.getPos(), 1, ChunkStatus::getStatus).thenApply(
                     either_ -> either_.mapLeft(list -> list.get(list.size() / 2))
                 ),
                 unloaded -> CompletableFuture.completedFuture(Either.right(unloaded))
             ),
-            this.mainThread
+            this.mainThreadExecutor
         );
     }
 }

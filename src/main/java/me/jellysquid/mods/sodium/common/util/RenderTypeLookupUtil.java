@@ -108,7 +108,7 @@ public class RenderTypeLookupUtil {
             final FluidState other$state = other.state;
             if (this$state == null && other$state != null || this$state != null && other$state == null) return false;
             if (this$state == other$state) return true;
-            return this$state.getFluid().equals(other$state.getFluid());
+            return this$state.getType().equals(other$state.getType());
         }
 
         protected boolean canEqual(final Object other) {

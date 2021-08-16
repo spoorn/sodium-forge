@@ -20,29 +20,29 @@ public class PerlinNoiseSamplerMixin {
 
     @Shadow
     @Final
-    private byte[] permutations;
+    private byte[] p;
 
     @Shadow
     @Final
-    public double xCoord;
+    public double xo;
 
     @Shadow
     @Final
-    public double yCoord;
+    public double yo;
 
     @Shadow
     @Final
-    public double zCoord;
+    public double zo;
 
     private final byte[] gradientTable = new byte[256 * GRADIENT_STRIDE];
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void reinit(Random random, CallbackInfo ci) {
         for (int i = 0; i < 256; i++) {
-            int hash = this.permutations[i & 255] & 15;
+            int hash = this.p[i & 255] & 15;
 
             for (int j = 0; j < 3; j++) {
-                this.gradientTable[(i * GRADIENT_STRIDE) + j] = (byte) SimplexNoiseGenerator.GRADS[hash][j];
+                this.gradientTable[(i * GRADIENT_STRIDE) + j] = (byte) SimplexNoiseGenerator.GRADIENT[hash][j];
             }
         }
     }
@@ -52,10 +52,10 @@ public class PerlinNoiseSamplerMixin {
      * @author JellySquid
      */
     @Overwrite
-    public double func_215456_a(double x, double y, double z, double d, double e) {
-        final double ox = x + this.xCoord;
-        final double oy = y + this.yCoord;
-        final double oz = z + this.zCoord;
+    public double noise(double x, double y, double z, double d, double e) {
+        final double ox = x + this.xo;
+        final double oy = y + this.yo;
+        final double oz = z + this.zo;
 
         final double fox = Math.floor(ox);
         final double foy = Math.floor(oy);
@@ -65,15 +65,15 @@ public class PerlinNoiseSamplerMixin {
         double ooy = oy - foy;
         double ooz = oz - foz;
 
-        final double fx = MathHelper.perlinFade(oox);
-        final double fy = MathHelper.perlinFade(ooy);
-        final double fz = MathHelper.perlinFade(ooz);
+        final double fx = MathHelper.smoothstep(oox);
+        final double fy = MathHelper.smoothstep(ooy);
+        final double fz = MathHelper.smoothstep(ooz);
 
         if (d != 0.0D) {
             ooy = ooy - (Math.floor(Math.min(e, ooy) / d) * d);
         }
 
-        return this.func_215459_a((int) fox, (int) foy, (int) foz, oox, ooy, ooz, fx, fy, fz);
+        return this.sampleAndLerp((int) fox, (int) foy, (int) foz, oox, ooy, ooz, fx, fy, fz);
     }
 
     /**
@@ -87,8 +87,8 @@ public class PerlinNoiseSamplerMixin {
      * @author JellySquid
      */
     @Overwrite
-    public double func_215459_a(int sectionX, int sectionY, int sectionZ, double localX1, double localY1, double localZ1, double fadeLocalX, double fadeLocalY, double fadeLocalZ) {
-        final byte[] perm = this.permutations;
+    public double sampleAndLerp(int sectionX, int sectionY, int sectionZ, double localX1, double localY1, double localZ1, double fadeLocalX, double fadeLocalY, double fadeLocalZ) {
+        final byte[] perm = this.p;
 
         final int i = (perm[sectionX & 255] & 255) + sectionY;
         final int l = (perm[(sectionX + 1) & 255] & 255) + sectionY;

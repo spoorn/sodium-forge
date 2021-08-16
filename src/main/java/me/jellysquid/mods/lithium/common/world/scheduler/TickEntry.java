@@ -35,7 +35,7 @@ public class TickEntry<T> extends NextTickListEntry<T> {
     public final Set<TickEntry<T>> chunkIdx;
 
     public TickEntry(NextTickListEntry<T> tick, Set<TickEntry<T>> chunkIdx) {
-        super(tick.position, tick.getTarget(), tick.field_235017_b_, tick.priority);
+        super(tick.pos, tick.getType(), tick.triggerTick, tick.priority);
 
         this.chunkIdx = chunkIdx;
         this.chunkIdx.add(this);

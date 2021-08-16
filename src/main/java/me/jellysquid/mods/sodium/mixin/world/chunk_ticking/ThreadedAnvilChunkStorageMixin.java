@@ -15,14 +15,14 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class ThreadedAnvilChunkStorageMixin {
     @Shadow
     @Final
-    private ChunkManager.ProxyTicketManager ticketManager;
+    private ChunkManager.ProxyTicketManager distanceManager;
 
     @Shadow
     @Final
-    private PlayerGenerationTracker playerGenerationTracker;
+    private PlayerGenerationTracker playerMap;
 
     @Shadow
-    private static double getDistanceSquaredToChunk(ChunkPos pos, Entity entity) {
+    private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
         throw new UnsupportedOperationException();
     }
 
@@ -37,16 +37,16 @@ public abstract class ThreadedAnvilChunkStorageMixin {
      */
     @Overwrite
     @SuppressWarnings("ConstantConditions")
-    public boolean isOutsideSpawningRadius(ChunkPos pos) {
-        long key = pos.asLong();
+    public boolean noPlayersCloseForSpawning(ChunkPos pos) {
+        long key = pos.toLong();
 
-        if (!this.ticketManager.isOutsideSpawningRadius(key)) {
+        if (!this.distanceManager.hasPlayersNearby(key)) {
             return true;
         }
 
-        for (ServerPlayerEntity player : ((PlayerChunkWatchingManagerIterable) (Object) this.playerGenerationTracker).getPlayers()) {
+        for (ServerPlayerEntity player : ((PlayerChunkWatchingManagerIterable) (Object) this.playerMap).getPlayers()) {
             // [VanillaCopy] Only non-spectator players within 128 blocks of the chunk can enable mob spawning
-            if (!player.isSpectator() && getDistanceSquaredToChunk(pos, player) < 16384.0D) {
+            if (!player.isSpectator() && euclideanDistanceSquared(pos, player) < 16384.0D) {
                 return false;
             }
         }

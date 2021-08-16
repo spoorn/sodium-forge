@@ -26,7 +26,7 @@ public abstract class TypeFilterableListMixin<T> implements ClassGroupFilterable
 
     @Shadow
     @Final
-    private List<T> values;
+    private List<T> allInstances;
 
     private final Reference2ReferenceArrayMap<EntityClassGroup, ReferenceLinkedOpenHashSet<T>> entitiesByGroup =
             new Reference2ReferenceArrayMap<>();
@@ -75,7 +75,7 @@ public abstract class TypeFilterableListMixin<T> implements ClassGroupFilterable
     private Collection<T> createAllOfGroupType(EntityClassGroup type) {
         ReferenceLinkedOpenHashSet<T> allOfType = new ReferenceLinkedOpenHashSet<>();
 
-        for (T entity : this.values) {
+        for (T entity : this.allInstances) {
             if (type.contains(entity.getClass())) {
                 allOfType.add(entity);
             }

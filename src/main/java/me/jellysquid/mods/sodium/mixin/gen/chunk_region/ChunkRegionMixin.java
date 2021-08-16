@@ -21,11 +21,11 @@ import java.util.List;
 public abstract class ChunkRegionMixin {
     @Shadow
     @Final
-    private ChunkPos field_241160_n_;
+    private ChunkPos firstPos;
 
     @Shadow
     @Final
-    private int field_217380_e;
+    private int size;
 
     // Array view of the chunks in the region to avoid an unnecessary de-reference
     private IChunk[] chunksArr;
@@ -35,8 +35,8 @@ public abstract class ChunkRegionMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(ServerWorld world, List<IChunk> chunks, CallbackInfo ci) {
-        this.minChunkX = this.field_241160_n_.x;
-        this.minChunkZ = this.field_241160_n_.z;
+        this.minChunkX = this.firstPos.x;
+        this.minChunkZ = this.firstPos.z;
 
         this.chunksArr = chunks.toArray(new IChunk[0]);
     }
@@ -49,7 +49,7 @@ public abstract class ChunkRegionMixin {
     public BlockState getBlockState(BlockPos pos) {
         int x = (pos.getX() >> 4) - this.minChunkX;
         int z = (pos.getZ() >> 4) - this.minChunkZ;
-        int w = this.field_217380_e;
+        int w = this.size;
 
         if (x >= 0 && z >= 0 && x < w && z < w) {
             return this.chunksArr[x + z * w].getBlockState(pos);

@@ -33,7 +33,7 @@ public abstract class VoxelShapesMixin {
     @Mutable
     @Shadow
     @Final
-    private static final VoxelShape FULL_CUBE;
+    private static final VoxelShape BLOCK;
 
     @Mutable
     @Shadow
@@ -48,14 +48,14 @@ public abstract class VoxelShapesMixin {
         // [VanillaCopy] The FULL_CUBE and UNBOUNDED shape is initialized with a single 1x1x1 voxel as neither will
         // contain multiple inner cuboids.
         FULL_CUBE_VOXELS = new BitSetVoxelShapePart(1, 1, 1);
-        FULL_CUBE_VOXELS.setFilled(0, 0, 0, true, true);
+        FULL_CUBE_VOXELS.setFull(0, 0, 0, true, true);
 
         // Used in some rare cases to indicate a shape which encompasses the entire world (such as a moving world border)
         INFINITY = new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY,
                 Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
         // Represents a full-block cube shape, such as that for a dirt block.
-        FULL_CUBE = new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+        BLOCK = new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 
         // Represents an empty cube shape with no vertices that cannot be collided with.
         EMPTY = new VoxelShapeEmpty(new BitSetVoxelShapePart(0, 0, 0));
@@ -91,9 +91,9 @@ public abstract class VoxelShapesMixin {
         //If the VoxelShape cannot be represented by a BitSet with 3 bit resolution on any axis (BitSetVoxelSet),
         //a shape without boxes inside will be used in vanilla (ArrayVoxelShape with only 2 PointPositions on each axis)
 
-        if ((xRes = VoxelShapes.getPrecisionBits(box.minX, box.maxX)) == -1 ||
-                (yRes = VoxelShapes.getPrecisionBits(box.minY, box.maxY)) == -1 ||
-                (zRes = VoxelShapes.getPrecisionBits(box.minZ, box.maxZ)) == -1) {
+        if ((xRes = VoxelShapes.findBits(box.minX, box.maxX)) == -1 ||
+                (yRes = VoxelShapes.findBits(box.minY, box.maxY)) == -1 ||
+                (zRes = VoxelShapes.findBits(box.minZ, box.maxZ)) == -1) {
             //vanilla uses ArrayVoxelShape here without any rounding of the coordinates
             return new VoxelShapeSimpleCube(FULL_CUBE_VOXELS, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
         } else {

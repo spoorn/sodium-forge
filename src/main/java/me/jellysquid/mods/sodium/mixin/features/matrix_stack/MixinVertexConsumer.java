@@ -16,20 +16,20 @@ public interface MixinVertexConsumer {
     IVertexBuilder normal(float x, float y, float z);
 
     @Shadow
-    IVertexBuilder pos(double x, double y, double z);
+    IVertexBuilder vertex(double x, double y, double z);
 
     /**
      * @reason Avoid allocations
      * @author JellySquid
      */
     @Overwrite
-    default IVertexBuilder pos(Matrix4f matrix, float x, float y, float z) {
+    default IVertexBuilder vertex(Matrix4f matrix, float x, float y, float z) {
         Matrix4fExtended ext = MatrixUtil.getExtendedMatrix(matrix);
         float x2 = ext.transformVecX(x, y, z);
         float y2 = ext.transformVecY(x, y, z);
         float z2 = ext.transformVecZ(x, y, z);
 
-        return this.pos(x2, y2, z2);
+        return this.vertex(x2, y2, z2);
     }
 
     /**

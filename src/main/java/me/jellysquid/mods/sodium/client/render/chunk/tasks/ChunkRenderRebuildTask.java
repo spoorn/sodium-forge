@@ -110,7 +110,7 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             }
         }
 
-        renderData.setOcclusionData(occluder.computeVisibility());
+        renderData.setOcclusionData(occluder.resolve());
         renderData.setBounds(bounds.build(this.render.getChunkPos()));
 
         return new ChunkBuildResult<>(this.render, renderData.build());
@@ -125,36 +125,36 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
             return;
         }
 
-        pos.setPos(x, y, z);
+        pos.set(x, y, z);
         buffers.setRenderOffset(x - offset.getX(), y - offset.getY(), z - offset.getZ());
 
         // TODO: don't create a new BlockPos, just use coordinates
-        if (blockState.isOpaqueCube(slice, pos)) {
-            occluder.setOpaqueCube(pos);
+        if (blockState.isSolidRender(slice, pos)) {
+            occluder.setOpaque(pos);
         }
 
         if (blockState.hasTileEntity()) {
-            TileEntity entity = slice.getTileEntity(pos);
+            TileEntity entity = slice.getBlockEntity(pos);
 
             if (entity != null) {
                 TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(entity);
 
                 if (renderer != null) {
-                    renderData.addBlockEntity(entity, !renderer.isGlobalRenderer(entity));
+                    renderData.addBlockEntity(entity, !renderer.shouldRenderOffScreen(entity));
 
                     bounds.addBlock(relX, relY, relZ);
                 }
             }
         }
 
-        for (RenderType layer : RenderType.getBlockRenderTypes()) {
+        for (RenderType layer : RenderType.chunkBufferLayers()) {
             ForgeHooksClient.setRenderLayer(layer);
             // Fluids
             FluidState fluidState = blockState.getFluidState();
 
             if (!fluidState.isEmpty() && RenderTypeLookupUtil.canRenderInLayer(fluidState, layer)) {
-                if (layer == RenderType.getTranslucent() || layer == RenderType.getTripwire()) {
-                    renderData.addTranslucentBlock(pos.toImmutable());
+                if (layer == RenderType.translucent() || layer == RenderType.tripwire()) {
+                    renderData.addTranslucentBlock(pos.immutable());
                 }
 
                 if (cache.getFluidRenderer().render(slice, fluidState, pos, buffers.get(layer))) {
@@ -162,18 +162,18 @@ public class ChunkRenderRebuildTask<T extends ChunkGraphicsState> extends ChunkR
                 }
             }
 
-            if (blockState.getRenderType() != BlockRenderType.MODEL || !RenderTypeLookupUtil.canRenderInLayer(blockState, layer)) {
+            if (blockState.getRenderShape() != BlockRenderType.MODEL || !RenderTypeLookupUtil.canRenderInLayer(blockState, layer)) {
                 continue;
             }
 
-            if (layer == RenderType.getTranslucent() || layer == RenderType.getTripwire()) {
-                renderData.addTranslucentBlock(pos.toImmutable());
+            if (layer == RenderType.translucent() || layer == RenderType.tripwire()) {
+                renderData.addTranslucentBlock(pos.immutable());
             }
 
             IBakedModel model = cache.getBlockModels()
-                    .getModel(blockState);
+                    .getBlockModel(blockState);
 
-            long seed = blockState.getPositionRandom(pos);
+            long seed = blockState.getSeed(pos);
 
             // Solid blocks
             if (cache.getBlockRenderer().renderModel(slice, blockState, pos, model, buffers.get(layer), true, seed)) {

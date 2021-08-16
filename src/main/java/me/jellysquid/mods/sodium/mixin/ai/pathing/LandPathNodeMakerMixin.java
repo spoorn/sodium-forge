@@ -28,7 +28,7 @@ public abstract class LandPathNodeMakerMixin {
      * @author JellySquid
      */
     @Overwrite
-    public static PathNodeType func_237238_b_(IBlockReader blockView, BlockPos blockPos) {
+    public static PathNodeType getBlockPathTypeRaw(IBlockReader blockView, BlockPos blockPos) {
         BlockState blockState = blockView.getBlockState(blockPos);
         PathNodeType type = PathNodeCache.getPathNodeType(blockState);
 
@@ -38,7 +38,7 @@ public abstract class LandPathNodeMakerMixin {
             // This is only ever called in vanilla after all other possibilities are exhausted, but before fluid checks
             // It should be safe to perform it last in actuality and take advantage of the cache for fluid types as well
             // since fluids will always pass this check.
-            if (!blockState.allowsMovement(blockView, blockPos, PathType.LAND)) {
+            if (!blockState.isPathfindable(blockView, blockPos, PathType.LAND)) {
                 return PathNodeType.BLOCKED;
             }
 
@@ -55,7 +55,7 @@ public abstract class LandPathNodeMakerMixin {
      * @author JellySquid
      */
     @Overwrite
-    public static PathNodeType getSurroundingDanger(IBlockReader world, BlockPos.Mutable pos, PathNodeType type) {
+    public static PathNodeType checkNeighbourBlocks(IBlockReader world, BlockPos.Mutable pos, PathNodeType type) {
         int x = pos.getX();
         int y = pos.getY();
         int z = pos.getZ();
@@ -67,9 +67,9 @@ public abstract class LandPathNodeMakerMixin {
         if (world instanceof ICollisionReader && WorldHelper.areNeighborsWithinSameChunk(pos)) {
             // If the y-coordinate is within bounds, we can cache the chunk section. Otherwise, the if statement to check
             // if the cached chunk section was initialized will early-exit.
-            if (!World.isYOutOfBounds(y)) {
+            if (!World.isOutsideBuildHeight(y)) {
                 // This cast is always safe and is necessary to obtain direct references to chunk sections.
-                IChunk chunk = (IChunk) ((ICollisionReader) world).getBlockReader(x >> 4, z >> 4);
+                IChunk chunk = (IChunk) ((ICollisionReader) world).getChunkForCollisions(x >> 4, z >> 4);
 
                 // If the chunk is absent, the cached section above will remain null, as there is no chunk section anyways.
                 // An empty chunk or section will never pose any danger sources, which will be caught later.
@@ -94,7 +94,7 @@ public abstract class LandPathNodeMakerMixin {
                         continue;
                     }
 
-                    pos.setPos(x2 + x, y2 + y, z2 + z);
+                    pos.set(x2 + x, y2 + y, z2 + z);
 
                     BlockState state;
 
