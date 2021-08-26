@@ -1,8 +1,8 @@
 <img src="src/main/resources/assets/sodium/icon.png" width="128">
 
 # Sodium/Lithium/Phosphor (for Forge)
-![GitHub license](https://img.shields.io/github/license/jellysquid3/sodium-fabric.svg)
-![GitHub tag](https://img.shields.io/github/tag/jellysquid3/sodium-fabric.svg)
+![GitHub license](https://img.shields.io/github/license/spoorn/sodium-forge.svg)
+![GitHub tag](https://img.shields.io/github/tag/spoorn/sodium-forge.svg)
 
 Sodium is a free and open-source optimization mod for the Minecraft client that improves frame rates, reduces
 micro-stutter, and fixes graphical issues in Minecraft.
@@ -13,7 +13,7 @@ This fork includes [Lithium](https://github.com/CaffeineMC/lithium-fabric), and 
 
 ### Downloads
 
-Downloads are available on the [actions page](https://github.com/GalaxiaTeam/sodium-forge/actions).
+Downloads are available on the [actions page](https://github.com/spoorn/sodium-forge/actions).
 
 ### Community
 
@@ -59,4 +59,4 @@ guide [here](https://gist.github.com/jellysquid3/8a7b21e57f47f5711eb5697e282e502
 ### License
 
 Sodium, Lithium, and Phosphor are licensed under GNU LGPLv3, a free and open-source license. For more information, please see the
-[license file](https://github.com/GalaxiaTeam/sodium-forge/blob/1.16.x/dev/LICENSE.txt).
+[license file](https://github.com/spoorn/sodium-forge/blob/1.16.x/dev/LICENSE.txt).
