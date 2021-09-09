@@ -14,6 +14,7 @@ import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.compat.LegacyFogHelper;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
+import me.jellysquid.mods.sodium.client.render.FlywheelCompat;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuilder;
@@ -282,6 +283,7 @@ public class ChunkRenderManager<T extends ChunkGraphicsState> implements ChunkSt
 
         if (!blockEntities.isEmpty()) {
             this.visibleBlockEntities.addAll(blockEntities);
+            FlywheelCompat.filterBlockEntityList(this.visibleBlockEntities);
         }
     }
 

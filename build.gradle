@@ -29,6 +29,10 @@ repositories {
         name "LatvianModder"
         url "https://maven.latmod.com"
     }
+    maven { // Flywheel
+        name 'tterrag maven'
+        url 'https://maven.tterrag.com/'
+    }
 }
 
 version = "${project.mod_version}+${getVersionMetadata()}"
@@ -62,6 +66,9 @@ minecraft {
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
+
+            // Disable refmap to launch game with Flywheel
+            property 'mixin.env.disableRefMap', 'true'
 
             mods {
                 examplemod {
@@ -136,6 +143,13 @@ dependencies {
     /*compileOnly fg.deobf(project.dependencies.create("dev.ftb.mods:ftb-chunks:${ftb_chunks_version}") {
         transitive = false
     })*/
+
+    def flywheel = fg.deobf("com.jozufozu.flywheel:Flywheel:${flywheel_version}")
+    if (project.use_third_party_mods) {
+        implementation flywheel
+    } else {
+        compileOnly flywheel
+    }
 
     annotationProcessor 'org.spongepowered:mixin:0.8.2:processor'
 }
