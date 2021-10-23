@@ -15,14 +15,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 // forge patches ingamegui, any injections or anything to the base class are worthless
 @Mixin(ForgeIngameGui.class)
 public class MixinInGameHud {
-    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/gui/OverlayRegistry$OverlayEntry;isEnabled()Z"), remap = false)
+    /*@Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/gui/OverlayRegistry$OverlayEntry;isEnabled()Z"), remap = false)
     private boolean redirectFancyGraphicsVignette(OverlayRegistry.OverlayEntry overlayEntry) {
         if (overlayEntry.getOverlay() == ForgeIngameGui.VIGNETTE_ELEMENT) {
             return SodiumClientMod.options().quality.enableVignette;
         } else {
             return overlayEntry.isEnabled();
         }
-    }
+    }*/
 
     @Inject(at = @At("TAIL"), method = "render", remap = false)
     public void render(PoseStack matrixStack, float partialTicks, CallbackInfo info) {
