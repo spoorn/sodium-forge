@@ -1,37 +1,23 @@
-Curseforge link: https://www.curseforge.com/minecraft/mc-mods/sodium-reforged
+<img src="src/main/resources/assets/sodium/icon.png" width="128">
 
-![Project icon](https://git-assets.jellysquid.me/hotlink-ok/sodium/icon-rounded-128px.png)
-
-# Sodium/Lithium/Phosphor (Forge fork)
-![GitHub license](https://img.shields.io/github/license/jellysquid3/sodium-fabric.svg)
-![GitHub tag](https://img.shields.io/github/tag/jellysquid3/sodium-fabric.svg)
-
-### This is Forge edition of Sodium/Lithium/Phosphor
+# Sodium/Lithium/Phosphor (for Forge)
+![GitHub license](https://img.shields.io/github/license/spoorn/sodium-forge.svg)
+![GitHub tag](https://img.shields.io/github/tag/spoorn/sodium-forge.svg)
 
 Sodium is a free and open-source optimization mod for the Minecraft client that improves frame rates, reduces
-micro-stutter, and fixes graphical issues in Minecraft. 
+micro-stutter, and fixes graphical issues in Minecraft.
 
-:warning: This fork uses outdated dev branch of original repo, though this fork is functional, stuff will be broken. 
+:warning: This fork uses the outdated dev branch of the original repo. Although this fork is functional, stuff will be broken.
 
-This fork includes Lithium, as [original repo](https://github.com/CaffeineMC/lithium-fabric) says:
+This fork includes [Lithium](https://github.com/CaffeineMC/lithium-fabric), and [Phosphor](https://github.com/CaffeineMC/phosphor-fabric).
 
-* Lithium is a free and open-source Minecraft mod which works to optimize many areas of the game in order to provide
-  better overall performance. It works on both the **client and server**, and **doesn't require the mod to be installed
-  on both sides**. 
-  
-This fork includes Phosphor, as [original repo](https://github.com/CaffeineMC/phosphor-fabric) says:
-
- * Phosphor is a free and open-source Minecraft mod (under GNU GPLv3) aiming to save your CPU cycles and improve performance by optimizing one of Minecraft's most inefficient areas-- the lighting engine.
-   It works on **both the client and server**, and can be installed on servers **without requiring clients to also have the mod**
- * The mod is designed to be as minimal as possible in the changes it makes, and as such, does not modify the light model or interfaces of vanilla Minecraft. Because of this, Phosphor should be compatible with many Minecraft mods (so long as they do not make drastic changes to how the lighting engine works.) If you've ran into a compatibility problem, please open an issue!
 ### Downloads
 
-Currently, only on [release page](https://github.com/Pannoniae/sodium-forge/releases/latest/).
+Downloads are available on the [actions page](https://github.com/spoorn/sodium-forge/actions).
 
 ### Community
-Please do not join Caffeine discord if you intend to get support about this fork. All forks or unofficial version 
-of sodium/phosphor/lithium are not support by original authors, if you encounter any issues, check current issues on this repo or 
-make a new issue. 
+
+Please do not attempt to contact the developers of the original mods if you wish to get support. If you have any problems, check currently open issues, or create a new issue.
 
 ### Building from source
 
@@ -43,10 +29,10 @@ to start here.
 You will need to install JDK 8 (or newer, see below) in order to build Sodium. You can either install this through
 a package manager such as [Chocolatey](https://chocolatey.org/) on Windows or [SDKMAN!](https://sdkman.io/) on other
 platforms. If you'd prefer to not use a package manager, you can always grab the installers or packages directly from
-[AdoptOpenJDK](https://adoptopenjdk.net/).
+[Adoptium](https://adoptium.net/).
 
 On Windows, the Oracle JDK/JRE builds should be avoided where possible due to their poor quality. Always prefer using
-the open-source builds from AdoptOpenJDK when possible.
+the open-source builds from Adoptium when possible.
 
 #### Compiling
 
@@ -70,45 +56,7 @@ For most users, these compatibility issues are not relevant, and it should be re
 runtime and apply the required patches. For more information on upgrading and tuning the Java runtime, see the
 guide [here](https://gist.github.com/jellysquid3/8a7b21e57f47f5711eb5697e282e502e).
 
-### Building from sources
-
-#### Requirements
-
-- JRE 8 or newer (for running Gradle)
-- JDK 8 (optional)
-  - If you neither have JDK 8 available on your shell's path or installed through a supported package manager (such as
-[SDKMAN](https://sdkman.io)), Gradle will automatically download a suitable toolchain from the [AdoptOpenJDK project](https://adoptopenjdk.net/)
-and use it to compile the project. For more information on what package managers are supported and how you can
-customize this behavior on a system-wide level, please see [Gradle's Toolchain user guide](https://docs.gradle.org/current/userguide/toolchains.html).
-- Gradle 6.7 or newer (optional)
-  - The [Gradle wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html#sec:using_wrapper) is provided in
-    this repository can be used instead of installing a suitable version of Gradle yourself. However, if you are building
-    many projects, you may prefer to install it yourself through a suitable package manager as to save disk space and to
-    avoid many different Gradle daemons sitting around in memory.
-
-#### Building with Gradle
-
-Sodium uses a typical Gradle project structure and can be built by simply running the default `build` task.
-
-**Tip:** If this is a one-off build, and you would prefer the Gradle daemon does not stick around in memory afterwards 
-(often consuming upwards of 1 GiB), then you can use the [`--no-daemon` argument](https://docs.gradle.org/current/userguide/gradle_daemon.html#sec:disabling_the_daemon)
-to ensure that the daemon is torn down after the build is complete. However, subsequent Gradle builds will
-[start more slowly](https://docs.gradle.org/current/userguide/gradle_daemon.html#sec:why_the_daemon) if the Gradle
-daemon is not sitting warm and loaded in memory.
-
-After Gradle finishes building the project, the resulting build artifacts (your usual mod binaries, and
-their sources) can be found in `build/libs`.
-
-Build artifacts classified with `dev` are outputs containing the sources and compiled classes
-before they are remapped into stable intermediary names. If you are working in a developer environment and would
-like to add the mod to your game, you should prefer to use the `modRuntime` or `modCompile` configurations provided by
-Loom instead of these outputs.
-
-Please note that support is not provided for setting up build environments or compiling the mod. We ask that
-users who are looking to get their hands dirty with the code have a basic understanding of compiling Java/Gradle
-projects.
-
 ### License
 
-Sodium is licensed under GNU LGPLv3, a free and open-source license. For more information, please see the
-[license file](https://github.com/jellysquid3/sodium-fabric/blob/1.16.x/dev/LICENSE.txt).
+Sodium, Lithium, and Phosphor are licensed under GNU LGPLv3, a free and open-source license. For more information, please see the
+[license file](https://github.com/spoorn/sodium-forge/blob/1.16.x/dev/LICENSE.txt).
