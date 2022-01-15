@@ -21,9 +21,11 @@ public class SodiumClientMod {
     private static Logger LOGGER;
     private static String MOD_VERSION;
     public static boolean ftbChunksLoaded;
+    public static boolean flywheelLoaded;
 
     public SodiumClientMod() {
         ftbChunksLoaded = ModList.get().isLoaded("ftbchunks");
+        flywheelLoaded = ModList.get().isLoaded("flywheel");
         // Register the setup method for modloading
         //FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
 
